@@ -138,7 +138,12 @@
                                         <a href="{{ route('packages.edit', $package->id) }}"
                                             class="btn btn-link text-muted p-0 me-2"><i class='bx bx-pencil'></i></a>
                                         <form action="{{ route('packages.destroy', $package->id) }}" method="POST"
-                                            class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                            class="d-inline"
+                                            data-confirm="This package will be removed if the server allows it."
+                                            data-confirm-title="Delete package?"
+                                            data-confirm-record="{{ $package->name }}"
+                                            data-confirm-text="Delete"
+                                            data-confirm-loading="Deleting...">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-muted p-0"><i

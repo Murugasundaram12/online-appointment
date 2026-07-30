@@ -100,12 +100,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .required-label::after {
-            content: '*';
-            color: #f64e60;
-            margin-left: 0.25rem;
-        }
-
         .modal-body .form-control,
         .modal-body .form-select {
             background-color: #f9f9f9;
@@ -302,7 +296,12 @@
                                             <i class='bx bx-pencil'></i>
                                         </button>
                                         <form action="{{ route('clients.destroy', $client->id) }}" method="POST"
-                                            class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                            class="d-inline"
+                                            data-confirm="This action cannot be undone. Clients with appointments, invoices, or form records cannot be deleted."
+                                            data-confirm-title="Delete client?"
+                                            data-confirm-record="{{ $client->name }}"
+                                            data-confirm-text="Delete"
+                                            data-confirm-loading="Deleting...">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-muted p-0"><i
@@ -326,8 +325,8 @@
         </div>
     </div>
     <!-- Add Client Modal -->
-    <div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade app-modal" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addClientModalLabel">Add new client</h5>
@@ -341,7 +340,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Client name</label>
+                                        <label class="form-label">Client name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" name="name" placeholder="Enter full name"
                                             required>
                                     </div>
@@ -416,8 +415,8 @@
         </div>
     </div>
     <!-- Edit Client Modal -->
-    <div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade app-modal" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editClientModalLabel">Edit client</h5>
@@ -432,7 +431,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Client name</label>
+                                        <label class="form-label">Client name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" id="edit-client-name" name="name"
                                             placeholder="Enter full name" required>
                                     </div>

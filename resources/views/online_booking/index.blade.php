@@ -62,7 +62,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label required-label">Service</label>
+                                    <label class="form-label">Service <span class="required-mark">*</span></label>
                                     <select class="form-select" name="service_id" id="service_id" required>
                                         <option value="">Select service</option>
                                         @foreach($services as $service)
@@ -71,7 +71,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Staff</label>
+                                    <label class="form-label">Staff <span class="required-mark">*</span></label>
                                     <select class="form-select" name="staff_id" id="staff_id">
                                         <option value="">Any available staff</option>
                                         @foreach($staff as $member)
@@ -80,11 +80,11 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label required-label">Date</label>
+                                    <label class="form-label">Date <span class="required-mark">*</span></label>
                                     <input type="date" class="form-control" id="booking_date" min="{{ now()->toDateString() }}" required>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label required-label">Available time</label>
+                                    <label class="form-label">Available time <span class="required-mark">*</span></label>
                                     <div id="slotButtons" class="d-flex flex-wrap gap-2 p-3 bg-light rounded-3">
                                         <span class="text-muted small">Select a service and date to view available slots.</span>
                                     </div>
@@ -93,7 +93,7 @@
                                     <input type="hidden" name="end_time" id="end_time">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label required-label">Name</label>
+                                    <label class="form-label">Name <span class="required-mark">*</span></label>
                                     <input class="form-control" name="client_name" value="{{ old('client_name') }}" required>
                                 </div>
                                 <div class="col-md-4">

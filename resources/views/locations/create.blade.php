@@ -17,7 +17,7 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label for="name" class="form-label">Location Name</label>
+                            <label for="name" class="form-label">Location Name <span class="required-mark">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
 

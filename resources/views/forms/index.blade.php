@@ -175,7 +175,11 @@
                                     <a href="{{ route('forms.edit', $form->id) }}" class="btn btn-link text-muted p-0 me-2"><i
                                             class='bx bx-pencil'></i></a>
                                     <form action="{{ route('forms.destroy', $form->id) }}" method="POST" class="d-inline"
-                                        onsubmit="return confirm('Are you sure?');">
+                                        data-confirm="This form will be deleted if the server allows it."
+                                        data-confirm-title="Delete form?"
+                                        data-confirm-record="{{ $form->name }}"
+                                        data-confirm-text="Delete"
+                                        data-confirm-loading="Deleting...">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-link text-muted p-0"><i

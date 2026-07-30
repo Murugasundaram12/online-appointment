@@ -18,7 +18,7 @@
                     @method('PUT')
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">Service Name</label>
+                            <label for="name" class="form-label">Service Name <span class="required-mark">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ $service->name }}"
                                 required>
                         </div>
@@ -39,12 +39,12 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="price" class="form-label">Price</label>
+                            <label for="price" class="form-label">Price <span class="required-mark">*</span></label>
                             <input type="number" step="0.01" class="form-control" id="price" name="price"
                                 value="{{ $service->price }}" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="duration_minutes" class="form-label">Duration (minutes)</label>
+                            <label for="duration_minutes" class="form-label">Duration (minutes) <span class="required-mark">*</span></label>
                             <input type="number" class="form-control" id="duration_minutes" name="duration_minutes"
                                 value="{{ $service->duration_minutes }}" required>
                         </div>

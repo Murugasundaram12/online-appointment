@@ -17,11 +17,11 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">Full Name</label>
+                            <label for="name" class="form-label">Full Name <span class="required-mark">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="email" class="form-label">Email Address</label>
+                            <label for="email" class="form-label">Email Address <span class="required-mark">*</span></label>
                             <input type="email" class="form-control" id="email" name="email" required>
                         </div>
                         <div class="col-md-6">
@@ -51,7 +51,7 @@
                             <input type="text" class="form-control" id="category" name="category">
                         </div>
                         <div class="col-md-6">
-                            <label for="password" class="form-label">Password</label>
+                            <label for="password" class="form-label">Password <span class="required-mark">*</span></label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
                         <div class="col-12">

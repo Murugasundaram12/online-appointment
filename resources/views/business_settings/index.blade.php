@@ -24,7 +24,7 @@
                     @method('PUT')
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Business name</label>
+                            <label class="form-label">Business name <span class="required-mark">*</span></label>
                             <input class="form-control" name="business_name" value="{{ old('business_name', $settings['business_name'] ?? config('app.name')) }}" required>
                         </div>
                         <div class="col-md-6">
@@ -36,7 +36,7 @@
                             <input class="form-control" name="business_phone" value="{{ old('business_phone', $settings['business_phone'] ?? '') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Currency</label>
+                            <label class="form-label">Currency <span class="required-mark">*</span></label>
                             <input class="form-control" name="currency" value="{{ old('currency', $settings['currency'] ?? 'USD') }}" required>
                         </div>
                         <div class="col-12">
@@ -44,7 +44,7 @@
                             <textarea class="form-control" name="business_address" rows="3">{{ old('business_address', $settings['business_address'] ?? '') }}</textarea>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Timezone</label>
+                            <label class="form-label">Timezone <span class="required-mark">*</span></label>
                             <select class="form-select" name="timezone" required>
                                 @foreach(timezone_identifiers_list() as $timezone)
                                     <option value="{{ $timezone }}" {{ old('timezone', $settings['timezone'] ?? config('app.timezone')) === $timezone ? 'selected' : '' }}>{{ $timezone }}</option>
@@ -52,19 +52,19 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Date format</label>
+                            <label class="form-label">Date format <span class="required-mark">*</span></label>
                             <input class="form-control" name="date_format" value="{{ old('date_format', $settings['date_format'] ?? 'M j, Y') }}" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Time format</label>
+                            <label class="form-label">Time format <span class="required-mark">*</span></label>
                             <input class="form-control" name="time_format" value="{{ old('time_format', $settings['time_format'] ?? 'g:i A') }}" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Appointment interval minutes</label>
+                            <label class="form-label">Appointment interval minutes <span class="required-mark">*</span></label>
                             <input type="number" min="5" max="240" class="form-control" name="appointment_interval" value="{{ old('appointment_interval', $settings['appointment_interval'] ?? 30) }}" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Default appointment status</label>
+                            <label class="form-label">Default appointment status <span class="required-mark">*</span></label>
                             <select class="form-select" name="default_appointment_status" required>
                                 @foreach(['pending', 'booked', 'completed', 'cancelled'] as $status)
                                     <option value="{{ $status }}" {{ old('default_appointment_status', $settings['default_appointment_status'] ?? 'pending') === $status ? 'selected' : '' }}>{{ ucfirst($status) }}</option>
@@ -72,7 +72,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Invoice prefix</label>
+                            <label class="form-label">Invoice prefix <span class="required-mark">*</span></label>
                             <input class="form-control" name="invoice_prefix" value="{{ old('invoice_prefix', $settings['invoice_prefix'] ?? 'INV') }}" required>
                         </div>
                         <div class="col-12">

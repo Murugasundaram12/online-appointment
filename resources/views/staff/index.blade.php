@@ -65,12 +65,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .required-label::after {
-            content: '*';
-            color: #f64e60;
-            margin-left: 0.25rem;
-        }
-
         .modal-body .form-control,
         .modal-body .form-select {
             background-color: #f9f9f9;
@@ -274,7 +268,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Staff name</label>
+                                        <label class="form-label">Staff name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" name="name" placeholder="Enter staff name"
                                             required>
                                     </div>
@@ -287,7 +281,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-shield-quarter'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Access level</label>
+                                        <label class="form-label">Access level</label>
                                         <select class="form-select" name="access_level">
                                             <option selected disabled>Select access level</option>
                                             <option value="business_owner">Business owner</option>
@@ -336,7 +330,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Email address</label>
+                                        <label class="form-label">Email address <span class="required-mark">*</span></label>
                                         <input type="email" class="form-control" name="email"
                                             placeholder="Enter email address" required>
                                     </div>
@@ -349,7 +343,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Password</label>
+                                        <label class="form-label">Password <span class="required-mark">*</span></label>
                                         <input type="password" class="form-control" name="password"
                                             placeholder="Enter password" required>
                                     </div>
@@ -400,7 +394,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Staff name</label>
+                                        <label class="form-label">Staff name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" id="edit-staff-name" name="name"
                                             placeholder="Enter staff name" required>
                                     </div>
@@ -413,7 +407,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-shield-quarter'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Access level</label>
+                                        <label class="form-label">Access level</label>
                                         <select class="form-select" id="edit-staff-access-level" name="access_level">
                                             <option disabled>Select access level</option>
                                             <option value="business_owner">Business owner</option>
@@ -462,7 +456,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Email address</label>
+                                        <label class="form-label">Email address <span class="required-mark">*</span></label>
                                         <input type="email" class="form-control" id="edit-staff-email" name="email"
                                             placeholder="Enter email address" required>
                                     </div>
@@ -475,7 +469,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Password</label>
+                                        <label class="form-label">Password</label>
                                         <input type="password" class="form-control" id="edit-staff-password"
                                             name="password" placeholder="Leave blank to keep current">
                                     </div>

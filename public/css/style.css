@@ -23,6 +23,10 @@
     --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
     --radius: 16px;
     --radius-sm: 10px;
+    --modal-bg: #ffffff;
+    --modal-border: #e2e8f0;
+    --modal-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    --modal-radius: 18px;
 }
 
 * {
@@ -329,10 +333,10 @@ a:hover {
     font-weight: 750;
 }
 
-.required-label::after {
-    content: "*";
+.required-mark {
     color: var(--danger);
-    margin-left: 3px;
+    font-weight: 800;
+    margin-left: 2px;
 }
 
 .table-responsive {
@@ -403,21 +407,216 @@ a:hover {
     color: var(--text-secondary) !important;
 }
 
-.modal-content {
-    border: 0 !important;
-    border-radius: 20px !important;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24) !important;
+.modal-backdrop.show {
+    opacity: 0.38;
+}
+
+.app-modal .modal-dialog {
+    max-width: min(94vw, 560px);
+}
+
+.app-modal .modal-dialog.modal-lg,
+.app-modal .modal-lg {
+    max-width: min(94vw, 840px);
+}
+
+.app-modal .modal-dialog.modal-xl,
+.app-modal .modal-xl {
+    max-width: min(96vw, 1120px);
+}
+
+.modal-content,
+.app-modal .modal-content {
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--modal-border) !important;
+    border-radius: var(--modal-radius) !important;
+    box-shadow: var(--modal-shadow) !important;
+    overflow: hidden;
 }
 
 .modal-header,
-.modal-footer {
-    border-color: var(--border) !important;
+.app-modal .modal-header {
+    border-bottom: 1px solid var(--border) !important;
+    background: var(--surface-muted) !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+.modal-body,
+.app-modal .modal-body {
+    padding: 1.5rem !important;
+}
+
+.modal-footer,
+.app-modal .modal-footer {
+    border-top: 1px solid var(--border) !important;
+    background: #fff !important;
+    padding: 1rem 1.5rem !important;
+    gap: 0.75rem;
+}
+
+.modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    min-width: 0;
+}
+
+.modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+    font-size: 1.35rem;
+    flex: 0 0 auto;
+}
+
+.modal-icon-success { background: var(--success-soft); color: var(--success); }
+.modal-icon-warning { background: var(--warning-soft); color: var(--warning); }
+.modal-icon-danger { background: var(--danger-soft); color: var(--danger); }
+.modal-icon-info { background: var(--info-soft); color: var(--info); }
+
+.modal-title {
+    color: var(--text-primary);
+    font-weight: 850;
+    margin: 0;
+}
+
+.modal-subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.35;
+}
+
+.app-confirm-message {
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.app-confirm-record {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    font-weight: 700;
+}
+
+.appointment-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.appointment-form-grid > .alert,
+.appointment-form-grid > .row,
+.appointment-form-grid > div:has(textarea),
+.appointment-form-grid #appointment-form-error {
+    grid-column: 1 / -1;
+}
+
+.appointment-form-grid .mb-2 {
+    margin-bottom: 0 !important;
+}
+
+.modal-loading-state {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.78);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+.is-loading .modal-loading-state,
+.modal-content.is-loading .modal-loading-state {
+    display: flex;
 }
 
 .alert {
-    border: 0;
+    border: 1px solid transparent;
     border-radius: 14px;
     box-shadow: var(--shadow-sm);
+}
+
+.app-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+}
+
+.app-alert i {
+    font-size: 1.25rem;
+    margin-top: 0.1rem;
+}
+
+.app-alert-success { background: var(--success-soft); color: #14532d; border-color: #bbf7d0; }
+.app-alert-danger { background: var(--danger-soft); color: #7f1d1d; border-color: #fecaca; }
+.app-alert-warning { background: var(--warning-soft); color: #78350f; border-color: #fde68a; }
+.app-alert-info { background: var(--info-soft); color: #164e63; border-color: #bae6fd; }
+
+.app-toast-container {
+    z-index: 1095;
+}
+
+.app-toast {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.app-toast .toast-header {
+    border-bottom: 0;
+    background: #fff;
+    padding: 0.85rem 1rem 0.25rem;
+}
+
+.app-toast .toast-body {
+    padding: 0.25rem 1rem 0.95rem;
+    color: var(--text-secondary);
+}
+
+.app-toast-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.65rem;
+    font-size: 1.05rem;
+}
+
+.app-toast-success .app-toast-mark { background: var(--success-soft); color: var(--success); }
+.app-toast-danger .app-toast-mark { background: var(--danger-soft); color: var(--danger); }
+.app-toast-warning .app-toast-mark { background: var(--warning-soft); color: var(--warning); }
+.app-toast-info .app-toast-mark { background: var(--info-soft); color: var(--info); }
+
+.btn .app-btn-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.45rem;
+    vertical-align: -0.15rem;
+    animation: app-spin 0.7s linear infinite;
+}
+
+@keyframes app-spin {
+    to { transform: rotate(360deg); }
 }
 
 .empty-state {
@@ -540,5 +739,30 @@ a:hover {
     .table thead th,
     .table tbody td {
         white-space: nowrap;
+    }
+
+    .modal-dialog {
+        margin: 0.75rem;
+    }
+
+    .appointment-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .app-modal .modal-footer,
+    .modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .app-toast-container {
+        left: 0;
+        right: 0;
+        top: 0;
+        padding: 0.75rem !important;
+    }
+
+    .app-toast-container .toast {
+        width: 100%;
     }
 }

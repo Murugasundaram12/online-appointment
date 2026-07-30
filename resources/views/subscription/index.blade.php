@@ -7,8 +7,20 @@
         <h2 class="fs-4 m-0 fw-bold">Subscription</h2>
     </nav>
     <div class="container-fluid px-4 pt-4">
-        @if(session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
-        @if($errors->any()) <div class="alert alert-danger">{{ $errors->first() }}</div> @endif
+        @if(session('success'))
+            <div class="alert app-alert app-alert-success alert-success alert-dismissible fade show" role="alert" data-app-alert-type="success" data-app-alert-title="Success">
+                <i class="bx bx-check-circle" aria-hidden="true"></i>
+                <div>{{ session('success') }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="alert app-alert app-alert-danger alert-danger alert-dismissible fade show" role="alert" data-app-alert-type="danger" data-app-alert-title="Error">
+                <i class="bx bx-error-circle" aria-hidden="true"></i>
+                <div>{{ $errors->first() }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
         <div class="row g-3 mb-4">
             @foreach($plans as $plan)
@@ -55,18 +67,33 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <h3 class="fs-6 fw-bold">Activate or change plan</h3>
-                        <form method="POST" action="{{ route('subscription.activate') }}" class="row g-3">
+                        <form method="POST" action="{{ route('subscription.activate') }}" class="row g-3"
+                            data-confirm="This will activate or change the current subscription plan."
+                            data-confirm-title="Activate subscription?"
+                            data-confirm-subtitle="Review billing details before continuing."
+                            data-confirm-text="Activate"
+                            data-confirm-class="btn-primary"
+                            data-confirm-type="info"
+                            data-confirm-loading="Activating...">
                             @csrf
                             <div class="col-md-4">
+                                <label class="form-label">Subscription plan <span class="required-mark">*</span></label>
                                 <select class="form-select" name="subscription_plan_id" required>
                                     @foreach($plans as $plan)
                                         <option value="{{ $plan->id }}">{{ $plan->name }} - ${{ number_format($plan->price, 2) }}/{{ $plan->billing_cycle }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3"><input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required></div>
-                            <div class="col-md-3"><input type="date" name="end_date" class="form-control" value="{{ now()->addMonth()->toDateString() }}"></div>
+                            <div class="col-md-3">
+                                <label class="form-label">Start date <span class="required-mark">*</span></label>
+                                <input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">End date</label>
+                                <input type="date" name="end_date" class="form-control" value="{{ now()->addMonth()->toDateString() }}">
+                            </div>
                             <div class="col-md-2">
+                                <label class="form-label">Payment <span class="required-mark">*</span></label>
                                 <select class="form-select" name="payment_status"><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select>
                             </div>
                             <div class="col-12"><button class="btn btn-primary px-4">Activate</button></div>

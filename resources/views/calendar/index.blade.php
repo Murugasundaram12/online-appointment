@@ -854,17 +854,23 @@
         </div>
     </div>
 
-    <div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+    <div class="modal fade app-modal" id="appointmentModal" tabindex="-1" aria-labelledby="appointment-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
-                <form id="appointment-form">
+                <form id="appointment-form" data-app-managed="true">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="appointment-modal-title">New Appointment</h5>
+                        <div class="modal-heading">
+                            <div class="modal-icon" aria-hidden="true"><i class="bx bx-calendar-plus"></i></div>
+                            <div>
+                                <h5 class="modal-title" id="appointment-modal-title">New Appointment</h5>
+                                <p class="modal-subtitle">Manage patient, staff, service, schedule, and status details.</p>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="appointment-id" />
-                        <div id="appointment-form-fields">
+                        <div id="appointment-form-fields" class="appointment-form-grid">
                             <div id="appointment-form-error" class="alert alert-danger d-none" role="alert"></div>
 
                             <div class="mb-2">
@@ -874,17 +880,17 @@
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label">Staff</label>
+                                <label class="form-label">Staff <span class="required-mark">*</span></label>
                                 <select id="appt-staff" class="form-select" required></select>
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label">Service</label>
+                                <label class="form-label">Service <span class="required-mark">*</span></label>
                                 <select id="appt-service" class="form-select" required></select>
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label">Client</label>
+                                <label class="form-label">Client <span class="required-mark">*</span></label>
                                 <input type="search" id="appt-client-search" class="form-control mb-2" placeholder="Search clients by name, phone, or email" autocomplete="off" />
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" class="form-select"></select>
@@ -895,17 +901,17 @@
 
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
-                                    <label class="form-label">Start</label>
+                                    <label class="form-label">Start <span class="required-mark">*</span></label>
                                     <input type="datetime-local" id="appt-start" class="form-control" required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">End</label>
+                                    <label class="form-label">End <span class="required-mark">*</span></label>
                                     <input type="datetime-local" id="appt-end" class="form-control" required />
                                 </div>
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label">Status</label>
+                                <label class="form-label">Status <span class="required-mark">*</span></label>
                                 <select id="appt-status" class="form-select" required>
                                     <option value="pending">Pending</option>
                                     <option value="booked">Booked</option>
@@ -960,22 +966,28 @@
         </div>
     </div>
 
-    <div class="modal fade" id="newClientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade app-modal" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form id="new-client-form">
+                <form id="new-client-form" data-app-managed="true">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add New Client</h5>
+                        <div class="modal-heading">
+                            <div class="modal-icon modal-icon-info" aria-hidden="true"><i class="bx bx-user-plus"></i></div>
+                            <div>
+                                <h5 class="modal-title" id="newClientModalTitle">Add New Client</h5>
+                                <p class="modal-subtitle">Create a patient record without leaving the calendar.</p>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div id="new-client-form-error" class="alert alert-danger d-none" role="alert"></div>
                         <div class="mb-2">
-                            <label class="form-label">Client Name</label>
+                            <label class="form-label">Client Name <span class="required-mark">*</span></label>
                             <input type="text" id="new-client-name" class="form-control" required />
                         </div>
                         <div class="mb-2">
-                            <label class="form-label">Client Email</label>
+                            <label class="form-label">Client Email <span class="required-mark">*</span></label>
                             <input type="email" id="new-client-email" class="form-control" required />
                         </div>
                         <div class="mb-2">
@@ -1044,6 +1056,11 @@
             if (viewSelect && viewSelect.value) currentView = viewSelect.value;
 
             function showPageNotice(message, type = 'danger', timeout = 4200) {
+                window.AppToast?.show({
+                    type: type === 'success' ? 'success' : 'danger',
+                    title: type === 'success' ? 'Success' : 'Calendar notice',
+                    message
+                });
                 if (!pageNotice) return;
                 if (noticeTimer) clearTimeout(noticeTimer);
                 pageNotice.classList.remove('d-none', 'notice-danger', 'notice-success');
@@ -1545,6 +1562,17 @@
                 return Array.from(selectEl.options || []).some(o => String(o.value) === v);
             }
 
+            function ensureSelectOption(selectEl, value, label, suffix = '') {
+                if (!selectEl || value === null || value === undefined || value === '') return;
+                if (hasSelectOptionValue(selectEl, value)) return;
+
+                const option = document.createElement('option');
+                option.value = String(value);
+                option.textContent = `${label || 'Historical record'}${suffix}`;
+                option.dataset.historical = '1';
+                selectEl.appendChild(option);
+            }
+
             function hydrateFormOptions() {
                 hydrateLocationOptions();
                 hydrateStaffOptionsForSelectedLocation();
@@ -1760,38 +1788,54 @@
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
                 try {
-                    const res = await fetch(calendarUrl(`appointments/${appointmentId}`));
-                    if (!res.ok) throw new Error('Unable to load appointment');
-                    const appt = await res.json();
-
-                    const normalizedStatus = String(appt.status || '').toLowerCase();
-                    const isCompleted = normalizedStatus === 'completed';
-                    const isTentative = normalizedStatus === 'tentative';
-                    if (isCompleted || isTentative) {
-                        hideAppointmentDetailsCard();
-                        showAppointmentDetailsCard(appt, clickEvent);
-                        return;
+                    clearFormError();
+                    hideAppointmentDetailsCard();
+                    setAppointmentReadOnlyMode(false);
+                    if (apptSaveBtn) {
+                        apptSaveBtn.disabled = true;
+                        apptSaveBtn.dataset.originalText = apptSaveBtn.textContent;
+                        apptSaveBtn.textContent = 'Loading appointment...';
                     }
 
-                    hideAppointmentDetailsCard();
-                    modalTitle.textContent = isCompleted ? 'Appointment Details' : 'Edit Appointment';
+                    const res = await fetch(calendarUrl(`appointments/${appointmentId}`));
+                    if (!res.ok) {
+                        const msg = await getErrorMessage(res, 'Unable to load appointment');
+                        throw new Error(msg);
+                    }
+                    const appt = await res.json();
+
+                    modalTitle.textContent = 'Edit Appointment';
                     apptIdField.value = appt.id;
-                    hydrateLocationOptions(appt.locationId ? { id: appt.locationId, name: appt.location } : null);
-                    locationField.value = appt.locationId ? String(appt.locationId) : '';
+
+                    hydrateLocationOptions(appt.locationId ? { id: appt.locationId, name: appt.locationName || appt.location } : null);
+                    if (locationField) locationField.value = appt.locationId ? String(appt.locationId) : '';
+
                     hydrateStaffOptionsForSelectedLocation();
+                    ensureSelectOption(staffField, appt.staffId, appt.staffName || appt.staff, ' (historical)');
                     staffField.value = appt.staffId ? String(appt.staffId) : '';
+
+                    fillSelect(serviceField, window.CALENDAR_DATA.services || [], 'Select service');
+                    ensureSelectOption(serviceField, appt.serviceId, appt.serviceName || appt.service, ' (historical)');
                     serviceField.value = appt.serviceId ? String(appt.serviceId) : '';
+
+                    hydrateClientOptions();
+                    ensureSelectOption(clientField, appt.clientId, appt.clientName || appt.title);
                     clientField.value = appt.clientId ? String(appt.clientId) : '';
+
                     statusField.value = appt.status || 'pending';
                     notesField.value = appt.notes || '';
                     startField.value = toInputDateTime(parseCalendarDate(appt.start));
                     endField.value = toInputDateTime(parseCalendarDate(appt.end));
                     clearNewClientFields();
                     clearFormError();
-                    setAppointmentReadOnlyMode(isCompleted);
                     appointmentModal.show();
                 } catch (err) {
                     showPageNotice(err.message || 'Failed to load appointment');
+                } finally {
+                    if (apptSaveBtn) {
+                        apptSaveBtn.disabled = false;
+                        apptSaveBtn.textContent = apptSaveBtn.dataset.originalText || 'Save';
+                    }
                 }
             }
 
@@ -2175,12 +2219,13 @@
                 }
             });
 
-            if (openNewClientModalBtn) {
+                if (openNewClientModalBtn) {
                 openNewClientModalBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Go directly to client list (do not open any modal)
-                    window.location.href = '{{ route('clients.index') }}';
+                    clearNewClientFields();
+                    clearNewClientFormError();
+                    newClientModal.show();
                 });
             }
 
@@ -2199,6 +2244,8 @@
                 }
 
                 try {
+                    const quickClientButton = newClientForm.querySelector('button[type="submit"]');
+                    window.AppButtonLoading?.set(quickClientButton, 'Adding...');
                     const createClientRes = await fetch(calendarUrl('quick-client'), {
                         method: 'POST',
                         headers: {
@@ -2237,6 +2284,9 @@
                     showPageNotice('Client added successfully.', 'success');
                 } catch (err) {
                     showNewClientFormError(err.message || 'Unable to create client.');
+                } finally {
+                    const quickClientButton = newClientForm.querySelector('button[type="submit"]');
+                    window.AppButtonLoading?.reset(quickClientButton);
                 }
             });
 

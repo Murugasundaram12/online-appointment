@@ -140,12 +140,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .required-label::after {
-            content: '*';
-            color: #f64e60;
-            margin-left: 0.25rem;
-        }
-
         .modal-body .form-control,
         .modal-body .form-select {
             background-color: #f9f9f9;
@@ -289,7 +283,11 @@
                                         <i class='bx bx-pencil'></i>
                                     </button>
                                     <form action="{{ route('services.destroy', $service->id) }}" method="POST" class="d-inline"
-                                        onsubmit="return confirm('Are you sure?');">
+                                        data-confirm="This action cannot be undone. Services connected to appointments may be protected by the server."
+                                        data-confirm-title="Delete service?"
+                                        data-confirm-record="{{ $service->name }}"
+                                        data-confirm-text="Delete"
+                                        data-confirm-loading="Deleting...">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-link text-muted p-0"><i
@@ -312,7 +310,7 @@
         </div>
     </div>
     <!-- Add Service Modal -->
-    <div class="modal fade" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel"
+    <div class="modal fade app-modal" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -328,7 +326,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-layer-plus'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Service name</label>
+                                        <label class="form-label">Service name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" name="name"
                                             placeholder="e.g. Massagetherapy - 60 Mins">
                                     </div>
@@ -341,7 +339,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Category</label>
+                                        <label class="form-label">Category</label>
                                         <select class="form-select" name="service_category_id">
                                             <option value="" selected>Select category</option>
                                             @foreach($categories as $category)
@@ -355,7 +353,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-list-check'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Service type</label>
+                                        <label class="form-label">Service type</label>
                                         <select class="form-select" name="type">
                                             <option value="in_person" selected>In-person</option>
                                             <option value="online">Online</option>
@@ -371,7 +369,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-dollar-circle'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Price (CA$)</label>
+                                        <label class="form-label">Price (CA$) <span class="required-mark">*</span></label>
                                         <input type="number" step="0.01" min="0" class="form-control" name="price"
                                             placeholder="0.00" required>
                                     </div>
@@ -381,7 +379,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-time-five'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Duration</label>
+                                        <label class="form-label">Duration <span class="required-mark">*</span></label>
                                         <select class="form-select" name="duration_minutes" required>
                                             <option value="30">30 mins</option>
                                             <option value="45">45 mins</option>
@@ -420,7 +418,7 @@
         </div>
     </div>
     <!-- Edit Service Modal -->
-    <div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel"
+    <div class="modal fade app-modal" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -437,7 +435,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-layer-plus'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Service name</label>
+                                        <label class="form-label">Service name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" id="edit-service-name" name="name"
                                             placeholder="e.g. Massagetherapy - 60 Mins">
                                     </div>
@@ -450,7 +448,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Category</label>
+                                        <label class="form-label">Category</label>
                                         <select class="form-select" id="edit-service-category" name="service_category_id">
                                             <option value="" selected>Select category</option>
                                             @foreach($categories as $category)
@@ -464,7 +462,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-list-check'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Service type</label>
+                                        <label class="form-label">Service type</label>
                                         <select class="form-select" id="edit-service-type" name="type">
                                             <option value="in_person">In-person</option>
                                             <option value="online">Online</option>
@@ -480,7 +478,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-dollar-circle'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Price (CA$)</label>
+                                        <label class="form-label">Price (CA$) <span class="required-mark">*</span></label>
                                         <input type="number" step="0.01" min="0" class="form-control"
                                             id="edit-service-price" name="price" placeholder="0.00" required>
                                     </div>
@@ -490,7 +488,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-time-five'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label required-label">Duration</label>
+                                        <label class="form-label">Duration <span class="required-mark">*</span></label>
                                         <select class="form-select" id="edit-service-duration" name="duration_minutes"
                                             required>
                                             <option value="30">30 mins</option>
@@ -556,4 +554,3 @@
     });
 </script>
 @endpush
-

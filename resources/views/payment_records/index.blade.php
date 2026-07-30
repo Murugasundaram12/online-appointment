@@ -187,7 +187,7 @@
                 <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3 align-items-end">
                     @csrf
                     <div class="col-md-4">
-                        <label class="form-label">Invoice</label>
+                        <label class="form-label">Invoice <span class="required-mark">*</span></label>
                         <select name="invoice_id" class="form-select" required>
                             <option value="">Select invoice</option>
                             @foreach($invoices as $invoice)
@@ -196,11 +196,11 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Amount</label>
+                        <label class="form-label">Amount <span class="required-mark">*</span></label>
                         <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Method</label>
+                        <label class="form-label">Method <span class="required-mark">*</span></label>
                         <select name="payment_method" class="form-select" required>
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
@@ -208,7 +208,7 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Date</label>
+                        <label class="form-label">Date <span class="required-mark">*</span></label>
                         <input type="date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
                     </div>
                     <div class="col-md-2">
@@ -285,7 +285,12 @@
                                     @if($record->invoice)
                                         <a href="{{ route('invoices.show', $record->invoice_id) }}" class="btn btn-link text-muted p-0 me-2"><i class='bx bx-show'></i></a>
                                     @endif
-                                    <form action="{{ route('payment-records.destroy', $record->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this payment?');">
+                                    <form action="{{ route('payment-records.destroy', $record->id) }}" method="POST" class="d-inline"
+                                        data-confirm="This payment record will be permanently removed if the server allows it."
+                                        data-confirm-title="Delete payment?"
+                                        data-confirm-record="{{ number_format((float) $record->amount, 2) }}"
+                                        data-confirm-text="Delete"
+                                        data-confirm-loading="Deleting...">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-link text-muted p-0"><i class='bx bx-trash'></i></button>

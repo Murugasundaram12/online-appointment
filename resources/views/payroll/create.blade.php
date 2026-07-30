@@ -144,7 +144,7 @@
 
                     {{-- Staff Selection --}}
                     <div class="form-group">
-                        <label for="staff_id" class="form-label">Staff Member <span class="text-danger">*</span></label>
+                        <label for="staff_id" class="form-label">Staff Member <span class="required-mark">*</span></label>
                         <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror"
                             required>
                             <option value="">Select a staff member</option>
@@ -164,7 +164,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="period_start" class="form-label">Start Date <span
-                                    class="text-danger">*</span></label>
+                                    class="required-mark">*</span></label>
                             <input type="date" id="period_start" name="period_start"
                                 class="form-control @error('period_start') is-invalid @enderror"
                                 value="{{ old('period_start') }}" required>
@@ -174,7 +174,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="period_end" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <label for="period_end" class="form-label">End Date <span class="required-mark">*</span></label>
                             <input type="date" id="period_end" name="period_end"
                                 class="form-control @error('period_end') is-invalid @enderror"
                                 value="{{ old('period_end') }}" required>
@@ -199,7 +199,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="salary_amount" class="form-label">Base Salary <span
-                                    class="text-danger">*</span></label>
+                                    class="required-mark">*</span></label>
                             <input type="number" id="salary_amount" name="salary_amount"
                                 class="form-control @error('salary_amount') is-invalid @enderror"
                                 value="{{ old('salary_amount', 0) }}" step="0.01" min="0" required
@@ -245,7 +245,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="payment_date" class="form-label">Payment Date <span
-                                    class="text-danger">*</span></label>
+                                    class="required-mark">*</span></label>
                             <input type="date" id="payment_date" name="payment_date"
                                 class="form-control @error('payment_date') is-invalid @enderror"
                                 value="{{ old('payment_date') }}" required>
@@ -256,7 +256,7 @@
 
                         <div class="form-group">
                             <label for="payment_type" class="form-label">Payment Type <span
-                                    class="text-danger">*</span></label>
+                                    class="required-mark">*</span></label>
                             <select id="payment_type" name="payment_type"
                                 class="form-select @error('payment_type') is-invalid @enderror" required>
                                 <option value="">Select payment type</option>
@@ -273,7 +273,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                            <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
                             <select id="status" name="status" class="form-select @error('status') is-invalid @enderror"
                                 required>
                                 <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>

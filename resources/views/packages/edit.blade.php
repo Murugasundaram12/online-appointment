@@ -18,12 +18,12 @@
                     @method('PUT')
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">Package Name</label>
+                            <label for="name" class="form-label">Package Name <span class="required-mark">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ $package->name }}"
                                 required>
                         </div>
                         <div class="col-md-6">
-                            <label for="price" class="form-label">Price</label>
+                            <label for="price" class="form-label">Price <span class="required-mark">*</span></label>
                             <input type="number" step="0.01" class="form-control" id="price" name="price"
                                 value="{{ $package->price }}" required>
                         </div>

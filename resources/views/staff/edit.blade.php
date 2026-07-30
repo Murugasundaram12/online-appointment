@@ -18,12 +18,12 @@
                     @method('PUT')
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">Full Name</label>
+                            <label for="name" class="form-label">Full Name <span class="required-mark">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ $staff->name }}"
                                 required>
                         </div>
                         <div class="col-md-6">
-                            <label for="email" class="form-label">Email Address</label>
+                            <label for="email" class="form-label">Email Address <span class="required-mark">*</span></label>
                             <input type="email" class="form-control" id="email" name="email" value="{{ $staff->email }}"
                                 required>
                         </div>

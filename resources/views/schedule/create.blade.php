@@ -89,16 +89,16 @@
                         </div> --}}
                     
                         <div class="col-12 col-md-4">
-                            <label class="form-label small text-muted">Date</label>
+                            <label class="form-label small text-muted">Date <span class="required-mark">*</span></label>
                             <input type="date" class="form-control" name="working_date" id="working-date" required>
                             <div class="form-text">Creates/updates schedule for this date.</div>
                         </div>
                         <div class="col-6 col-md-4">
-                            <label class="form-label small text-muted">Start Time</label>
+                            <label class="form-label small text-muted">Start Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" name="start_time" id="single-start-time" value="09:00" required>
                         </div>
                         <div class="col-6 col-md-4">
-                            <label class="form-label small text-muted">End Time</label>
+                            <label class="form-label small text-muted">End Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" name="end_time" id="single-end-time" value="17:00" required>
                         </div>
                     </div>

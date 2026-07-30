@@ -118,7 +118,11 @@
                                     <td class="text-muted small">-</td>
                                     <td class="pe-4 text-end">
                                         <a href="{{ route('form-records.show', $record->id) }}" class="btn btn-link text-muted p-0 me-2"><i class='bx bx-show'></i></a>
-                                        <form action="{{ route('form-records.destroy', $record->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this form record?');">
+                                        <form action="{{ route('form-records.destroy', $record->id) }}" method="POST" class="d-inline"
+                                            data-confirm="This submitted form record will be permanently removed."
+                                            data-confirm-title="Delete form record?"
+                                            data-confirm-text="Delete"
+                                            data-confirm-loading="Deleting...">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-link text-muted p-0"><i class='bx bx-trash'></i></button>

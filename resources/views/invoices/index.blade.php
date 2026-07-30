@@ -86,7 +86,9 @@
             </div>
             <div class="d-flex align-items-center">
                 <h2 class="fs-4 m-0 fw-bold me-4">Invoices</h2>
-                <button class="btn btn-primary btn-sm px-4">Sell product</button>
+                <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm px-4">
+                    <i class='bx bx-plus-circle me-1'></i> Create Invoice
+                </a>
             </div>
         </div>
     </nav>

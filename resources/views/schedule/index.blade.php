@@ -306,12 +306,18 @@
     </div>
 
     <!-- Create Schedule Modal -->
-    <div class="modal fade" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel"
+    <div class="modal fade app-modal" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog">
-            <form class="modal-content" id="create-schedule-form">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" id="create-schedule-form" data-app-managed="true">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createScheduleModalLabel">Create Schedule</h5>
+                    <div class="modal-heading">
+                        <div class="modal-icon" aria-hidden="true"><i class="bx bx-time-five"></i></div>
+                        <div>
+                            <h5 class="modal-title" id="createScheduleModalLabel">Create Schedule</h5>
+                            <p class="modal-subtitle">Set staff working hours for this date.</p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -331,11 +337,11 @@
                             <input type="text" class="form-control" id="cs-staff-category" value="" readonly>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small text-muted">Start Time</label>
+                            <label class="form-label small text-muted">Start Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-start-time" name="start_time" required>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small text-muted">End Time</label>
+                            <label class="form-label small text-muted">End Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-end-time" name="end_time" required>
                         </div>
                     </div>
@@ -504,7 +510,11 @@
 
             function openScheduleForm(dayIndex, hour) {
                 if (!currentStaffId) {
-                    alert('Please select a staff member first');
+                    window.AppToast?.show({
+                        type: 'warning',
+                        title: 'Select staff',
+                        message: 'Please select a staff member first.'
+                    });
                     return;
                 }
 
@@ -517,10 +527,15 @@
                 const workingDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
                 if (!createModal) {
-                    const confirmed = confirm(`Create schedule?\n\nStart: ${startTime}\nEnd: ${endTime}\n\nClick OK to continue.`);
-                    if (confirmed) {
-                        createSchedule(currentStaffId, dayIndex, workingDate, startTime, endTime);
-                    }
+                    window.AppConfirm.open({
+                        title: 'Create schedule?',
+                        subtitle: 'Confirm staff working hours.',
+                        message: `Create a schedule from ${startTime} to ${endTime}?`,
+                        confirmText: 'Create',
+                        confirmClass: 'btn-primary',
+                        type: 'info',
+                        onConfirm: () => createSchedule(currentStaffId, dayIndex, workingDate, startTime, endTime)
+                    });
                     return;
                 }
 
@@ -574,10 +589,10 @@
                         if (data.success) {
                             location.reload();
                         } else {
-                            alert('Error: ' + (data.message || 'Could not create schedule'));
+                            window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: data.message || 'Could not create schedule' });
                         }
                     })
-                    .catch(err => alert('Error: ' + err.message));
+                    .catch(err => window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: err.message }));
             }
 
             function editSchedule(scheduleId) {
@@ -605,10 +620,10 @@
                         if (data.success) {
                             location.reload();
                         } else {
-                            alert('Error: ' + (data.message || 'Could not update schedule'));
+                            window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: data.message || 'Could not update schedule' });
                         }
                     })
-                    .catch(err => alert('Error: ' + err.message));
+                    .catch(err => window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: err.message }));
             }
 
             // Initial render

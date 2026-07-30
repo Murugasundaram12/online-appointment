@@ -151,7 +151,12 @@
                                         <i class='bx bx-pencil'></i>
                                     </a>
                                     <form action="{{ route('locations.destroy', $location->id) }}" method="POST"
-                                        class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                        class="d-inline"
+                                        data-confirm="This action cannot be undone. Locations used by appointments may be protected by the server."
+                                        data-confirm-title="Delete location?"
+                                        data-confirm-record="{{ $location->name }}"
+                                        data-confirm-text="Delete"
+                                        data-confirm-loading="Deleting...">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-link p-0 text-muted">

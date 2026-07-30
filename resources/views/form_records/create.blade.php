@@ -16,7 +16,7 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Form</label>
+                            <label class="form-label">Form <span class="required-mark">*</span></label>
                             <select class="form-select" name="form_id" required>
                                 @foreach($forms as $form)
                                     <option value="{{ $form->id }}">{{ $form->name }}</option>
@@ -24,7 +24,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Client</label>
+                            <label class="form-label">Client <span class="required-mark">*</span></label>
                             <select class="form-select" name="client_id" required>
                                 @foreach($clients as $client)
                                     <option value="{{ $client->id }}">{{ $client->name }}</option>
