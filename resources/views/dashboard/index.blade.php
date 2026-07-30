@@ -26,6 +26,9 @@
                 ['Completed appointments', $stats['completed_appointments'], 'bx-check-circle', 'All-time completed'],
                 ['Outstanding amount', '$' . number_format($stats['outstanding_invoice_amount'], 2), 'bx-receipt', 'Open invoice balance'],
                 ['Paid amount', '$' . number_format($stats['paid_invoice_amount'], 2), 'bx-dollar', 'Collected invoice amount'],
+                ['Pending payroll', $stats['pending_payroll_count'], 'bx-wallet', 'Salary records awaiting payout'],
+                ['Monthly payroll', '$' . number_format($stats['monthly_payroll_amount'], 2), 'bx-money', 'Paid payroll this month'],
+                ['Upcoming salaries', $stats['upcoming_salary_payments'], 'bx-calendar-event', 'Payments due in 14 days'],
             ];
         @endphp
 

@@ -58,7 +58,7 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <div class="text-muted small">Appointments</div>
@@ -66,7 +66,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <div class="text-muted small">Schedules</div>
@@ -74,11 +74,39 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <div class="text-muted small">Payroll Records</div>
                                 <div class="fs-4 fw-bold">{{ $staff->payrolls_count }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="text-muted small">Pending Payroll</div>
+                                <div class="fs-4 fw-bold">${{ number_format($pendingPayroll ?? 0, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mt-4">
+                    <div class="card-body p-4">
+                        <h3 class="fs-6 fw-bold mb-3">Payroll Snapshot</h3>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="text-muted small">Current Salary</div>
+                                <div class="fw-bold">${{ number_format((float) ($staff->salary ?? 0), 2) }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">Last Payroll</div>
+                                <div class="fw-bold">{{ $lastPayroll ? $lastPayroll->payroll_number . ' - $' . number_format($lastPayroll->total_payout, 2) : 'Not available' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">Total Payrolls</div>
+                                <div class="fw-bold">{{ $staff->payrolls_count }}</div>
                             </div>
                         </div>
                     </div>

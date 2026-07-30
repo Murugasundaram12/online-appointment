@@ -2,356 +2,150 @@
 
 @section('title', 'Create Payroll')
 
-@section('styles')
-    <style>
-        .payroll-card {
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #eef0f7;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #3f4254;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: #3f4254;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .form-control,
-        .form-select {
-            border-color: #eef0f7;
-            padding: 0.6rem 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #3699ff;
-            box-shadow: 0 0 0 0.2rem rgba(54, 153, 255, 0.15);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .btn-submit {
-            background-color: #3699ff;
-            color: white;
-            border: none;
-            padding: 0.6rem 2rem;
-            font-weight: 500;
-            border-radius: 4px;
-        }
-
-        .btn-submit:hover {
-            background-color: #2681dd;
-            color: white;
-        }
-
-        .btn-cancel {
-            background-color: #f5f8fa;
-            color: #3f4254;
-            border: none;
-            padding: 0.6rem 2rem;
-            font-weight: 500;
-            border-radius: 4px;
-        }
-
-        .btn-cancel:hover {
-            background-color: #e9ecf0;
-            color: #3f4254;
-        }
-
-        .summary-box {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eef0f7;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .summary-label {
-            color: #7e8299;
-            font-size: 0.9rem;
-        }
-
-        .summary-value {
-            font-weight: 600;
-            color: #3f4254;
-        }
-
-        .total-payout {
-            font-size: 1.3rem;
-            color: #3699ff;
-            font-weight: 700;
-        }
-    </style>
-@endsection
-
 @section('content')
-    <div id="page-content-wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-            <div class="d-flex align-items-center">
-                <h2 class="fs-4 m-0 fw-bold">Create Payroll Record</h2>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Create Payroll</h1>
+                <p class="text-muted mb-0">Create a salary record with commission, bonus, and deductions.</p>
             </div>
-        </nav>
-
-        <div class="container-fluid px-4">
-            {{-- Error Messages --}}
-            @if($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <h5>Validation Errors</h5>
-                    <ul class="mb-0">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            <div class="payroll-card">
-                <form action="{{ route('payroll.store') }}" method="POST" id="payrollForm">
-                    @csrf
-
-                    {{-- Staff Selection --}}
-                    <div class="form-group">
-                        <label for="staff_id" class="form-label">Staff Member <span class="required-mark">*</span></label>
-                        <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror"
-                            required>
-                            <option value="">Select a staff member</option>
-                            @foreach($staff as $member)
-                                <option value="{{ $member->id }}" {{ old('staff_id') == $member->id ? 'selected' : '' }}>
-                                    {{ $member->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('staff_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- Period --}}
-                    <h5 class="section-title mt-4">Period</h5>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="period_start" class="form-label">Start Date <span
-                                    class="required-mark">*</span></label>
-                            <input type="date" id="period_start" name="period_start"
-                                class="form-control @error('period_start') is-invalid @enderror"
-                                value="{{ old('period_start') }}" required>
-                            @error('period_start')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="period_end" class="form-label">End Date <span class="required-mark">*</span></label>
-                            <input type="date" id="period_end" name="period_end"
-                                class="form-control @error('period_end') is-invalid @enderror"
-                                value="{{ old('period_end') }}" required>
-                            @error('period_end')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="total_hours" class="form-label">Total Hours</label>
-                            <input type="number" id="total_hours" name="total_hours"
-                                class="form-control @error('total_hours') is-invalid @enderror"
-                                value="{{ old('total_hours', 0) }}" step="0.5" min="0">
-                            @error('total_hours')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    {{-- Salary Details --}}
-                    <h5 class="section-title mt-4">Salary Details</h5>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="salary_amount" class="form-label">Base Salary <span
-                                    class="required-mark">*</span></label>
-                            <input type="number" id="salary_amount" name="salary_amount"
-                                class="form-control @error('salary_amount') is-invalid @enderror"
-                                value="{{ old('salary_amount', 0) }}" step="0.01" min="0" required
-                                onchange="calculateTotal()">
-                            @error('salary_amount')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="commission_amount" class="form-label">Commission</label>
-                            <input type="number" id="commission_amount" name="commission_amount"
-                                class="form-control @error('commission_amount') is-invalid @enderror"
-                                value="{{ old('commission_amount', 0) }}" step="0.01" min="0" onchange="calculateTotal()">
-                            @error('commission_amount')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="bonus" class="form-label">Bonus</label>
-                            <input type="number" id="bonus" name="bonus"
-                                class="form-control @error('bonus') is-invalid @enderror" value="{{ old('bonus', 0) }}"
-                                step="0.01" min="0" onchange="calculateTotal()">
-                            @error('bonus')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="deductions" class="form-label">Deductions</label>
-                            <input type="number" id="deductions" name="deductions"
-                                class="form-control @error('deductions') is-invalid @enderror"
-                                value="{{ old('deductions', 0) }}" step="0.01" min="0" onchange="calculateTotal()">
-                            @error('deductions')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    {{-- Payment Details --}}
-                    <h5 class="section-title mt-4">Payment Details</h5>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="payment_date" class="form-label">Payment Date <span
-                                    class="required-mark">*</span></label>
-                            <input type="date" id="payment_date" name="payment_date"
-                                class="form-control @error('payment_date') is-invalid @enderror"
-                                value="{{ old('payment_date') }}" required>
-                            @error('payment_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="payment_type" class="form-label">Payment Type <span
-                                    class="required-mark">*</span></label>
-                            <select id="payment_type" name="payment_type"
-                                class="form-select @error('payment_type') is-invalid @enderror" required>
-                                <option value="">Select payment type</option>
-                                <option value="cash" {{ old('payment_type') == 'cash' ? 'selected' : '' }}>Cash</option>
-                                <option value="check" {{ old('payment_type') == 'check' ? 'selected' : '' }}>Check</option>
-                                <option value="transfer" {{ old('payment_type') == 'transfer' ? 'selected' : '' }}>Bank
-                                    Transfer</option>
-                                <option value="mobile_money" {{ old('payment_type') == 'mobile_money' ? 'selected' : '' }}>
-                                    Mobile Money</option>
-                            </select>
-                            @error('payment_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
-                            <select id="status" name="status" class="form-select @error('status') is-invalid @enderror"
-                                required>
-                                <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="processing" {{ old('status') == 'processing' ? 'selected' : '' }}>Processing
-                                </option>
-                                <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed
-                                </option>
-                                <option value="cancelled" {{ old('status') == 'cancelled' ? 'selected' : '' }}>Cancelled
-                                </option>
-                            </select>
-                            @error('status')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    {{-- Notes --}}
-                    <div class="form-group mt-3">
-                        <label for="notes" class="form-label">Notes</label>
-                        <textarea id="notes" name="notes" class="form-control @error('notes') is-invalid @enderror"
-                            rows="3">{{ old('notes') }}</textarea>
-                        @error('notes')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- Summary Box --}}
-                    <div class="summary-box">
-                        <h6 class="mb-3" style="color: #3f4254; font-weight: 600;">Payroll Summary</h6>
-                        <div class="summary-row">
-                            <span class="summary-label">Base Salary</span>
-                            <span class="summary-value" id="display-salary">0.00</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Commission</span>
-                            <span class="summary-value" id="display-commission">0.00</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Bonus</span>
-                            <span class="summary-value" id="display-bonus">0.00</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Deductions</span>
-                            <span class="summary-value" id="display-deductions">0.00</span>
-                        </div>
-                        <div class="summary-row"
-                            style="border-bottom: 2px solid #eef0f7; padding-bottom: 1rem; margin-bottom: 1rem;">
-                            <span style="font-size: 1.1rem; font-weight: 600; color: #3f4254;">Total Payout</span>
-                            <span class="total-payout" id="display-total">0.00</span>
-                        </div>
-                    </div>
-
-                    {{-- Actions --}}
-                    <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-submit">Create Payroll</button>
-                        <a href="{{ route('payroll.index') }}" class="btn btn-cancel">Cancel</a>
-                    </div>
-                </form>
-            </div>
+            <a href="{{ route('payroll.index') }}" class="btn btn-light border">Back</a>
         </div>
+
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <strong>Please fix the highlighted fields.</strong>
+                <div>{{ $errors->first() }}</div>
+            </div>
+        @endif
+
+        <form action="{{ route('payroll.store') }}" method="POST" id="payrollForm">
+            @csrf
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h2 class="fs-5 fw-bold mb-3">Payroll Details</h2>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="staff_id" class="form-label">Staff <span class="required-mark">*</span></label>
+                                    <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
+                                        <option value="">Select staff</option>
+                                        @foreach($staff as $member)
+                                            <option value="{{ $member->id }}" data-salary="{{ $member->salary ?? 0 }}" {{ old('staff_id') == $member->id ? 'selected' : '' }}>{{ $member->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('staff_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="period_start" class="form-label">Period Start <span class="required-mark">*</span></label>
+                                    <input type="date" id="period_start" name="period_start" value="{{ old('period_start') }}" class="form-control @error('period_start') is-invalid @enderror" required>
+                                    @error('period_start')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="period_end" class="form-label">Period End <span class="required-mark">*</span></label>
+                                    <input type="date" id="period_end" name="period_end" value="{{ old('period_end') }}" class="form-control @error('period_end') is-invalid @enderror" required>
+                                    @error('period_end')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="salary_amount" class="form-label">Basic Salary <span class="required-mark">*</span></label>
+                                    <input type="number" step="0.01" min="0" id="salary_amount" name="salary_amount" value="{{ old('salary_amount', 0) }}" class="form-control payroll-money @error('salary_amount') is-invalid @enderror" required>
+                                    @error('salary_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="commission_amount" class="form-label">Commission</label>
+                                    <input type="number" step="0.01" min="0" id="commission_amount" name="commission_amount" value="{{ old('commission_amount', 0) }}" class="form-control payroll-money @error('commission_amount') is-invalid @enderror">
+                                    @error('commission_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bonus" class="form-label">Bonus</label>
+                                    <input type="number" step="0.01" min="0" id="bonus" name="bonus" value="{{ old('bonus', 0) }}" class="form-control payroll-money @error('bonus') is-invalid @enderror">
+                                    @error('bonus')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="deductions" class="form-label">Deductions</label>
+                                    <input type="number" step="0.01" min="0" id="deductions" name="deductions" value="{{ old('deductions', 0) }}" class="form-control payroll-money @error('deductions') is-invalid @enderror">
+                                    @error('deductions')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="total_hours" class="form-label">Worked Hours</label>
+                                    <input type="number" step="0.5" min="0" id="total_hours" name="total_hours" value="{{ old('total_hours', 0) }}" class="form-control @error('total_hours') is-invalid @enderror">
+                                    @error('total_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="payment_date" class="form-label">Payment Date</label>
+                                    <input type="date" id="payment_date" name="payment_date" value="{{ old('payment_date') }}" class="form-control @error('payment_date') is-invalid @enderror">
+                                    @error('payment_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="payment_type" class="form-label">Payment Method <span class="required-mark">*</span></label>
+                                    <select id="payment_type" name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" required>
+                                        @foreach(['cash' => 'Cash', 'check' => 'Check', 'transfer' => 'Bank Transfer', 'mobile_money' => 'Mobile Money'] as $value => $label)
+                                            <option value="{{ $value }}" {{ old('payment_type', 'transfer') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('payment_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
+                                    <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                        <option value="pending" {{ old('status', 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Paid</option>
+                                        <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                    </select>
+                                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-12">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea id="notes" name="notes" rows="3" class="form-control @error('notes') is-invalid @enderror">{{ old('notes') }}</textarea>
+                                    @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm position-sticky" style="top: 1rem;">
+                        <div class="card-body p-4">
+                            <h2 class="fs-5 fw-bold mb-3">Total Payout</h2>
+                            <div class="d-flex justify-content-between mb-2"><span>Salary</span><strong id="display-salary">0.00</strong></div>
+                            <div class="d-flex justify-content-between mb-2"><span>Commission</span><strong id="display-commission">0.00</strong></div>
+                            <div class="d-flex justify-content-between mb-2"><span>Bonus</span><strong id="display-bonus">0.00</strong></div>
+                            <div class="d-flex justify-content-between mb-3"><span>Deductions</span><strong id="display-deductions">0.00</strong></div>
+                            <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Net Total</span>
+                                <span class="fs-4 fw-bold text-primary" id="display-total">0.00</span>
+                            </div>
+                            <button class="btn btn-primary w-100 mt-4">Create Payroll</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
 
     <script>
+        const moneyIds = ['salary_amount', 'commission_amount', 'bonus', 'deductions'];
+        function valueOf(id) { return parseFloat(document.getElementById(id).value) || 0; }
         function calculateTotal() {
-            const salary = parseFloat(document.getElementById('salary_amount').value) || 0;
-            const commission = parseFloat(document.getElementById('commission_amount').value) || 0;
-            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
-            const deductions = parseFloat(document.getElementById('deductions').value) || 0;
-            const total = salary + commission + bonus - deductions;
-
+            const salary = valueOf('salary_amount');
+            const commission = valueOf('commission_amount');
+            const bonus = valueOf('bonus');
+            const deductions = valueOf('deductions');
             document.getElementById('display-salary').textContent = salary.toFixed(2);
             document.getElementById('display-commission').textContent = commission.toFixed(2);
             document.getElementById('display-bonus').textContent = bonus.toFixed(2);
             document.getElementById('display-deductions').textContent = deductions.toFixed(2);
-            document.getElementById('display-total').textContent = total.toFixed(2);
+            document.getElementById('display-total').textContent = Math.max(0, salary + commission + bonus - deductions).toFixed(2);
         }
-
-        // Calculate on page load
-        window.addEventListener('load', calculateTotal);
+        moneyIds.forEach(id => document.getElementById(id).addEventListener('input', calculateTotal));
+        document.getElementById('staff_id').addEventListener('change', event => {
+            const option = event.target.selectedOptions[0];
+            if (option && option.dataset.salary && !parseFloat(document.getElementById('salary_amount').value)) {
+                document.getElementById('salary_amount').value = parseFloat(option.dataset.salary).toFixed(2);
+                calculateTotal();
+            }
+        });
+        calculateTotal();
     </script>
 @endsection

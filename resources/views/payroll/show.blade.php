@@ -2,301 +2,91 @@
 
 @section('title', 'Payroll Record')
 
-@section('styles')
+@push('styles')
     <style>
-        .payroll-card {
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #eef0f7;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #3f4254;
-            margin-bottom: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .section-title:first-of-type {
-            margin-top: 0;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .detail-item {
-            padding: 1rem;
-            background: #f9fafb;
-            border-radius: 6px;
-            border-left: 3px solid #eef0f7;
-        }
-
-        .detail-label {
-            color: #7e8299;
-            font-size: 0.85rem;
-            margin-bottom: 0.3rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-value {
-            color: #3f4254;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .summary-box {
-            background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-top: 2rem;
-            border: 1px solid #eef0f7;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eef0f7;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .summary-label {
-            color: #7e8299;
-            font-size: 0.95rem;
-        }
-
-        .summary-value {
-            font-weight: 600;
-            color: #3f4254;
-        }
-
-        .total-payout {
-            font-size: 1.5rem;
-            color: #3699ff;
-            font-weight: 700;
-        }
-
-        .badge-status {
-            padding: 0.4rem 1rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-processing {
-            background-color: #cfe2ff;
-            color: #084298;
-        }
-
-        .badge-completed {
-            background-color: #d1e7dd;
-            color: #0f5132;
-        }
-
-        .badge-cancelled {
-            background-color: #f8d7da;
-            color: #842029;
-        }
-
-        .btn-edit {
-            background-color: #3699ff;
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background-color: #2681dd;
-            color: white;
-        }
-
-        .btn-back {
-            background-color: #f5f8fa;
-            color: #3f4254;
-        }
-
-        .btn-back:hover {
-            background-color: #e9ecf0;
-            color: #3f4254;
-        }
-
-        .notes-box {
-            background: #f9fafb;
-            border-left: 3px solid #3699ff;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-top: 1.5rem;
-        }
-
-        .notes-label {
-            color: #7e8299;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-
-        .notes-content {
-            color: #3f4254;
-            font-size: 0.95rem;
-            line-height: 1.5;
+        .payroll-doc { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); }
+        .payroll-badge { border-radius: 999px; padding: .35rem .75rem; font-weight: 800; font-size: .78rem; }
+        .payroll-badge.pending { background: var(--warning-soft); color: var(--warning); }
+        .payroll-badge.completed, .payroll-badge.paid { background: var(--success-soft); color: var(--success); }
+        .payroll-badge.cancelled { background: var(--danger-soft); color: var(--danger); }
+        @media print {
+            .no-print, .sidebar, .topbar, nav { display: none !important; }
+            body { background: #fff !important; }
+            .payroll-doc { border: 0; box-shadow: none; }
         }
     </style>
-@endsection
+@endpush
 
 @section('content')
-    <div id="page-content-wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-            <div class="d-flex align-items-center justify-content-between w-100">
-                <h2 class="fs-4 m-0 fw-bold">Payroll Details</h2>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('payroll.edit', $payroll->id) }}" class="btn btn-edit"><i class='bx bx-edit'></i>
-                        Edit</a>
-                    <a href="{{ route('payroll.index') }}" class="btn btn-back"><i class='bx bx-arrow-back'></i> Back</a>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Payroll Details</h1>
+                <p class="text-muted mb-0">{{ $payroll->payroll_number }}</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" onclick="window.print()" class="btn btn-light border"><i class='bx bx-printer'></i> Print</button>
+                <a href="{{ route('payroll.download', $payroll->id) }}" class="btn btn-light border"><i class='bx bx-file'></i> PDF</a>
+                <a href="{{ route('payroll.edit', $payroll->id) }}" class="btn btn-primary"><i class='bx bx-edit'></i> Edit</a>
+                <a href="{{ route('payroll.index') }}" class="btn btn-light border">Back</a>
+            </div>
+        </div>
+
+        <div class="payroll-doc p-4 p-lg-5">
+            <div class="d-flex justify-content-between gap-4 border-bottom pb-4 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">{{ $settings['business_name'] ?? config('app.name') }}</h2>
+                    <div class="text-muted">{{ $settings['business_email'] ?? '' }}</div>
+                    <div class="text-muted">{{ $settings['business_phone'] ?? '' }}</div>
+                </div>
+                <div class="text-end">
+                    <div class="text-muted small text-uppercase fw-bold">Payroll</div>
+                    <div class="fs-4 fw-bold">{{ $payroll->payroll_number }}</div>
+                    <span class="payroll-badge {{ $payroll->status }}">{{ ucfirst($payroll->display_status) }}</span>
                 </div>
             </div>
-        </nav>
 
-        <div class="container-fluid px-4">
-            <div class="payroll-card">
-                {{-- Staff and Period Info --}}
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Staff Member</div>
-                        <div class="detail-value">{{ $payroll->staff->name ?? 'N/A' }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Period Start</div>
-                        <div class="detail-value">{{ $payroll->period_start->format('M d, Y') }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Period End</div>
-                        <div class="detail-value">{{ $payroll->period_end->format('M d, Y') }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Status</div>
-                        <div class="detail-value">
-                            <span class="badge-status badge-{{ $payroll->status }}">{{ ucfirst($payroll->status) }}</span>
-                        </div>
-                    </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <h3 class="fs-6 fw-bold">Employee</h3>
+                    <div>{{ optional($payroll->staff)->name ?? 'Not available' }}</div>
+                    <div class="text-muted">{{ optional($payroll->staff)->email }}</div>
+                    <div class="text-muted">{{ ucfirst(str_replace('_', ' ', optional($payroll->staff)->access_level ?? 'staff')) }}</div>
                 </div>
-
-                {{-- Salary Details --}}
-                <h5 class="section-title">Salary Breakdown</h5>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Base Salary</div>
-                        <div class="detail-value">{{ number_format($payroll->salary_amount, 2) }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Commission</div>
-                        <div class="detail-value">{{ number_format($payroll->commission_amount ?? 0, 2) }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Bonus</div>
-                        <div class="detail-value">{{ number_format($payroll->bonus ?? 0, 2) }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Deductions</div>
-                        <div class="detail-value">{{ number_format($payroll->deductions ?? 0, 2) }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Total Hours</div>
-                        <div class="detail-value">{{ $payroll->total_hours ?? 0 }} hrs</div>
-                    </div>
+                <div class="col-md-6">
+                    <h3 class="fs-6 fw-bold">Payment Details</h3>
+                    <div>Period: {{ $payroll->period_start->format('M d, Y') }} - {{ $payroll->period_end->format('M d, Y') }}</div>
+                    <div>Payment date: {{ $payroll->payment_date ? $payroll->payment_date->format('M d, Y') : 'Not paid yet' }}</div>
+                    <div>Method: {{ ucfirst(str_replace('_', ' ', $payroll->payment_type ?? 'transfer')) }}</div>
                 </div>
+            </div>
 
-                {{-- Payment Details --}}
-                <h5 class="section-title">Payment Information</h5>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Payment Date</div>
-                        <div class="detail-value">{{ $payroll->payment_date->format('M d, Y') }}</div>
-                    </div>
+            <div class="table-responsive mb-4">
+                <table class="table">
+                    <thead>
+                    <tr><th>Description</th><th class="text-end">Amount</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr><td>Basic Salary</td><td class="text-end">${{ number_format($payroll->salary_amount, 2) }}</td></tr>
+                    <tr><td>Commission</td><td class="text-end">${{ number_format($payroll->commission_amount ?? 0, 2) }}</td></tr>
+                    <tr><td>Bonus</td><td class="text-end">${{ number_format($payroll->bonus ?? 0, 2) }}</td></tr>
+                    <tr><td>Deductions</td><td class="text-end">-${{ number_format($payroll->deductions ?? 0, 2) }}</td></tr>
+                    <tr><td>Worked Hours</td><td class="text-end">{{ number_format($payroll->total_hours ?? 0, 2) }}</td></tr>
+                    <tr class="fw-bold fs-5"><td>Total Payout</td><td class="text-end text-primary">${{ number_format($payroll->total_payout, 2) }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-                    <div class="detail-item">
-                        <div class="detail-label">Payment Type</div>
-                        <div class="detail-value">{{ ucfirst(str_replace('_', ' ', $payroll->payment_type)) }}</div>
-                    </div>
+            @if($payroll->notes)
+                <div class="alert alert-light border"><strong>Notes:</strong> {{ $payroll->notes }}</div>
+            @endif
 
-                    <div class="detail-item">
-                        <div class="detail-label">Total Payout</div>
-                        <div class="detail-value" style="color: #3699ff; font-size: 1.2rem;">
-                            {{ number_format($payroll->total_payout, 2) }}</div>
-                    </div>
+            <div class="row g-4 mt-5">
+                <div class="col-md-6">
+                    <div class="border-top pt-3 text-muted">Prepared by payroll administrator</div>
                 </div>
-
-                {{-- Summary Box --}}
-                <div class="summary-box">
-                    <h6 class="mb-3" style="color: #3f4254; font-weight: 600; font-size: 1rem;">Payroll Summary</h6>
-                    <div class="summary-row">
-                        <span class="summary-label">Base Salary</span>
-                        <span class="summary-value">{{ number_format($payroll->salary_amount, 2) }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Commission</span>
-                        <span class="summary-value">+ {{ number_format($payroll->commission_amount ?? 0, 2) }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Bonus</span>
-                        <span class="summary-value">+ {{ number_format($payroll->bonus ?? 0, 2) }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Deductions</span>
-                        <span class="summary-value">- {{ number_format($payroll->deductions ?? 0, 2) }}</span>
-                    </div>
-                    <div class="summary-row"
-                        style="border-bottom: 2px solid #eef0f7; padding-bottom: 1rem; margin-bottom: 1rem; padding-top: 1rem;">
-                        <span style="font-size: 1.1rem; font-weight: 600; color: #3f4254;">Total Payout</span>
-                        <span class="total-payout">{{ number_format($payroll->total_payout, 2) }}</span>
-                    </div>
-                </div>
-
-                {{-- Notes --}}
-                @if($payroll->notes)
-                    <div class="notes-box">
-                        <div class="notes-label">Notes</div>
-                        <div class="notes-content">{{ $payroll->notes }}</div>
-                    </div>
-                @endif
-
-                {{-- Metadata --}}
-                <div class="details-grid" style="margin-top: 2rem;">
-                    <div class="detail-item">
-                        <div class="detail-label">Created</div>
-                        <div class="detail-value small">{{ $payroll->created_at->format('M d, Y at h:i A') }}</div>
-                    </div>
-
-                    <div class="detail-item">
-                        <div class="detail-label">Last Updated</div>
-                        <div class="detail-value small">{{ $payroll->updated_at->format('M d, Y at h:i A') }}</div>
-                    </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="border-top pt-3 text-muted">Authorized signature</div>
                 </div>
             </div>
         </div>

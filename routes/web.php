@@ -122,6 +122,9 @@ Route::delete('payment-records/{paymentRecord}', [PaymentRecordController::class
 Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
 Route::get('payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
 Route::post('payroll', [PayrollController::class, 'store'])->name('payroll.store');
+Route::get('payroll/export/csv', [PayrollController::class, 'exportCsv'])->name('payroll.export.csv');
+Route::post('payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid'])->name('payroll.mark-paid');
+Route::get('payroll/{payroll}/download', [PayrollController::class, 'download'])->name('payroll.download');
 Route::get('payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
 Route::get('payroll/{payroll}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
 Route::put('payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');

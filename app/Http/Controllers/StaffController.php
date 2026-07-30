@@ -43,11 +43,14 @@ class StaffController extends Controller
 
     public function show(string $id)
     {
-        $staff = Staff::with(['location'])
+        $staff = Staff::with(['location', 'payrolls' => fn ($query) => $query->latest('period_end')->limit(5)])
             ->withCount(['appointments', 'schedules', 'payrolls'])
             ->findOrFail($id);
 
-        return view('staff.show', compact('staff'));
+        $lastPayroll = $staff->payrolls->first();
+        $pendingPayroll = $staff->payrolls()->where('status', 'pending')->sum('total_payout');
+
+        return view('staff.show', compact('staff', 'lastPayroll', 'pendingPayroll'));
     }
 
     public function edit(string $id)

@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffSchedule;
 use App\Models\Location;
+use App\Models\Payroll;
 use App\Services\AppointmentEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -89,6 +90,13 @@ class CalendarController extends Controller
             'cancelled_appointments' => Appointment::where('status', 'cancelled')->count(),
             'outstanding_invoice_amount' => \App\Models\Invoice::where('status', '!=', 'void')->sum(\Illuminate\Support\Facades\DB::raw('GREATEST(total_amount - paid_amount, 0)')),
             'paid_invoice_amount' => \App\Models\Invoice::where('status', '!=', 'void')->sum('paid_amount'),
+            'pending_payroll_count' => Payroll::where('status', 'pending')->count(),
+            'monthly_payroll_amount' => Payroll::whereBetween('payment_date', [$monthStart, $monthEnd])
+                ->whereIn('status', ['completed', 'paid'])
+                ->sum('total_payout'),
+            'upcoming_salary_payments' => Payroll::where('status', 'pending')
+                ->whereBetween('payment_date', [$today, Carbon::now()->addDays(14)])
+                ->count(),
         ];
 
         $recentAppointments = Appointment::with(['client', 'staff', 'service'])

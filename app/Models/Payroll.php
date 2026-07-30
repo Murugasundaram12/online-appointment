@@ -9,6 +9,13 @@ class Payroll extends Model
 {
     protected $table = 'payroll';
 
+    protected static function booted()
+    {
+        static::saving(function (Payroll $payroll) {
+            $payroll->total_payout = $payroll->calculateTotalPayout();
+        });
+    }
+
     protected $fillable = [
         'staff_id',
         'period_start',
@@ -33,6 +40,7 @@ class Payroll extends Model
         'commission_amount' => 'decimal:2',
         'bonus' => 'decimal:2',
         'deductions' => 'decimal:2',
+        'total_hours' => 'decimal:2',
         'total_payout' => 'decimal:2'
     ];
 
@@ -46,7 +54,22 @@ class Payroll extends Model
      */
     public function calculateTotalPayout()
     {
-        return ($this->salary_amount ?? 0) + ($this->commission_amount ?? 0) + ($this->bonus ?? 0) - ($this->deductions ?? 0);
+        return max(0, ($this->salary_amount ?? 0) + ($this->commission_amount ?? 0) + ($this->bonus ?? 0) - ($this->deductions ?? 0));
+    }
+
+    public function getDisplayStatusAttribute()
+    {
+        return $this->status === 'completed' ? 'paid' : $this->status;
+    }
+
+    public function getPayrollNumberAttribute()
+    {
+        return 'PAY-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function isPaid()
+    {
+        return in_array($this->status, ['completed', 'paid'], true);
     }
 
     /**
