@@ -51,16 +51,19 @@
         </tr>
     </table>
 
+    @php
+        $currency = $settings['currency'] ?? '$';
+    @endphp
     <div class="section">
         <table>
             <thead><tr><th>Salary Breakdown</th><th class="text-right">Amount</th></tr></thead>
             <tbody>
-            <tr><td>Basic Salary</td><td class="text-right">${{ number_format($payroll->salary_amount, 2) }}</td></tr>
-            <tr><td>Commission</td><td class="text-right">${{ number_format($payroll->commission_amount ?? 0, 2) }}</td></tr>
-            <tr><td>Bonus</td><td class="text-right">${{ number_format($payroll->bonus ?? 0, 2) }}</td></tr>
-            <tr><td>Deductions</td><td class="text-right">-${{ number_format($payroll->deductions ?? 0, 2) }}</td></tr>
+            <tr><td>Basic Salary</td><td class="text-right">{{ $currency }}{{ number_format($payroll->salary_amount, 2) }}</td></tr>
+            <tr><td>Commission</td><td class="text-right">{{ $currency }}{{ number_format($payroll->commission_amount ?? 0, 2) }}</td></tr>
+            <tr><td>Bonus</td><td class="text-right">{{ $currency }}{{ number_format($payroll->bonus ?? 0, 2) }}</td></tr>
+            <tr><td>Deductions</td><td class="text-right">-{{ $currency }}{{ number_format($payroll->deductions ?? 0, 2) }}</td></tr>
             <tr><td>Worked Hours</td><td class="text-right">{{ number_format($payroll->total_hours ?? 0, 2) }}</td></tr>
-            <tr><td><strong>Total Payout</strong></td><td class="text-right total">${{ number_format($payroll->total_payout, 2) }}</td></tr>
+            <tr><td><strong>Total Payout</strong></td><td class="text-right total">{{ $currency }}{{ number_format($payroll->total_payout, 2) }}</td></tr>
             </tbody>
         </table>
     </div>

@@ -115,16 +115,29 @@ class CalendarController extends Controller
         $monthlyRevenue = \App\Models\Invoice::whereBetween('issued_date', [$monthStart, $monthEnd])
             ->where('status', '!=', 'void')
             ->sum('paid_amount');
+
+        $appointmentsByDate = Appointment::selectRaw('DATE(start_time) as date, COUNT(*) as count')
+            ->whereBetween('start_time', [$monthStart, $monthEnd->copy()->endOfDay()])
+            ->groupBy('date')
+            ->pluck('count', 'date')
+            ->toArray();
+
+        $revenuesByDate = \App\Models\Invoice::selectRaw('DATE(issued_date) as date, SUM(paid_amount) as sum')
+            ->whereBetween('issued_date', [$monthStart, $monthEnd])
+            ->where('status', '!=', 'void')
+            ->groupBy('date')
+            ->pluck('sum', 'date')
+            ->toArray();
+
         $dailyAppointmentCounts = [];
         $dailyRevenueCounts = [];
         $dailyLabels = [];
         $cursor = $monthStart->copy();
         while ($cursor->lte($monthEnd)) {
+            $dateStr = $cursor->toDateString();
             $dailyLabels[] = $cursor->format('M j');
-            $dailyAppointmentCounts[] = Appointment::whereDate('start_time', $cursor)->count();
-            $dailyRevenueCounts[] = (float) \App\Models\Invoice::whereDate('issued_date', $cursor)
-                ->where('status', '!=', 'void')
-                ->sum('paid_amount');
+            $dailyAppointmentCounts[] = $appointmentsByDate[$dateStr] ?? 0;
+            $dailyRevenueCounts[] = (float) ($revenuesByDate[$dateStr] ?? 0);
             $cursor->addDay();
         }
         $statusSummary = Appointment::select('status', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
@@ -263,6 +276,13 @@ class CalendarController extends Controller
      */
     public function storeAppointment(Request $request)
     {
+        if (!\App\Models\Subscription::checkLimit('appointment')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Appointment limit for your current subscription plan has been reached.'
+            ], 422);
+        }
+
         $validated = $request->validate([
             'staff_id' => ['required', Rule::exists('staff', 'id')->where('is_active', true)],
             'service_id' => ['required', Rule::exists('services', 'id')->where('is_active', true)],
@@ -590,8 +610,8 @@ class CalendarController extends Controller
 
         // Check for conflicts with existing appointments
         // Compare in UTC to match database datetime storage and avoid timezone-shift false positives.
-        $queryStart = $startTime->copy()->utc();
-        $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes))->utc();
+        $queryStart = $startTime->copy();
+        $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes));
 
         $query = Appointment::where('staff_id', $staffId)
             ->where('status', '!=', 'cancelled')

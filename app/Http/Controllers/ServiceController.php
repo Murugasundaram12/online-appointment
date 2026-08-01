@@ -22,12 +22,22 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required',
-            'price' => 'required',
-            // Add other validation rules
+            'service_category_id' => 'nullable|exists:service_categories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'type' => 'nullable|string|in:in_person,online',
+            'price' => 'required|numeric|min:0',
+            'duration_minutes' => 'required|integer|min:1',
+            'buffer_minutes' => 'nullable|integer|min:0',
+            'color' => 'nullable|string|max:7',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        \App\Models\Service::create($request->all());
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+        }
+
+        \App\Models\Service::create($validated);
 
         return redirect()->route('services.index')->with('success', 'Service created successfully.');
     }
@@ -46,20 +56,38 @@ class ServiceController extends Controller
     public function update(Request $request, string $id)
     {
         $service = \App\Models\Service::findOrFail($id);
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required',
-            'duration_minutes' => 'required'
+        $validated = $request->validate([
+            'service_category_id' => 'nullable|exists:service_categories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'type' => 'nullable|string|in:in_person,online',
+            'price' => 'required|numeric|min:0',
+            'duration_minutes' => 'required|integer|min:1',
+            'buffer_minutes' => 'nullable|integer|min:0',
+            'color' => 'nullable|string|max:7',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $service->update($request->all());
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : false;
+        }
+
+        $service->update($validated);
 
         return redirect()->route('services.index')->with('success', 'Service updated successfully.');
     }
 
     public function destroy(string $id)
     {
-        \App\Models\Service::findOrFail($id)->delete();
+        $service = \App\Models\Service::withCount('appointments')->findOrFail($id);
+
+        if ($service->appointments_count > 0) {
+            return redirect()
+                ->route('services.index')
+                ->with('error', 'This service has scheduled appointments and cannot be deleted. Deactivate it instead.');
+        }
+
+        $service->delete();
         return redirect()->route('services.index')->with('success', 'Service deleted successfully.');
     }
 }

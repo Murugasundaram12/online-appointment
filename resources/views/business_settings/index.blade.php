@@ -19,7 +19,7 @@
 
         <div class="card shadow-sm border-0 rounded mb-5">
             <div class="card-body p-4">
-                <form action="{{ route('business-settings.update') }}" method="POST">
+                <form action="{{ route('business-settings.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <div class="row g-3">
@@ -75,7 +75,17 @@
                             <label class="form-label">Invoice prefix <span class="required-mark">*</span></label>
                             <input class="form-control" name="invoice_prefix" value="{{ old('invoice_prefix', $settings['invoice_prefix'] ?? 'INV') }}" required>
                         </div>
-                        <div class="col-12">
+                        <div class="col-md-8">
+                            <label class="form-label">Business Logo</label>
+                            <input type="file" class="form-control" name="business_logo" accept="image/*">
+                            @if(!empty($settings['business_logo']))
+                                <div class="mt-2 d-flex align-items-center gap-2">
+                                    <span class="text-muted small">Current Logo:</span>
+                                    <img src="{{ asset('storage/' . $settings['business_logo']) }}" alt="Logo" style="max-height: 40px; border-radius: 4px; border: 1px solid var(--border)">
+                                </div>
+                            @endif
+                        </div>
+                        <div class="col-12 mt-4">
                             <button class="btn btn-primary px-4">Save settings</button>
                         </div>
                     </div>

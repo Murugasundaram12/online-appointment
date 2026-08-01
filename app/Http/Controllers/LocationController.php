@@ -20,12 +20,25 @@ class LocationController extends Controller
 
     public function store(Request $request)
     {
+        if (!\App\Models\Subscription::checkLimit('location')) {
+            return back()->withInput()->with('error', 'Your current subscription plan location limit has been reached. Please upgrade.');
+        }
+
         $validated = $request->validate([
-            'name' => 'required',
-            // Add other validation rules
+            'name' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'phone' => 'nullable|string|max:30',
+            'email' => 'nullable|email|max:255',
+            'timezone' => 'nullable|string|timezone',
+            'color' => 'nullable|string|max:7',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        \App\Models\Location::create($request->all());
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+        }
+
+        \App\Models\Location::create($validated);
 
         return redirect()->route('locations.index')->with('success', 'Location created successfully.');
     }
@@ -38,13 +51,27 @@ class LocationController extends Controller
     public function edit(string $id)
     {
         $location = \App\Models\Location::findOrFail($id);
-        return view('locations.create', compact('location')); // Reusing create view for simplicity if applicable, or locations.edit
+        return view('locations.create', compact('location'));
     }
 
     public function update(Request $request, string $id)
     {
         $location = \App\Models\Location::findOrFail($id);
-        $location->update($request->all());
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'phone' => 'nullable|string|max:30',
+            'email' => 'nullable|email|max:255',
+            'timezone' => 'nullable|string|timezone',
+            'color' => 'nullable|string|max:7',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : false;
+        }
+
+        $location->update($validated);
 
         return redirect()->route('locations.index')->with('success', 'Location updated successfully.');
     }

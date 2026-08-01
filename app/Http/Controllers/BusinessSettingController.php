@@ -27,7 +27,18 @@ class BusinessSettingController extends Controller
             'appointment_interval' => 'required|integer|min:5|max:240',
             'default_appointment_status' => 'required|in:pending,booked,completed,cancelled',
             'invoice_prefix' => 'required|string|max:20',
+            'business_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
+
+        if ($request->hasFile('business_logo')) {
+            $path = $request->file('business_logo')->store('business', 'public');
+            \App\Models\BusinessSetting::updateOrCreate(
+                ['key' => 'business_logo'],
+                ['value' => $path, 'group' => 'general']
+            );
+        }
+
+        unset($validated['business_logo']);
 
         foreach ($validated as $key => $value) {
             \App\Models\BusinessSetting::updateOrCreate(

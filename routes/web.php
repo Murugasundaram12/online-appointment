@@ -62,17 +62,19 @@ Route::post('/calendar/quick-client', [CalendarController::class, 'quickCreateCl
 Route::post('/schedule-api/create', [ScheduleController::class, 'storeApi'])->name('schedule.storeApi');
 Route::put('/schedule-api/{id}', [ScheduleController::class, 'updateApi'])->name('schedule.updateApi');
 
-// Payroll API endpoints
-Route::post('/payroll-api/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
-Route::get('/payroll-api/report', [PayrollController::class, 'report'])->name('payroll.report');
+Route::middleware(['role:admin,business_owner'])->group(function () {
+    // Payroll API endpoints
+    Route::post('/payroll-api/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
+    Route::get('/payroll-api/report', [PayrollController::class, 'report'])->name('payroll.report');
 
-Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
-Route::get('staff/create', [StaffController::class, 'create'])->name('staff.create');
-Route::post('staff', [StaffController::class, 'store'])->name('staff.store');
-Route::get('staff/{staff}', [StaffController::class, 'show'])->name('staff.show');
-Route::get('staff/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
-Route::put('staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
-Route::delete('staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
+    Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
+    Route::get('staff/create', [StaffController::class, 'create'])->name('staff.create');
+    Route::post('staff', [StaffController::class, 'store'])->name('staff.store');
+    Route::get('staff/{staff}', [StaffController::class, 'show'])->name('staff.show');
+    Route::get('staff/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
+    Route::put('staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+    Route::delete('staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
+});
 
 Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
 Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create');
@@ -119,16 +121,18 @@ Route::get('payment-records', [PaymentRecordController::class, 'index'])->name('
 Route::post('payment-records', [PaymentRecordController::class, 'store'])->name('payment-records.store');
 Route::delete('payment-records/{paymentRecord}', [PaymentRecordController::class, 'destroy'])->name('payment-records.destroy');
 
-Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
-Route::get('payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
-Route::post('payroll', [PayrollController::class, 'store'])->name('payroll.store');
-Route::get('payroll/export/csv', [PayrollController::class, 'exportCsv'])->name('payroll.export.csv');
-Route::post('payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid'])->name('payroll.mark-paid');
-Route::get('payroll/{payroll}/download', [PayrollController::class, 'download'])->name('payroll.download');
-Route::get('payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
-Route::get('payroll/{payroll}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
-Route::put('payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
-Route::delete('payroll/{payroll}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+Route::middleware(['role:admin,business_owner'])->group(function () {
+    Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+    Route::post('payroll', [PayrollController::class, 'store'])->name('payroll.store');
+    Route::get('payroll/export/csv', [PayrollController::class, 'exportCsv'])->name('payroll.export.csv');
+    Route::post('payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid'])->name('payroll.mark-paid');
+    Route::get('payroll/{payroll}/download', [PayrollController::class, 'download'])->name('payroll.download');
+    Route::get('payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
+    Route::get('payroll/{payroll}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
+    Route::put('payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
+    Route::delete('payroll/{payroll}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+});
 
 Route::get('forms', [FormController::class, 'index'])->name('forms.index');
 Route::get('forms/create', [FormController::class, 'create'])->name('forms.create');
@@ -152,9 +156,11 @@ Route::get('locations/{location}/edit', [LocationController::class, 'edit'])->na
 Route::put('locations/{location}', [LocationController::class, 'update'])->name('locations.update');
 Route::delete('locations/{location}', [LocationController::class, 'destroy'])->name('locations.destroy');
 
-Route::get('business-settings', [BusinessSettingController::class, 'index'])->name('business-settings.index');
-Route::put('business-settings', [BusinessSettingController::class, 'update'])->name('business-settings.update');
+Route::middleware(['role:admin,business_owner'])->group(function () {
+    Route::get('business-settings', [BusinessSettingController::class, 'index'])->name('business-settings.index');
+    Route::put('business-settings', [BusinessSettingController::class, 'update'])->name('business-settings.update');
 
-Route::get('subscription', [\App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
-Route::post('subscription/activate', [\App\Http\Controllers\SubscriptionController::class, 'activate'])->name('subscription.activate');
+    Route::get('subscription', [\App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::post('subscription/activate', [\App\Http\Controllers\SubscriptionController::class, 'activate'])->name('subscription.activate');
+});
 });

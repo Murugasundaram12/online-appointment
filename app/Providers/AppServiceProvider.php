@@ -24,7 +24,19 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         if (env('APP_ENV') !== 'local') {
-        URL::forceScheme('https');
-    }
+            URL::forceScheme('https');
+        }
+
+        if (Schema::hasTable('business_settings')) {
+            try {
+                $timezone = \App\Models\BusinessSetting::where('key', 'timezone')->value('value');
+                if ($timezone && in_array($timezone, timezone_identifiers_list(), true)) {
+                    config(['app.timezone' => $timezone]);
+                    date_default_timezone_set($timezone);
+                }
+            } catch (\Throwable $e) {
+                // Ignore database connection/migration errors during boot
+            }
+        }
     }
 }

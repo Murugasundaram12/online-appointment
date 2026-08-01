@@ -204,16 +204,17 @@ class InvoiceController extends Controller
         }
 
         $relative = ltrim(str_replace('\\', '/', $logo), '/');
-        $candidates = [
-            public_path($relative),
-            public_path('storage/' . $relative),
-            storage_path('app/public/' . $relative),
-        ];
 
-        foreach ($candidates as $path) {
-            if (is_file($path)) {
-                return $forPdf ? $path : asset($relative);
-            }
+        if (is_file(public_path($relative))) {
+            return $forPdf ? public_path($relative) : asset($relative);
+        }
+
+        if (is_file(public_path('storage/' . $relative))) {
+            return $forPdf ? public_path('storage/' . $relative) : asset('storage/' . $relative);
+        }
+
+        if (is_file(storage_path('app/public/' . $relative))) {
+            return $forPdf ? storage_path('app/public/' . $relative) : asset('storage/' . $relative);
         }
 
         return null;

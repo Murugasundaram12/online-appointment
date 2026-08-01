@@ -115,7 +115,7 @@
             </div>
             <div class="d-flex align-items-center">
                 <h2 class="fs-4 m-0 fw-bold me-4">Locations</h2>
-                <button class="btn btn-primary px-4 fw-600">Add new location</button>
+                <a href="{{ route('locations.create') }}" class="btn btn-primary px-4 fw-600">Add new location</a>
             </div>
         </div>
     </nav>

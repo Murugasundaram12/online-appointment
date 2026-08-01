@@ -54,7 +54,7 @@ class OnlineBookingController extends Controller
                 $end = Carbon::parse($date->toDateString() . ' ' . $window->end_time);
                 while ($cursor->copy()->addMinutes($service->duration_minutes)->lte($end)) {
                     $slotEnd = $cursor->copy()->addMinutes($service->duration_minutes);
-                    if ($this->isAvailable($member->id, $cursor, $slotEnd, $window)) {
+                    if ($cursor->gt(now()) && $this->isAvailable($member->id, $cursor, $slotEnd, $window, (int) ($service->buffer_minutes ?? 0))) {
                         $slots[] = [
                             'staff_id' => $member->id,
                             'staff_name' => $member->name,
@@ -73,10 +73,16 @@ class OnlineBookingController extends Controller
 
     public function store(Request $request)
     {
+        if (!\App\Models\Subscription::checkLimit('appointment')) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_time' => 'Clinic booking limits reached for this month. Please contact the clinic directly.'
+            ]);
+        }
+
         $validated = $request->validate([
             'location_id' => 'nullable|exists:locations,id',
-            'service_id' => 'required|exists:services,id',
-            'staff_id' => 'required|exists:staff,id',
+            'service_id' => ['required', \Illuminate\Validation\Rule::exists('services', 'id')->where('is_active', true)],
+            'staff_id' => ['required', \Illuminate\Validation\Rule::exists('staff', 'id')->where('is_active', true)],
             'start_time' => 'required|date|after:now',
             'end_time' => 'required|date|after:start_time',
             'client_name' => 'required|string|max:255',
@@ -87,14 +93,17 @@ class OnlineBookingController extends Controller
 
         try {
             $appointment = DB::transaction(function () use ($validated) {
-                $client = Client::where(function ($query) use ($validated) {
-                    if (!empty($validated['client_email'])) {
-                        $query->orWhere('email', $validated['client_email']);
-                    }
-                    if (!empty($validated['client_phone'])) {
-                        $query->orWhere('phone', $validated['client_phone']);
-                    }
-                })->first();
+                $client = null;
+                if (!empty($validated['client_email']) || !empty($validated['client_phone'])) {
+                    $client = Client::where(function ($query) use ($validated) {
+                        if (!empty($validated['client_email'])) {
+                            $query->orWhere('email', $validated['client_email']);
+                        }
+                        if (!empty($validated['client_phone'])) {
+                            $query->orWhere('phone', $validated['client_phone']);
+                        }
+                    })->first();
+                }
 
                 if (!$client) {
                     $client = Client::create([
@@ -108,8 +117,9 @@ class OnlineBookingController extends Controller
                 $start = Carbon::parse($validated['start_time']);
                 $end = Carbon::parse($validated['end_time']);
                 $windows = $this->staffWorkingWindows($validated['staff_id'], $start);
+                $service = Service::where('is_active', true)->findOrFail($validated['service_id']);
                 $window = $windows->first(fn($item) => $start->gte(Carbon::parse($start->toDateString() . ' ' . $item->start_time)) && $end->lte(Carbon::parse($start->toDateString() . ' ' . $item->end_time)));
-                if (!$window || !$this->isAvailable($validated['staff_id'], $start, $end, $window)) {
+                if (!$window || !$this->isAvailable($validated['staff_id'], $start, $end, $window, (int) ($service->buffer_minutes ?? 0))) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['start_time' => 'Selected slot is no longer available.']);
                 }
 
@@ -160,7 +170,7 @@ class OnlineBookingController extends Controller
             ->get();
     }
 
-    private function isAvailable(int $staffId, Carbon $start, Carbon $end, StaffSchedule $schedule): bool
+    private function isAvailable(int $staffId, Carbon $start, Carbon $end, StaffSchedule $schedule, int $newBufferMinutes = 0): bool
     {
         foreach (($schedule->breaks ?? []) as $break) {
             $breakStart = Carbon::parse($start->toDateString() . ' ' . $break['start']);
@@ -170,10 +180,15 @@ class OnlineBookingController extends Controller
             }
         }
 
+        $queryStart = $start->copy();
+        $queryEnd = $end->copy()->addMinutes(max(0, $newBufferMinutes));
+
         return !Appointment::where('staff_id', $staffId)
             ->where('status', '!=', 'cancelled')
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->where(function ($q) use ($queryStart, $queryEnd) {
+                $q->where('start_time', '<', $queryEnd)
+                    ->whereRaw('DATE_ADD(end_time, INTERVAL COALESCE((SELECT buffer_minutes FROM services WHERE services.id = appointments.service_id), 0) MINUTE) > ?', [$queryStart]);
+            })
             ->exists();
     }
 }

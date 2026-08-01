@@ -31,6 +31,10 @@ class StaffController extends Controller
 
     public function store(Request $request)
     {
+        if (!\App\Models\Subscription::checkLimit('staff')) {
+            return back()->withInput()->with('error', 'Your current subscription plan staff limit has been reached. Please upgrade.');
+        }
+
         $validated = $this->validateStaff($request, null, true);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -69,8 +73,12 @@ class StaffController extends Controller
         $staff = Staff::findOrFail($id);
         $validated = $this->validateStaff($request, $staff, false);
 
-        if (isset($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
+        if (array_key_exists('password', $validated)) {
+            if (!empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']);
+            }
         }
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : false;
