@@ -88,7 +88,6 @@
                                     <div id="slotButtons" class="d-flex flex-wrap gap-2 p-3 bg-light rounded-3">
                                         <span class="text-muted small">Select a service and date to view available slots.</span>
                                     </div>
-                                    <select class="d-none" id="slot" required></select>
                                     <input type="hidden" name="start_time" id="start_time">
                                     <input type="hidden" name="end_time" id="end_time">
                                 </div>
@@ -122,7 +121,6 @@
 
 @push('scripts')
     <script>
-        const slotSelect = document.getElementById('slot');
         const slotButtons = document.getElementById('slotButtons');
         const fields = ['location_id', 'service_id', 'staff_id', 'booking_date'];
         fields.forEach((id) => document.getElementById(id).addEventListener('change', loadSlots));

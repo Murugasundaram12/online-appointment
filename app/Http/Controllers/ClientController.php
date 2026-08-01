@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +32,7 @@ class ClientController extends Controller
         $validated['is_vip'] = $request->has('is_vip')
             ? $request->boolean('is_vip')
             : $this->tagsToVip($request->input('tags'));
+        $validated['client_since'] = $this->normalizeClientSince($validated['client_since'] ?? null);
         unset($validated['tags']);
 
         Client::create($validated);
@@ -61,6 +63,7 @@ class ClientController extends Controller
         $validated['is_vip'] = $request->has('is_vip')
             ? $request->boolean('is_vip')
             : $this->tagsToVip($request->input('tags'));
+        $validated['client_since'] = $this->normalizeClientSince($validated['client_since'] ?? null);
         unset($validated['tags']);
         $client->update($validated);
 
@@ -74,6 +77,15 @@ class ClientController extends Controller
         }
 
         return stripos($tags, 'vip') !== false;
+    }
+
+    private function normalizeClientSince(?string $date): ?string
+    {
+        if (!$date) {
+            return null;
+        }
+
+        return Carbon::createFromFormat('Y-m-d', $date)->toDateString();
     }
 
     public function destroy(string $id)
@@ -93,20 +105,33 @@ class ClientController extends Controller
 
     private function validateClient(Request $request, ?Client $client = null): array
     {
+        $emailRule = Rule::unique('clients', 'email');
+
+        if ($client && $request->input('email') !== $client->email) {
+            $emailRule->ignore($client->id);
+        }
+
+        $emailRules = [
+            'nullable',
+            'email',
+            'max:255',
+        ];
+
+        if (!$client || $request->input('email') !== $client->email) {
+            $emailRules[] = $emailRule;
+        }
+
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'nullable',
-                'email',
-                'max:255',
-                Rule::unique('clients', 'email')->ignore($client?->id),
-            ],
+            'email' => $emailRules,
             'phone' => ['nullable', 'string', 'max:30'],
             'city' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:5000'],
-            'client_since' => ['nullable', 'date'],
+            'client_since' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after:1900-01-01'],
             'is_vip' => ['nullable', 'boolean'],
             'tags' => ['nullable', 'string', 'max:255'],
+        ], [
+            'email.unique' => 'This email is already used by another client.',
         ]);
     }
 }

@@ -19,23 +19,23 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Package Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ $package->name }}"
+                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $package->name) }}"
                                 required>
                         </div>
                         <div class="col-md-6">
                             <label for="price" class="form-label">Price <span class="required-mark">*</span></label>
                             <input type="number" step="0.01" class="form-control" id="price" name="price"
-                                value="{{ $package->price }}" required>
+                                value="{{ old('price', $package->price) }}" required>
                         </div>
                         <div class="col-md-6">
                             <label for="validity_days" class="form-label">Validity (Days)</label>
                             <input type="number" class="form-control" id="validity_days" name="validity_days"
-                                value="{{ $package->validity_days }}">
+                                value="{{ old('validity_days', $package->validity_days) }}">
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description"
-                                rows="3">{{ $package->description }}</textarea>
+                                rows="3">{{ old('description', $package->description) }}</textarea>
                         </div>
 
                         <div class="col-12">
@@ -57,7 +57,7 @@
 
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ $package->is_active ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $package->is_active) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">
                                     Active Package
                                 </label>

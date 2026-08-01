@@ -32,7 +32,6 @@
                             <select class="form-select" id="type" name="type">
                                 <option value="in_person">In-Person</option>
                                 <option value="online">Online</option>
-                                <option value="phone">Phone</option>
                             </select>
                         </div>
                         <div class="col-md-6">

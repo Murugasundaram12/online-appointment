@@ -50,17 +50,29 @@
     @endauth
 
     @foreach($groups as $group => $items)
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">{{ $group }}</div>
-            <nav class="sidebar-nav" aria-label="{{ $group }}">
-                @foreach($items as [$label, $route, $pattern, $icon])
-                    <a href="{{ route($route) }}" class="sidebar-link {{ request()->routeIs($pattern) ? 'active' : '' }}">
-                        <i class='bx {{ $icon }}'></i>
-                        <span>{{ $label }}</span>
-                    </a>
-                @endforeach
-            </nav>
-        </div>
+        @php
+            $visibleItems = collect($items)->filter(function ($item) use ($staffUser) {
+                $route = $item[1];
+                if (in_array($route, ['staff.index', 'payroll.index', 'business-settings.index', 'subscription.index'], true)) {
+                    return $staffUser && in_array($staffUser->access_level, ['admin', 'business_owner'], true);
+                }
+                return true;
+            });
+        @endphp
+
+        @if($visibleItems->isNotEmpty())
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">{{ $group }}</div>
+                <nav class="sidebar-nav" aria-label="{{ $group }}">
+                    @foreach($visibleItems as [$label, $route, $pattern, $icon])
+                        <a href="{{ route($route) }}" class="sidebar-link {{ request()->routeIs($pattern) ? 'active' : '' }}">
+                            <i class='bx {{ $icon }}'></i>
+                            <span>{{ $label }}</span>
+                        </a>
+                    @endforeach
+                </nav>
+            </div>
+        @endif
     @endforeach
 
     @auth('staff')

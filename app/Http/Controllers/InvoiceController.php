@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
@@ -47,7 +48,7 @@ class InvoiceController extends Controller
             'appointment_id' => ['nullable', 'exists:appointments,id'],
             'client_id' => 'required|exists:clients,id',
             'staff_id' => 'required|exists:staff,id',
-            'invoice_number' => 'nullable|string|max:255|unique:invoices,invoice_number',
+            'invoice_number' => ['nullable', 'string', 'max:255', Rule::unique('invoices', 'invoice_number')],
             'total_amount' => 'required|numeric|min:0.01',
             'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:outstanding,paid,partially_paid,void',
@@ -55,6 +56,7 @@ class InvoiceController extends Controller
             'due_date' => 'nullable|date|after_or_equal:issued_date',
         ], [
             'appointment_id.unique' => 'An invoice already exists for the selected appointment.',
+            'invoice_number.unique' => 'This invoice number is already used by another invoice.',
         ]);
 
         $invoice = DB::transaction(function () use ($validated) {
@@ -119,12 +121,14 @@ class InvoiceController extends Controller
             'appointment_id' => 'nullable|exists:appointments,id',
             'client_id' => 'required|exists:clients,id',
             'staff_id' => 'required|exists:staff,id',
-            'invoice_number' => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id,
+            'invoice_number' => ['required', 'string', 'max:255', Rule::unique('invoices', 'invoice_number')->ignore($invoice->id)],
             'total_amount' => 'required|numeric|min:0.01',
             'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'required|in:outstanding,paid,partially_paid,void',
             'issued_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:issued_date',
+        ], [
+            'invoice_number.unique' => 'This invoice number is already used by another invoice.',
         ]);
         $validated['paid_amount'] = min((float) ($validated['paid_amount'] ?? 0), (float) $validated['total_amount']);
         if ($validated['status'] !== 'void') {

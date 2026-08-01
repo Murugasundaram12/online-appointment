@@ -19,23 +19,26 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Full Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ $staff->name }}"
+                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $staff->name) }}"
                                 required>
                         </div>
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email Address <span class="required-mark">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ $staff->email }}"
+                            <input type="email" class="form-control" id="email" name="email" value="{{ old('email', $staff->email) }}"
                                 required>
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ $staff->phone }}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $staff->phone) }}">
                         </div>
                         <div class="col-md-6">
                             <label for="access_level" class="form-label">Access Level</label>
                             <select class="form-select" id="access_level" name="access_level">
-                                <option value="staff" {{ $staff->access_level == 'staff' ? 'selected' : '' }}>Staff</option>
-                                <option value="business_owner" {{ $staff->access_level == 'business_owner' ? 'selected' : '' }}>Business Owner</option>
+                                <option value="admin" {{ old('access_level', $staff->access_level) == 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="staff" {{ old('access_level', $staff->access_level) == 'staff' ? 'selected' : '' }}>Staff</option>
+                                <option value="receptionist" {{ old('access_level', $staff->access_level) == 'receptionist' ? 'selected' : '' }}>Receptionist</option>
+                                <option value="practitioner" {{ old('access_level', $staff->access_level) == 'practitioner' ? 'selected' : '' }}>Practitioner</option>
+                                <option value="business_owner" {{ old('access_level', $staff->access_level) == 'business_owner' ? 'selected' : '' }}>Business Owner</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -52,7 +55,7 @@
                         <div class="col-md-6">
                             <label for="category" class="form-label">Category (e.g. RMT, Stylist)</label>
                             <input type="text" class="form-control" id="category" name="category"
-                                value="{{ $staff->category }}">
+                                value="{{ old('category', $staff->category) }}">
                         </div>
                         <div class="col-md-6">
                             <label for="password" class="form-label">Password (Leave blank to keep current)</label>
@@ -60,11 +63,11 @@
                         </div>
                         <div class="col-12">
                             <label for="bio" class="form-label">Bio / Notes</label>
-                            <textarea class="form-control" id="bio" name="bio" rows="3">{{ $staff->bio }}</textarea>
+                            <textarea class="form-control" id="bio" name="bio" rows="3">{{ old('bio', $staff->bio) }}</textarea>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ $staff->is_active ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $staff->is_active) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">
                                     Active Account
                                 </label>

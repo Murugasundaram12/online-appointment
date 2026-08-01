@@ -14,6 +14,8 @@ use App\Models\Payroll;
 use App\Models\Service;
 use App\Models\Staff;
 use App\Models\StaffSchedule;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -36,6 +38,8 @@ function cleanupStaffClientProbe(): void
     Staff::whereIn('id', $staffIds)->delete();
     Service::whereIn('id', $serviceIds)->delete();
     Location::whereIn('id', $locationIds)->delete();
+    Subscription::whereHas('plan', fn ($query) => $query->where('name', 'SC_TEST_Unlimited'))->delete();
+    SubscriptionPlan::where('name', 'SC_TEST_Unlimited')->delete();
 }
 
 function scRequest(string $method, string $uri, array $data = []): Request
@@ -60,6 +64,25 @@ function expectValidation(callable $callback, string $field): bool
 }
 
 cleanupStaffClientProbe();
+
+$plan = SubscriptionPlan::create([
+    'name' => 'SC_TEST_Unlimited',
+    'description' => 'Manual probe unlimited plan',
+    'price' => 0,
+    'billing_cycle' => 'monthly',
+    'staff_limit' => null,
+    'location_limit' => null,
+    'appointment_limit' => null,
+    'is_active' => true,
+]);
+Subscription::create([
+    'subscription_plan_id' => $plan->id,
+    'start_date' => now()->subDay()->toDateString(),
+    'end_date' => now()->addYear()->toDateString(),
+    'status' => 'active',
+    'amount' => 0,
+    'payment_status' => 'paid',
+]);
 
 $staffController = app(StaffController::class);
 $clientController = app(ClientController::class);

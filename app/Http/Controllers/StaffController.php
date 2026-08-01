@@ -127,6 +127,7 @@ class StaffController extends Controller
         ];
 
         $validated = $request->validate($rules, [
+            'email.unique' => 'This email is already used by another staff member.',
             'location_id.exists' => 'Please choose an active location for this staff member.',
             'color.regex' => 'Staff color must be a valid hex color like #4f46e5.',
         ]);

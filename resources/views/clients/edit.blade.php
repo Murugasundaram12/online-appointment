@@ -19,33 +19,36 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Client Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ $client->name }}"
+                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $client->name) }}"
                                 required>
                         </div>
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ $client->email }}">
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $client->email) }}">
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ $client->phone }}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $client->phone) }}">
                         </div>
                         <div class="col-md-6">
                             <label for="city" class="form-label">City</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{ $client->city }}">
+                            <input type="text" class="form-control" id="city" name="city" value="{{ old('city', $client->city) }}">
                         </div>
                         <div class="col-md-6">
                             <label for="client_since" class="form-label">Client Since</label>
                             <input type="date" class="form-control" id="client_since" name="client_since"
-                                value="{{ $client->client_since ? $client->client_since->format('Y-m-d') : '' }}">
+                                value="{{ old('client_since', $client->client_since ? $client->client_since->format('Y-m-d') : '') }}">
                         </div>
                         <div class="col-12">
                             <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ $client->notes }}</textarea>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ old('notes', $client->notes) }}</textarea>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_vip" name="is_vip" value="1" {{ $client->is_vip ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" id="is_vip" name="is_vip" value="1" {{ old('is_vip', $client->is_vip) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_vip">
                                     VIP Client
                                 </label>

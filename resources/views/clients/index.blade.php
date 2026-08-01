@@ -288,11 +288,11 @@
                                         <button type="button" class="btn btn-link text-muted p-0 me-2 js-edit-client"
                                             data-bs-toggle="modal" data-bs-target="#editClientModal"
                                             data-update-url="{{ route('clients.update', $client->id) }}"
-                                            data-name="{{ $client->name }}" data-email="{{ $client->email }}"
-                                            data-phone="{{ $client->phone }}"
-                                            data-client_since="{{ $client->client_since ? $client->client_since->format('Y-m-d') : '' }}"
+                                            data-name="{{ e($client->name) }}" data-email="{{ e($client->email) }}"
+                                            data-phone="{{ e($client->phone) }}"
+                                            data-client-since="{{ $client->client_since ? $client->client_since->format('Y-m-d') : '' }}"
                                             data-tags="{{ $client->is_vip ? 'VIP' : '' }}"
-                                            data-notes="{{ $client->notes }}">
+                                            data-notes="{{ e($client->notes) }}">
                                             <i class='bx bx-pencil'></i>
                                         </button>
                                         <form action="{{ route('clients.destroy', $client->id) }}" method="POST"
@@ -508,12 +508,22 @@
     </div>
 @endsection
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Reset Add Client form when modal is shown to prevent values appending
+            const addClientModal = document.getElementById('addClientModal');
+            if (addClientModal) {
+                addClientModal.addEventListener('show.bs.modal', () => {
+                    const addForm = document.getElementById('addClientForm');
+                    if (addForm) {
+                        addForm.reset();
+                    }
+                });
+            }
+
             const editForm = document.getElementById('editClientForm');
             const buttons = document.querySelectorAll('.js-edit-client');
-            if (!editForm || buttons.length === 0) return;
+            if (!editForm) return;
 
             buttons.forEach((btn) => {
                 btn.addEventListener('click', () => {
@@ -521,7 +531,7 @@
                     document.getElementById('edit-client-name').value = btn.dataset.name || '';
                     document.getElementById('edit-client-email').value = btn.dataset.email || '';
                     document.getElementById('edit-client-phone').value = btn.dataset.phone || '';
-                    document.getElementById('edit-client-since').value = btn.dataset.client_since || '';
+                    document.getElementById('edit-client-since').value = btn.dataset.clientSince || '';
                     document.getElementById('edit-client-tags').value = btn.dataset.tags || '';
                     document.getElementById('edit-client-notes').value = btn.dataset.notes || '';
                 });

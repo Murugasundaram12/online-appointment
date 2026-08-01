@@ -1,0 +1,31 @@
+{
+    "baseUrl": "http:\/\/127.0.0.1:8000",
+    "password": "Password123",
+    "roles": {
+        "admin": {
+            "email": "prod_uat_admin@example.com",
+            "id": 38
+        },
+        "receptionist": {
+            "email": "prod_uat_receptionist@example.com",
+            "id": 39
+        },
+        "practitioner": {
+            "email": "prod_uat_practitioner@example.com",
+            "id": 40
+        },
+        "business_owner": {
+            "email": "prod_uat_business_owner@example.com",
+            "id": 41
+        }
+    },
+    "location_id": 30,
+    "inactive_location_id": 31,
+    "staff_id": 42,
+    "inactive_staff_id": 43,
+    "service_id": 31,
+    "inactive_service_id": 32,
+    "booking_date": "2026-08-10",
+    "appointment_id": 56,
+    "client_id": 44
+}

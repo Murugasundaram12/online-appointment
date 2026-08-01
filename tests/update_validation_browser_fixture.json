@@ -1,0 +1,9 @@
+{
+    "clientA": 42,
+    "clientB": 43,
+    "staff": 37,
+    "location": 29,
+    "service": 30,
+    "package": 10,
+    "plan": 10
+}

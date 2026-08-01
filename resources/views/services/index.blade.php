@@ -357,7 +357,6 @@
                                         <select class="form-select" name="type">
                                             <option value="in_person" selected>In-person</option>
                                             <option value="online">Online</option>
-                                            <option value="home_visit">Home visit</option>
                                         </select>
                                     </div>
                                 </div>
@@ -466,7 +465,6 @@
                                         <select class="form-select" id="edit-service-type" name="type">
                                             <option value="in_person">In-person</option>
                                             <option value="online">Online</option>
-                                            <option value="home_visit">Home visit</option>
                                         </select>
                                     </div>
                                 </div>
@@ -530,7 +528,6 @@
 
 @endsection
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const editForm = document.getElementById('edit-service-form');

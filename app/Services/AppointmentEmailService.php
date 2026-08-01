@@ -87,6 +87,17 @@ class AppointmentEmailService
         try {
             $mail = new $mailableClass($appointment, $this->businessContext($appointment), $previous, $this->publicReference($appointment));
 
+            Log::info('Appointment email SMTP attempt', [
+                'appointment_id' => $appointment->id,
+                'client_email' => $client->email,
+                'mail_type' => $type,
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+                'queue' => config('queue.default'),
+            ]);
+
             if (config('queue.default') !== 'sync') {
                 Mail::to($client->email)->queue($mail);
                 $verb = 'queued';
@@ -107,6 +118,10 @@ class AppointmentEmailService
                 'appointment_id' => $appointment->id,
                 'client_email' => $client->email,
                 'mail_type' => $type,
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
                 'exception' => $exception->getMessage(),
             ]);
 
