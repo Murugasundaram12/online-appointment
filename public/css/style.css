@@ -42,8 +42,14 @@
     /* Modals & Dialogs */
     --modal-bg: #ffffff;
     --modal-border: #e2e8f0;
+<<<<<<< HEAD
     --modal-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
     --modal-radius: 16px;
+=======
+    --modal-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    --modal-radius: 18px;
+    --sidebar-width: 284px;
+>>>>>>> 4df69ef (Save local CSS changes)
 }
 
 /* Global Aesthetics */
@@ -86,24 +92,38 @@ a:hover {
 
 .app-shell {
     min-height: 100vh;
+    align-items: stretch;
 }
 
 /* Sidebar Styling */
 .sidebar {
+<<<<<<< HEAD
     width: 270px;
     min-width: 270px;
     height: 100vh;
     overflow-y: auto;
+=======
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    flex: 0 0 var(--sidebar-width);
+    min-height: 100vh;
+>>>>>>> 4df69ef (Save local CSS changes)
     background: linear-gradient(180deg, var(--sidebar), var(--sidebar-2));
     color: #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 1040;
+<<<<<<< HEAD
     padding: 24px 16px;
     box-shadow: 10px 0 35px rgba(15, 23, 42, 0.15);
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--sidebar-border);
+=======
+    padding: 20px 16px;
+    box-shadow: 16px 0 40px rgba(15, 23, 42, 0.18);
+    overflow-y: auto;
+>>>>>>> 4df69ef (Save local CSS changes)
 }
 
 .sidebar-brand {
@@ -222,7 +242,24 @@ a:hover {
     color: white;
 }
 
+<<<<<<< HEAD
 .sidebar-link:hover i {
+=======
+.sidebar-link span,
+.sidebar-section-title,
+.sidebar-profile .name,
+.sidebar-profile .role,
+.brand-title,
+.brand-subtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-link:hover i,
+.sidebar-link.active i,
+.sidebar-link.active {
+>>>>>>> 4df69ef (Save local CSS changes)
     color: white;
 }
 
@@ -648,7 +685,6 @@ a:hover {
         transform: translateX(-100%);
         transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         height: 100vh;
-        overflow-y: auto;
     }
 
     body.sidebar-open .sidebar {
