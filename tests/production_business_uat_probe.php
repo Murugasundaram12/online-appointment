@@ -48,6 +48,15 @@ function expectValidation(callable $callback, string $field): bool
 $fixture = json_decode(file_get_contents(__DIR__ . '/production_uat_fixture.json'), true);
 View::share('errors', new ViewErrorBag());
 
+// Remove leftovers from previous runs so this probe is repeatable.
+$uatInvoiceIds = Invoice::where('invoice_number', 'like', 'PROD_UAT_INV_%')->pluck('id');
+PaymentRecord::whereIn('invoice_id', $uatInvoiceIds)->delete();
+Invoice::whereIn('id', $uatInvoiceIds)->delete();
+$uatPeriodStart = Carbon::now()->addMonths(3)->startOfMonth()->toDateString();
+Payroll::where('period_start', $uatPeriodStart)
+    ->where('notes', 'like', 'PROD_UAT payroll%')
+    ->delete();
+
 $invoiceController = app(InvoiceController::class);
 $paymentController = app(PaymentRecordController::class);
 $payrollController = app(PayrollController::class);

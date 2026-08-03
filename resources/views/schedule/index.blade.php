@@ -180,24 +180,6 @@
                     <h2 class="fs-6 m-0 fw-bold">Schedule list</h2>
                     <button class="btn btn-link text-muted p-0"><i class='bx bx-chevron-left fs-4'></i></button>
                 </div>
-                <div class="mb-3">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                        <input type="text" class="form-control border-start-0 bg-white" placeholder="Search">
-                    </div>
-                </div>
-                <div class="dropdown">
-                    <button
-                        class="btn btn-white border dropdown-toggle btn-sm text-muted w-100 text-start d-flex justify-content-between align-items-center"
-                        type="button" data-bs-toggle="dropdown">
-                        Category
-                    </button>
-                    <ul class="dropdown-menu w-100">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-            </div>
-
             <div class="provider-list">
                 @foreach($staff as $member)
                     <div class="provider-item {{ isset($currentStaff) && $currentStaff->id == $member->id ? 'active' : '' }}"
@@ -213,6 +195,7 @@
                 @endforeach
             </div>
         </div>
+    </div>
 
         <!-- Main Schedule Content -->
         <div class="schedule-container">

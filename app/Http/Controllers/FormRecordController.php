@@ -7,9 +7,21 @@ use Illuminate\Http\Request;
 
 class FormRecordController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $formRecords = \App\Models\FormRecord::with(['form', 'client'])->latest()->paginate(10);
+        $formRecords = \App\Models\FormRecord::with(['form', 'client'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('client', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    })->orWhereHas('form', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+                });
+            })
+            ->latest()
+            ->paginate($this->perPage($request));
         return view('form_records.index', compact('formRecords'));
     }
 

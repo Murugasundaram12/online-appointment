@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SubscriptionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (SubscriptionPlan::count() === 0) {
             SubscriptionPlan::insert([
@@ -20,7 +20,7 @@ class SubscriptionController extends Controller
         }
         $plans = SubscriptionPlan::where('is_active', true)->get();
         $currentSubscription = Subscription::with('plan')->latest()->first();
-        $history = Subscription::with('plan')->latest()->paginate(10);
+        $history = Subscription::with('plan')->latest()->paginate($this->perPage($request));
         return view('subscription.index', compact('plans', 'currentSubscription', 'history'));
     }
 

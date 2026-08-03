@@ -36,10 +36,10 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3 flex-grow-1 justify-content-end">
-                    <div class="topbar-search">
+                    <form class="topbar-search" method="GET" action="{{ route('clients.index') }}" role="search">
                         <i class='bx bx-search'></i>
-                        <input type="search" class="form-control" placeholder="Search clients, invoices, services">
-                    </div>
+                        <input type="search" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search clients, invoices, services" aria-label="Search">
+                    </form>
                     @auth('staff')
                         <div class="dropdown">
                             <button class="btn btn-white d-flex align-items-center gap-2" data-bs-toggle="dropdown" type="button" aria-expanded="false">

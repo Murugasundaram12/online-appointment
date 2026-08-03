@@ -17,6 +17,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\BusinessSettingController;
 use App\Http\Controllers\OnlineBookingController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuthController;
 
 /*
@@ -122,6 +123,15 @@ Route::post('payment-records', [PaymentRecordController::class, 'store'])->name(
 Route::delete('payment-records/{paymentRecord}', [PaymentRecordController::class, 'destroy'])->name('payment-records.destroy');
 
 Route::middleware(['role:admin,business_owner'])->group(function () {
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/appointments', [ReportController::class, 'appointments'])->name('reports.appointments');
+    Route::get('reports/revenue', [ReportController::class, 'revenue'])->name('reports.revenue');
+    Route::get('reports/invoices', [ReportController::class, 'invoices'])->name('reports.invoices');
+    Route::get('reports/payments', [ReportController::class, 'payments'])->name('reports.payments');
+    Route::get('reports/clients', [ReportController::class, 'clients'])->name('reports.clients');
+    Route::get('reports/staff', [ReportController::class, 'staff'])->name('reports.staff');
+    Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
+
     Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::get('payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
     Route::post('payroll', [PayrollController::class, 'store'])->name('payroll.store');

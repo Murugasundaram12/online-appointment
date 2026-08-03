@@ -4,22 +4,9 @@
 
 @push('styles')
     <style>
-        .schedule-form-card {
-            border: 1px solid #eef0f7;
-        }
-
-        .schedule-form-card .form-label {
-            font-weight: 600;
-        }
-
         .schedule-section-title {
             font-weight: 700;
-            color: #3f4254;
-        }
-
-        .schedule-help {
-            color: #7e8299;
-            font-size: 0.85rem;
+            color: var(--text-primary);
         }
 
         .schedule-toolbar {
@@ -90,16 +77,16 @@
                     
                         <div class="col-12 col-md-4">
                             <label class="form-label small text-muted">Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="working-date" required>
+                            <input type="date" class="form-control" name="working_date" id="working-date" value="{{ old('working_date') }}" required>
                             <div class="form-text">Creates/updates schedule for this date.</div>
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label small text-muted">Start Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="start_time" id="single-start-time" value="09:00" required>
+                            <input type="time" class="form-control" name="start_time" id="single-start-time" value="{{ old('start_time', '09:00') }}" required>
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label small text-muted">End Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="end_time" id="single-end-time" value="17:00" required>
+                            <input type="time" class="form-control" name="end_time" id="single-end-time" value="{{ old('end_time', '17:00') }}" required>
                         </div>
                     </div>
 

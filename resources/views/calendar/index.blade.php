@@ -5,8 +5,6 @@
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
-
         :root {
             --calendar-border: #eef2f7;
             --calendar-border-hourly: #c8d0e0;
@@ -181,6 +179,7 @@
             display: grid;
             grid-template-columns: 80px repeat(7, 1fr);
             min-height: 1000px;
+            position: relative;
         }
 
         .time-col {
@@ -669,7 +668,7 @@
         #appointment-details-card .detail-value,
         #appointment-readonly-details .detail-label,
         #appointment-readonly-details .detail-value {
-            font-family: "Google Sans", "Product Sans", "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
         /* Month view (FullCalendar) - keep consistent with existing UI */
@@ -679,7 +678,7 @@
         }
 
         #calendar-month-container .fc {
-            font-family: "Google Sans", "Product Sans", "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
         #calendar-month-container .fc .fc-daygrid-day-number {
@@ -762,28 +761,29 @@
                     <select id="calendar-filter-location" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All locations</option>
                         @foreach($locations ?? [] as $location)
-                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            <option value="{{ $location->id }}" {{ (string)($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-staff" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All staff</option>
                         @foreach($staffs ?? [] as $staff)
-                            <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                            <option value="{{ $staff->id }}" {{ (string)($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-service" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All services</option>
                         @foreach($services ?? [] as $service)
-                            <option value="{{ $service->id }}">{{ $service->name }}</option>
+                            <option value="{{ $service->id }}" {{ (string)($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
                         <option value="">All statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="booked">Booked</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
+                        <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
+                    <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
                 </div>
 
                 <!-- Calendar Content -->
@@ -1167,7 +1167,7 @@
             function navigateMonth(deltaMonths) {
                 const base = monthCalendar ? monthCalendar.getDate() : new Date();
                 const target = new Date(base.getFullYear(), base.getMonth() + deltaMonths, 1);
-                const url = new URL(window.location.href);
+                const url = copyFiltersToUrl(new URL(window.location.href));
                 url.searchParams.set('view', 'month');
                 url.searchParams.set('month', monthKeyFromDate(target));
                 window.location.href = url.toString();
@@ -1405,6 +1405,12 @@
             }
 
             function getRangeForCurrentView(startDate) {
+                if (currentView === 'month') {
+                    const base = monthCalendar ? monthCalendar.getDate() : new Date(startDate);
+                    const s = new Date(base.getFullYear(), base.getMonth(), 1, 0, 0, 0, 0);
+                    const e = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
+                    return { start: s, end: e };
+                }
                 const s = new Date(startDate);
                 s.setHours(0, 0, 0, 0);
                 const e = new Date(s);
@@ -1574,7 +1580,7 @@
             function hydrateFormOptions() {
                 hydrateLocationOptions();
                 hydrateStaffOptionsForSelectedLocation();
-                fillSelect(serviceField, window.CALENDAR_DATA.services || [], 'Select service');
+                hydrateServiceOptionsForSelectedStaff();
                 hydrateClientOptions();
             }
 
@@ -1611,11 +1617,64 @@
                 return staff.location_id && String(staff.location_id) === String(locationId);
             }
 
-            function hydrateStaffOptionsForSelectedLocation() {
+            function staffMatchesServiceCategory(staff, serviceId) {
+                if (!serviceId) return true;
+                const services = window.CALENDAR_DATA.services || [];
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (!svc) return true;
+
+                const staffCat = normalizeCategory(staff.category || '');
+                if (!staffCat) return true;
+
+                const svcCat = normalizeCategory(svc.category ? svc.category.name : '');
+                if (!svcCat) return true;
+                return svcCat === staffCat || svcCat.includes(staffCat) || staffCat.includes(svcCat);
+            }
+
+            function hydrateStaffOptionsForSelectedLocation(respectService = false) {
                 const locationId = locationField ? locationField.value : '';
-                const staffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
+                let staffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
+                if (respectService) {
+                    const serviceId = serviceField ? serviceField.value : '';
+                    staffs = staffs.filter(staff => staffMatchesServiceCategory(staff, serviceId));
+                }
                 fillSelect(staffField, staffs, staffs.length ? 'Select staff' : 'No staff assigned to this location');
                 return staffs;
+            }
+
+            function normalizeCategory(value) {
+                return String(value ?? '').trim().toLowerCase();
+            }
+
+            function servicesForStaff(staffId) {
+                const staff = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(staffId));
+                const services = window.CALENDAR_DATA.services || [];
+                const staffCategory = normalizeCategory(staff ? staff.category : '');
+                if (!staffCategory) return services;
+
+                return services.filter(s => {
+                    const category = normalizeCategory(s.category ? s.category.name : '');
+                    if (!category) return true;
+                    return category === staffCategory || category.includes(staffCategory) || staffCategory.includes(category);
+                });
+            }
+
+            function hydrateServiceOptionsForSelectedStaff(preserveValue = null) {
+                const staffId = staffField.value;
+                const matching = servicesForStaff(staffId);
+                const placeholder = staffId
+                    ? (matching.length ? 'Select service' : 'No services available for this staff category')
+                    : 'Select staff first';
+                fillSelect(serviceField, matching, placeholder);
+
+                if (preserveValue && hasSelectOptionValue(serviceField, preserveValue)) {
+                    serviceField.value = String(preserveValue);
+                } else {
+                    serviceField.value = '';
+                }
+
+                serviceField.disabled = !!(staffId && matching.length === 0);
+                return matching;
             }
 
             function syncLocationFromStaff() {
@@ -1644,7 +1703,11 @@
 
             function hydrateStaffOptionsForSlot(startDate, endDate) {
                 const locationId = locationField ? locationField.value : '';
-                const allStaffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
+                const serviceId = serviceField ? serviceField.value : '';
+                let allStaffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
+                if (serviceId) {
+                    allStaffs = allStaffs.filter(staff => staffMatchesServiceCategory(staff, serviceId));
+                }
                 const schedules = window._calendarSchedules || [];
 
                 if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
@@ -1774,6 +1837,7 @@
                     staffField.value = '';
                     if (locationField) locationField.value = '';
                 }
+                hydrateServiceOptionsForSelectedStaff();
                 serviceField.value = '';
                 clientField.value = '';
                 statusField.value = 'pending';
@@ -1812,9 +1876,10 @@
                     ensureSelectOption(staffField, appt.staffId, appt.staffName || appt.staff, ' (historical)');
                     staffField.value = appt.staffId ? String(appt.staffId) : '';
 
-                    fillSelect(serviceField, window.CALENDAR_DATA.services || [], 'Select service');
+                    hydrateServiceOptionsForSelectedStaff(appt.serviceId);
                     ensureSelectOption(serviceField, appt.serviceId, appt.serviceName || appt.service, ' (historical)');
                     serviceField.value = appt.serviceId ? String(appt.serviceId) : '';
+                    if (serviceField.value) serviceField.disabled = false;
 
                     hydrateClientOptions();
                     ensureSelectOption(clientField, appt.clientId, appt.clientName || appt.title);
@@ -1952,6 +2017,20 @@
                     window._calendarSchedules = schedJson && schedJson.staff ? schedJson.staff : [];
                     window._calendarEvents = Array.isArray(eventsJson) ? eventsJson : eventsJson.data || [];
 
+                    if (currentView === 'month' && monthCalendar) {
+                        monthCalendar.removeAllEvents();
+                        window._calendarEvents.forEach(ev => {
+                            monthCalendar.addEvent({
+                                id: ev.id,
+                                title: ev.title,
+                                start: ev.start,
+                                end: ev.end,
+                                color: ev.color,
+                                extendedProps: { staff: ev.staff, status: ev.status }
+                            });
+                        });
+                    }
+
                     renderStaffSchedules(); // keep header info if you want
                     renderAppointments();
                     render10amHourHighlight();
@@ -2067,6 +2146,23 @@
                         col.appendChild(el);
                     } catch (err) { console.warn('Error rendering event', err); }
                 });
+
+                gridBody.querySelectorAll('.calendar-empty-notice').forEach(el => el.remove());
+                if (events.length === 0) {
+                    const notice = document.createElement('div');
+                    notice.className = 'calendar-empty-notice';
+                    notice.style.position = 'absolute';
+                    notice.style.inset = '0';
+                    notice.style.display = 'flex';
+                    notice.style.alignItems = 'center';
+                    notice.style.justifyContent = 'center';
+                    notice.style.pointerEvents = 'none';
+                    notice.style.zIndex = '5';
+                    notice.style.fontSize = '14px';
+                    notice.style.color = '#7e8299';
+                    notice.textContent = 'No appointments match the current filters.';
+                    gridBody.appendChild(notice);
+                }
             }
             appointmentForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
@@ -2085,8 +2181,11 @@
 
                 const durationMinutes = getSelectedServiceDurationMinutes();
                 if (durationMinutes) {
-                    end = new Date(start.getTime() + (durationMinutes * 60000));
-                    endField.value = toInputDateTime(end);
+                    const minEnd = new Date(start.getTime() + (durationMinutes * 60000));
+                    if (end < minEnd) {
+                        end = minEnd;
+                        endField.value = toInputDateTime(end);
+                    }
                 }
 
                 if (end <= start) {
@@ -2160,20 +2259,45 @@
                 }
             });
 
-            serviceField.addEventListener('change', applyServiceDurationToEndTime);
+            serviceField.addEventListener('change', function () {
+                const currentStaff = staffField.value;
+                if (apptIdField.value) {
+                    hydrateStaffOptionsForSelectedLocation(true);
+                } else {
+                    applyServiceDurationToEndTime();
+                }
+                if (currentStaff && hasSelectOptionValue(staffField, currentStaff)) {
+                    staffField.value = String(currentStaff);
+                }
+            });
             if (locationField) {
                 locationField.addEventListener('change', function () {
                     const currentStaff = staffField.value;
-                    hydrateStaffOptionsForSelectedLocation();
+                    if (apptIdField.value) {
+                        hydrateStaffOptionsForSelectedLocation(true);
+                    } else {
+                        const start = fromInputDateTime(startField.value);
+                        const end = fromInputDateTime(endField.value);
+                        if (startField.value && endField.value && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+                            hydrateStaffOptionsForSlot(start, end);
+                        } else {
+                            hydrateStaffOptionsForSelectedLocation(true);
+                        }
+                    }
                     if (currentStaff && hasSelectOptionValue(staffField, currentStaff)) {
                         staffField.value = currentStaff;
                     } else if (currentStaff) {
                         staffField.value = '';
                         showFormError('Selected staff is not assigned to this location.');
                     }
+                    hydrateServiceOptionsForSelectedStaff();
                 });
             }
-            staffField.addEventListener('change', syncLocationFromStaff);
+            staffField.addEventListener('change', function () {
+                syncLocationFromStaff();
+                hydrateServiceOptionsForSelectedStaff();
+                if (serviceField.value && startField.value) applyServiceDurationToEndTime();
+            });
             ['calendar-filter-location', 'calendar-filter-staff', 'calendar-filter-service', 'calendar-filter-status'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('change', loadDataAndRender);
@@ -2189,6 +2313,7 @@
                 if (current && hasSelectOptionValue(staffField, current)) {
                     staffField.value = String(current);
                 }
+                hydrateServiceOptionsForSelectedStaff();
                 if (info && info.hasScheduleData && info.count === 0) {
                     const msg = 'No staff scheduled for the selected time.';
                     showFormError(msg);
@@ -2208,6 +2333,7 @@
                 if (current && hasSelectOptionValue(staffField, current)) {
                     staffField.value = String(current);
                 }
+                hydrateServiceOptionsForSelectedStaff();
                 if (info && info.hasScheduleData && info.count === 0) {
                     const msg = 'No staff scheduled for the selected time.';
                     showFormError(msg);
@@ -2391,6 +2517,17 @@
                 return meta ? meta.getAttribute('content') : '';
             }
 
+            function copyFiltersToUrl(url) {
+                ['calendar-filter-location', 'calendar-filter-staff', 'calendar-filter-service', 'calendar-filter-status'].forEach(id => {
+                    const el = document.getElementById(id);
+                    const value = el ? el.value : '';
+                    const param = id.replace('calendar-filter-', '');
+                    if (value) url.searchParams.set(param, value);
+                    else url.searchParams.delete(param);
+                });
+                return url;
+            }
+
             // Navigation
             document.getElementById('prev-week').addEventListener('click', () => {
                 if (currentView === 'month') {
@@ -2415,7 +2552,7 @@
             document.getElementById('btn-today').addEventListener('click', () => {
                 const now = new Date();
                 if (currentView === 'month') {
-                    const url = new URL(window.location.href);
+                    const url = copyFiltersToUrl(new URL(window.location.href));
                     url.searchParams.set('view', 'month');
                     url.searchParams.set('month', monthKeyFromDate(now));
                     window.location.href = url.toString();
@@ -2434,6 +2571,22 @@
                 loadDataAndRender();
             });
 
+            const resetFiltersBtn = document.getElementById('calendar-reset-filters');
+            if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', function () {
+                ['calendar-filter-location', 'calendar-filter-staff', 'calendar-filter-service', 'calendar-filter-status'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                if (currentView === 'month') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('view', 'month');
+                    url.searchParams.set('month', monthKeyFromDate(monthCalendar ? monthCalendar.getDate() : new Date()));
+                    window.location.href = url.toString();
+                    return;
+                }
+                loadDataAndRender();
+            });
+
             if (viewSelect) viewSelect.addEventListener('change', function () {
                 const view = this.value;
                 if (!view) return;
@@ -2441,7 +2594,7 @@
                 currentView = view;
                 const viewTitle = `${view.charAt(0).toUpperCase()}${view.slice(1)} View`;
                 if (view === 'month') {
-                    const url = new URL(window.location.href);
+                    const url = copyFiltersToUrl(new URL(window.location.href));
                     url.searchParams.set('view', 'month');
                     url.searchParams.set('month', monthKeyFromDate(currentWeekStart));
                     window.location.href = url.toString();

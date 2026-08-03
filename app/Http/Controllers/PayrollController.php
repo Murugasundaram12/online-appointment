@@ -64,7 +64,7 @@ class PayrollController extends Controller
 
         // Sort by latest first
         $summaryQuery = clone $query;
-        $payrolls = $query->orderBy('period_start', 'desc')->orderByDesc('id')->paginate(15)->withQueryString();
+        $payrolls = $query->orderBy('period_start', 'desc')->orderByDesc('id')->paginate($this->perPage($request, 15))->withQueryString();
         $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'access_level', 'salary']);
         $summary = $this->buildSummary($summaryQuery);
 

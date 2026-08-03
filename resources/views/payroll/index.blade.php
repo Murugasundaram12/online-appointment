@@ -160,22 +160,32 @@
                             <td>{{ $payroll->payment_date ? $payroll->payment_date->format('M d, Y') : '-' }}</td>
                             <td><span class="payroll-badge {{ $payroll->status }}">{{ ucfirst($payroll->display_status) }}</span></td>
                             <td class="text-end no-print">
-                                <div class="btn-group">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
                                     <a href="{{ route('payroll.show', $payroll->id) }}" class="btn btn-sm btn-light border" title="View"><i class='bx bx-show'></i></a>
                                     <a href="{{ route('payroll.edit', $payroll->id) }}" class="btn btn-sm btn-light border" title="Edit"><i class='bx bx-edit'></i></a>
-                                    @unless($payroll->isPaid())
-                                        <form method="POST" action="{{ route('payroll.mark-paid', $payroll->id) }}" data-confirm="This will mark the payroll as paid and set the payment date if missing." data-confirm-title="Mark payroll paid?" data-confirm-text="Mark Paid" data-confirm-class="btn-success">
-                                            @csrf
-                                            <button class="btn btn-sm btn-light border" title="Mark Paid"><i class='bx bx-check-circle'></i></button>
-                                        </form>
-                                    @endunless
-                                    <button type="button" onclick="window.print()" class="btn btn-sm btn-light border" title="Print"><i class='bx bx-printer'></i></button>
-                                    <a href="{{ route('payroll.download', $payroll->id) }}" class="btn btn-sm btn-light border" title="PDF"><i class='bx bx-file'></i></a>
-                                    <form method="POST" action="{{ route('payroll.destroy', $payroll->id) }}" data-confirm="Pending payroll can be deleted. Paid payroll is protected by the server." data-confirm-title="Delete payroll?" data-confirm-text="Delete" data-confirm-class="btn-danger">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-light border text-danger" title="Delete"><i class='bx bx-trash'></i></button>
-                                    </form>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More actions"><i class='bx bx-dots-vertical-rounded'></i></button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                            @unless($payroll->isPaid())
+                                                <li>
+                                                    <form method="POST" action="{{ route('payroll.mark-paid', $payroll->id) }}" data-confirm="This will mark the payroll as paid and set the payment date if missing." data-confirm-title="Mark payroll paid?" data-confirm-text="Mark Paid" data-confirm-class="btn-success">
+                                                        @csrf
+                                                        <button type="submit" class="dropdown-item"><i class='bx bx-check-circle me-2 text-success'></i>Mark paid</button>
+                                                    </form>
+                                                </li>
+                                            @endunless
+                                            <li><button type="button" onclick="window.print()" class="dropdown-item"><i class='bx bx-printer me-2'></i>Print</button></li>
+                                            <li><a class="dropdown-item" href="{{ route('payroll.download', $payroll->id) }}"><i class='bx bx-file me-2'></i>PDF</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="POST" action="{{ route('payroll.destroy', $payroll->id) }}" data-confirm="Pending payroll can be deleted. Paid payroll is protected by the server." data-confirm-title="Delete payroll?" data-confirm-text="Delete" data-confirm-class="btn-danger">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger"><i class='bx bx-trash me-2'></i>Delete</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -190,7 +200,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer bg-white">{{ $payrolls->links() }}</div>
+            @include('partials.pagination', ['paginator' => $payrolls])
         </div>
     </div>
 @endsection

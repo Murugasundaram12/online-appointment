@@ -2,82 +2,6 @@
 
 @section('title', 'Packages List')
 
-@push('styles')
-    <style>
-        .badge-upgrade {
-            background-color: #fff1f2;
-            color: #f64e60;
-            font-size: 0.75rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-weight: 500;
-            margin-left: 10px;
-        }
-
-        .filter-select {
-            background-color: #f5f8fa;
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #3f4254;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .search-input {
-            background-color: #f5f8fa;
-            border: none;
-            border-radius: 8px;
-            padding-left: 40px;
-        }
-
-        .search-container {
-            position: relative;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #a1a5b7;
-        }
-
-        .table thead th {
-            background-color: #fcfdfe;
-            color: #7e8299;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border-top: none;
-            padding: 1.25rem 1rem;
-        }
-
-        .empty-state {
-            padding: 5rem 1rem;
-            text-align: center;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            color: #3699ff;
-            margin-bottom: 1.5rem;
-        }
-
-        .empty-state h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #3f4254;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #b5b5c3;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-    </style>
-@endpush
-
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
         <div class="d-flex align-items-center justify-content-between w-100">
@@ -95,12 +19,20 @@
         <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
             <div class="search-container flex-grow-1" style="max-width: 400px;">
                 <i class='bx bx-search'></i>
-                <input type="text" class="form-control search-input" placeholder="Search">
+                <form method="GET" action="{{ route('packages.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control search-input" placeholder="Search">
+                </form>
             </div>
             <div class="dropdown">
                 <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Status
                 </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ route('packages.index', request()->except(['status', 'page'])) }}">All</a></li>
+                    <li><a class="dropdown-item" href="{{ route('packages.index', array_merge(request()->except(['status', 'page']), ['status' => 'active'])) }}">Active</a></li>
+                    <li><a class="dropdown-item" href="{{ route('packages.index', array_merge(request()->except(['status', 'page']), ['status' => 'inactive'])) }}">Inactive</a></li>
+                </ul>
             </div>
         </div>
 
@@ -114,7 +46,7 @@
                                 <th scope="col" class="ps-4 py-3 border-0" style="min-width: 250px;">Package name <i
                                         class='bx bx-up-arrow-alt'></i></th>
                                 <th scope="col" class="py-3 border-0">Status</th>
-                                <th scope="col" class="py-3 border-0">Package price</th>
+                                <th scope="col" class="py-3 border-0 text-end">Package price</th>
                                 <th scope="col" class="py-3 border-0">No.sessions</th>
                                 <th scope="col" class="py-3 border-0">Sold records</th>
                                 <th scope="col" class="pe-4 py-3 border-0 text-end">Actions</th>
@@ -131,7 +63,7 @@
                                             <span class="badge bg-light-secondary text-muted">Inactive</span>
                                         @endif
                                     </td>
-                                    <td class="text-muted small">${{ number_format($package->price, 2) }}</td>
+                                    <td class="text-muted small text-end">${{ number_format($package->price, 2) }}</td>
                                     <td class="text-muted small">{{ $package->services->sum(fn($service) => $service->pivot->quantity) }}</td>
                                     <td class="text-muted small">0</td>
                                     <td class="pe-4 text-end">
@@ -167,9 +99,7 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-                {{ $packages->links() }}
-            </div>
+            @include('partials.pagination', ['paginator' => $packages])
         </div>
     </div>
 @endsection

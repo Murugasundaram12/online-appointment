@@ -2,181 +2,7 @@
 
 @section('title', 'Clients List')
 
-@push('styles')
-    <style>
-        /* Standardized Header/Sidebar Styles */
-        .dot-active {
-            width: 8px;
-            height: 8px;
-            background-color: white;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .nav-icon-box {
-            width: 40px;
-            height: 40px;
-            background-color: #f3f6f9;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #7e8299;
-            font-size: 1.25rem;
-            position: relative;
-        }
-
-        .plus-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #3699ff;
-            color: white;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        /* Modal Premium Styles */
-        .modal-content {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-        }
-
-        .modal-title {
-            font-weight: 700;
-            color: #181c32;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .field-group {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-
-        .field-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #a1a5b7;
-            margin-top: 0.5rem;
-        }
-
-        .field-content {
-            flex-grow: 1;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #3f4254;
-            font-size: 0.95rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-body .form-control,
-        .modal-body .form-select {
-            background-color: #f9f9f9;
-            border: 1px solid #e1e3ea;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
-            color: #3f4254;
-        }
-
-        .modal-body .form-control:focus,
-        .modal-body .form-select:focus {
-            background-color: white;
-            border-color: #3699ff;
-            box-shadow: none;
-        }
-
-        .btn-cancel {
-            background-color: #f3f6f9;
-            color: #7e8299;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel:hover {
-            background-color: #eef2f7;
-            color: #3f4254;
-        }
-
-        .btn-submit {
-            background-color: #3699ff;
-            color: white;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-submit:hover {
-            background-color: #187de4;
-        }
-    </style>
-@endpush
-
 @section('content')
-    {{-- <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <div class="d-flex align-items-center">
-                <div class="nav-icon-box me-3">
-                    <i class='bx bx-cog'></i>
-                    <span class="plus-badge">+</span>
-                </div>
-                <div class="nav-icon-box">
-                    <i class='bx bx-camera-plus'></i>
-                </div>
-                <h2 class="fs-4 m-0 fw-bold">Clients list</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-primary" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Client actions
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Import clients</a></li>
-                        <li><a class="dropdown-item" href="#">Export clients</a></li>
-                    </ul>
-                </div>
-                <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal"
-                    data-bs-target="#addClientModal">Add new client</button>
-            </div>
-        </div>
-    </nav> --}}
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
             <div class="d-flex align-items-center">
@@ -191,16 +17,6 @@
             <h2 class="fs-4 m-0 fw-bold">Clients list</h2>
 
             <div class="d-flex gap-2">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-primary" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Client actions
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Import clients</a></li>
-                        <li><a class="dropdown-item" href="#">Export clients</a></li>
-                    </ul>
-                </div>
                 <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal"
                     data-bs-target="#addClientModal">Add new client</button>
             </div>
@@ -223,30 +39,18 @@
         <!-- Filters -->
         <div class="row g-3 mb-3">
             <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search">
-                </div>
+                <form method="GET" action="{{ route('clients.index') }}" id="clientsSearchForm">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search by name, email, phone or city">
+                    </div>
+                </form>
             </div>
             <div class="col-md-8 d-flex justify-content-end gap-2">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle text-muted" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Client since
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All time</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle text-muted" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Tags
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">VIP</a></li>
-                    </ul>
-                </div>
+                @if(request()->has('search') && request('search') !== '')
+                    <a href="{{ route('clients.index', ['per_page' => request('per_page', 10)]) }}" class="btn btn-white border text-muted">Clear search</a>
+                @endif
             </div>
         </div>
 
@@ -305,7 +109,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-muted p-0"><i
-                                                    class='bx bx-dots-vertical-rounded'></i></button>
+                                                    class='bx bx-trash'></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -319,9 +123,7 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-                {{ $clients->links() }}
-            </div>
+            @include('partials.pagination', ['paginator' => $clients])
         </div>
     </div>
     <!-- Add Client Modal -->
@@ -423,7 +225,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editClientForm" method="POST" action="{{ route('clients.store') }}">
+                    <form id="editClientForm" method="POST" action="#">
                         @csrf
                         @method('PUT')
                         <div class="row">

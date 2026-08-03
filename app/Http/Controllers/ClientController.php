@@ -10,11 +10,20 @@ use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->input('search'));
         $clients = Client::withCount('appointments')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%");
+                });
+            })
             ->latest()
-            ->paginate(10);
+            ->paginate($this->perPage($request));
         $newClientsCount = Client::where('created_at', '>=', now()->subDays(30))->count();
 
         return view('clients.index', compact('clients', 'newClientsCount'));
@@ -42,11 +51,59 @@ class ClientController extends Controller
 
     public function show(string $id)
     {
-        $client = Client::with(['appointments.staff', 'appointments.service', 'invoices'])
-            ->withCount('appointments')
+        $client = Client::withCount([
+                'appointments',
+                'appointments as upcoming_appointments_count' => fn ($query) => $query
+                    ->where('start_time', '>=', now())
+                    ->where('status', '!=', 'cancelled'),
+                'appointments as completed_appointments_count' => fn ($query) => $query->where('status', 'completed'),
+                'appointments as cancelled_appointments_count' => fn ($query) => $query->where('status', 'cancelled'),
+            ])
+            ->withSum(['invoices as total_invoiced' => fn ($query) => $query->where('status', '!=', 'void')], 'total_amount')
+            ->withSum(['invoices as total_paid' => fn ($query) => $query->where('status', '!=', 'void')], 'paid_amount')
             ->findOrFail($id);
 
-        return view('clients.show', compact('client'));
+        $upcoming = $client->appointments()
+            ->with(['staff', 'service', 'location'])
+            ->where('start_time', '>=', now())
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('start_time')
+            ->limit(5)
+            ->get();
+
+        $history = $client->appointments()
+            ->with(['staff', 'service', 'location'])
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->orderByDesc('start_time')
+            ->paginate(10, ['*'], 'history_page');
+
+        $invoices = $client->invoices()
+            ->with('staff')
+            ->orderByDesc('issued_date')
+            ->paginate(10, ['*'], 'invoices_page');
+
+        $payments = \App\Models\PaymentRecord::with('invoice')
+            ->whereHas('invoice', fn ($query) => $query->where('client_id', $client->id))
+            ->orderByDesc('payment_date')
+            ->paginate(10, ['*'], 'payments_page');
+
+        $formRecords = $client->formRecords()->with('form')->latest('submitted_at')->limit(10)->get();
+
+        $totalInvoiced = (float) ($client->total_invoiced ?? 0);
+        $totalPaid = (float) ($client->total_paid ?? 0);
+        $outstanding = max(0, $totalInvoiced - $totalPaid);
+
+        return view('clients.show', compact(
+            'client',
+            'upcoming',
+            'history',
+            'invoices',
+            'payments',
+            'formRecords',
+            'totalInvoiced',
+            'totalPaid',
+            'outstanding'
+        ));
     }
 
     public function edit(string $id)

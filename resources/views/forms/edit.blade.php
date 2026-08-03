@@ -19,18 +19,24 @@
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label for="name" class="form-label">Form Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ $form->name }}"
+                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $form->name) }}"
                                 required>
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description"
-                                rows="3">{{ $form->description }}</textarea>
+                                rows="3">{{ old('description', $form->description) }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="fields_json" class="form-label">Fields JSON</label>
+                            @php $existingFields = json_encode(is_array($form->fields) ? $form->fields : [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES); @endphp
+                            <textarea class="form-control" id="fields_json" name="fields_json" rows="6">{{ old('fields_json', $existingFields) }}</textarea>
+                            <div class="form-text">Supported types: text, textarea, email, number, date, select, checkbox, radio. Editing this field replaces the form's fields.</div>
                         </div>
 
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ $form->is_active ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $form->is_active) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">
                                     Publish Form
                                 </label>

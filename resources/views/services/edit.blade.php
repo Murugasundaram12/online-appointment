@@ -26,7 +26,9 @@
                             <label for="service_category_id" class="form-label">Category</label>
                             <select class="form-select" id="service_category_id" name="service_category_id">
                                 <option value="">Select Category</option>
-                                <!-- populate from categories -->
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ old('service_category_id', $service->service_category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">

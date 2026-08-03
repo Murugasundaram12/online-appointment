@@ -7,16 +7,28 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $services = \App\Models\Service::paginate(10);
+        $services = \App\Models\Service::when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('type', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('category_id'), function ($query) use ($request) {
+                $query->where('service_category_id', $request->input('category_id'));
+            })
+            ->paginate($this->perPage($request));
         $categories = \App\Models\ServiceCategory::all();
         return view('services.index', compact('services', 'categories'));
     }
 
     public function create()
     {
-        return view('services.create');
+        $categories = \App\Models\ServiceCategory::orderBy('name')->get();
+        return view('services.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -50,7 +62,8 @@ class ServiceController extends Controller
     public function edit(string $id)
     {
         $service = \App\Models\Service::findOrFail($id);
-        return view('services.edit', compact('service'));
+        $categories = \App\Models\ServiceCategory::orderBy('name')->get();
+        return view('services.edit', compact('service', 'categories'));
     }
 
     public function update(Request $request, string $id)

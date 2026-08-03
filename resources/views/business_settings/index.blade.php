@@ -86,7 +86,7 @@
                             @endif
                         </div>
                         <div class="col-12 mt-4">
-                            <button class="btn btn-primary px-4">Save settings</button>
+                            <button type="submit" class="btn btn-primary px-4" data-loading-text="Saving...">Save settings</button>
                         </div>
                     </div>
                 </form>

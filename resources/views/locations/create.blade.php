@@ -40,8 +40,8 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="timezone" class="form-label">Timezone <span class="required-mark">*</span></label>
-                            <select class="form-select" id="timezone" name="timezone" required>
+<label for="timezone" class="form-label">Timezone</label>
+<select class="form-select" id="timezone" name="timezone">
                                 @foreach(timezone_identifiers_list() as $timezone)
                                     <option value="{{ $timezone }}" {{ old('timezone', $location->timezone ?? 'UTC') === $timezone ? 'selected' : '' }}>{{ $timezone }}</option>
                                 @endforeach

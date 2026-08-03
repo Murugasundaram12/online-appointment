@@ -12,13 +12,6 @@
             <a href="{{ route('payroll.index') }}" class="btn btn-light border">Back</a>
         </div>
 
-        @if($errors->any())
-            <div class="alert alert-danger">
-                <strong>Please fix the highlighted fields.</strong>
-                <div>{{ $errors->first() }}</div>
-            </div>
-        @endif
-
         <form action="{{ route('payroll.store') }}" method="POST" id="payrollForm">
             @csrf
             <div class="row g-4">
@@ -73,7 +66,7 @@
                                     @error('total_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="payment_date" class="form-label">Payment Date</label>
+                                    <label for="payment_date" class="form-label">Payment Date <span class="required-mark" id="payment_date_mark">*</span></label>
                                     <input type="date" id="payment_date" name="payment_date" value="{{ old('payment_date') }}" class="form-control @error('payment_date') is-invalid @enderror">
                                     @error('payment_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
@@ -90,7 +83,9 @@
                                     <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
                                     <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
                                         <option value="pending" {{ old('status', 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="processing" {{ old('status') === 'processing' ? 'selected' : '' }}>Processing</option>
                                         <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Paid</option>
+                                        <option value="paid" {{ old('status') === 'paid' ? 'selected' : '' }}>Paid (Direct)</option>
                                         <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                                     </select>
                                     @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -116,7 +111,7 @@
                                 <span class="fw-bold">Net Total</span>
                                 <span class="fs-4 fw-bold text-primary" id="display-total">0.00</span>
                             </div>
-                            <button class="btn btn-primary w-100 mt-4">Create Payroll</button>
+                            <button type="submit" class="btn btn-primary w-100 mt-4" data-loading-text="Creating...">Create Payroll</button>
                         </div>
                     </div>
                 </div>
@@ -146,6 +141,24 @@
                 calculateTotal();
             }
         });
+        const statusSelect = document.getElementById('status');
+        const paymentDate = document.getElementById('payment_date');
+        const paymentDateMark = document.getElementById('payment_date_mark');
+        function togglePaymentDateRequired() {
+            const needsDate = ['completed', 'paid'].includes(statusSelect.value);
+            if (paymentDateMark) paymentDateMark.style.display = needsDate ? '' : 'none';
+            if (paymentDate) {
+                if (needsDate) {
+                    paymentDate.setAttribute('required', 'required');
+                } else {
+                    paymentDate.removeAttribute('required');
+                }
+            }
+        }
+        if (statusSelect) {
+            statusSelect.addEventListener('change', togglePaymentDateRequired);
+            togglePaymentDateRequired();
+        }
         calculateTotal();
     </script>
 @endsection

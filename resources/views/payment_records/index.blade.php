@@ -2,136 +2,6 @@
 
 @section('title', 'Payment Records')
 
-@push('styles')
-    <style>
-        .badge-paid {
-            background-color: #e8fff3;
-            color: #50cd89;
-            border: 1px solid #d1f7e4;
-        }
-
-        .badge-partial {
-            background-color: #fff8dd;
-            color: #ff9900;
-            border: 1px solid #fff4cc;
-        }
-
-        .badge-failed {
-            background-color: #fff5f8;
-            color: #f1416c;
-            border: 1px solid #ffdbdc;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.6rem;
-            border-radius: 4px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .search-input {
-            background-color: #f5f8fa;
-            border: none;
-            border-radius: 8px;
-            padding-left: 40px;
-        }
-
-        .search-container {
-            position: relative;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #a1a5b7;
-        }
-
-        .filter-select {
-            background-color: #f5f8fa;
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #3f4254;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .table thead th {
-            background-color: #fcfdfe;
-            color: #7e8299;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border-top: none;
-            padding: 1.25rem 1rem;
-        }
-
-        .table tbody td {
-            padding: 1.25rem 1rem;
-            vertical-align: middle;
-            font-size: 0.9rem;
-            color: #3f4254;
-            border-bottom: 1px solid #f8f9fa;
-        }
-
-        .client-avatar {
-            width: 30px;
-            height: 30px;
-            background-color: #f5f8fa;
-            color: #7e8299;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 0.8rem;
-            margin-right: 10px;
-        }
-
-        /* Standardized Header/Sidebar Styles */
-        .dot-active {
-            width: 8px;
-            height: 8px;
-            background-color: white;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .nav-icon-box {
-            width: 40px;
-            height: 40px;
-            background-color: #f3f6f9;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #7e8299;
-            font-size: 1.25rem;
-            position: relative;
-        }
-
-        .plus-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #3699ff;
-            color: white;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-    </style>
-@endpush
-
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
         <div class="d-flex align-items-center justify-content-between w-100">
@@ -226,22 +96,21 @@
         <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
             <div class="search-container flex-grow-1" style="max-width: 400px;">
                 <i class='bx bx-search'></i>
-                <input type="text" class="form-control search-input" placeholder="Search">
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Date
-                </button>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Status
-                </button>
+                <form method="GET" action="{{ route('payment-records.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control search-input" placeholder="Search">
+                </form>
             </div>
             <div class="dropdown">
                 <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Payment method
                 </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ route('payment-records.index', request()->except(['payment_method', 'page'])) }}">All</a></li>
+                    <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash'])) }}">Cash</a></li>
+                    <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card'])) }}">Card</a></li>
+                    <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'transfer'])) }}">Transfer</a></li>
+                </ul>
             </div>
         </div>
 
@@ -258,7 +127,7 @@
                             <th>Client name</th>
                             <th>Status</th>
                             <th>Method</th>
-                            <th>Amount</th>
+                            <th class="text-end">Amount</th>
                             <th class="text-end">Action</th>
                         </tr>
                     </thead>
@@ -280,7 +149,7 @@
                                     </span>
                                 </td>
                                 <td class="small">{{ $record->payment_method }}</td>
-                                <td class="small fw-500">${{ number_format($record->amount, 2) }}</td>
+                                <td class="small fw-500 text-end">${{ number_format($record->amount, 2) }}</td>
                                 <td class="text-end">
                                     @if($record->invoice)
                                         <a href="{{ route('invoices.show', $record->invoice_id) }}" class="btn btn-link text-muted p-0 me-2"><i class='bx bx-show'></i></a>
@@ -306,9 +175,7 @@
                 </table>
             </div>
             <!-- Pagination -->
-            <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-                {{ $paymentRecords->links() }}
-            </div>
+            @include('partials.pagination', ['paginator' => $paymentRecords])
         </div>
     </div>
 @endsection

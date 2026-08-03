@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\Staff;
 use App\Models\StaffSchedule;
 use App\Services\AppointmentEmailService;
+use App\Support\StaffCategoryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +24,11 @@ class OnlineBookingController extends Controller
     public function index()
     {
         $locations = Location::where('is_active', true)->orderBy('name')->get();
-        $services = Service::where('is_active', true)->orderBy('name')->get();
-        $staff = Staff::where('is_active', true)->orderBy('name')->get();
+        $services = Service::where('is_active', true)
+            ->with('category:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'price', 'duration_minutes', 'service_category_id']);
+        $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'category', 'location_id']);
         return view('online_booking.index', compact('locations', 'services', 'staff'));
     }
 
@@ -37,7 +41,7 @@ class OnlineBookingController extends Controller
             'location_id' => 'nullable|exists:locations,id',
         ]);
 
-        $service = Service::where('is_active', true)->findOrFail($validated['service_id']);
+        $service = Service::with('category')->where('is_active', true)->findOrFail($validated['service_id']);
         $staffQuery = Staff::where('is_active', true);
         if (!empty($validated['staff_id'])) {
             $staffQuery->where('id', $validated['staff_id']);
@@ -45,6 +49,8 @@ class OnlineBookingController extends Controller
         if (!empty($validated['location_id'])) {
             $staffQuery->where('location_id', $validated['location_id']);
         }
+
+        $staffQuery = StaffCategoryService::scopeStaffByCategory($staffQuery, $service->category?->name);
 
         $date = Carbon::parse($validated['date']);
         $slots = [];
@@ -117,7 +123,15 @@ class OnlineBookingController extends Controller
                 $start = Carbon::parse($validated['start_time']);
                 $end = Carbon::parse($validated['end_time']);
                 $windows = $this->staffWorkingWindows($validated['staff_id'], $start);
-                $service = Service::where('is_active', true)->findOrFail($validated['service_id']);
+                $service = Service::with('category')->where('is_active', true)->findOrFail($validated['service_id']);
+                $staff = Staff::where('is_active', true)->findOrFail($validated['staff_id']);
+
+                if (!StaffCategoryService::staffCanProvide($staff, $service)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'staff_id' => 'The selected service is not available for this staff member.',
+                    ]);
+                }
+
                 $window = $windows->first(fn($item) => $start->gte(Carbon::parse($start->toDateString() . ' ' . $item->start_time)) && $end->lte(Carbon::parse($start->toDateString() . ' ' . $item->end_time)));
                 if (!$window || !$this->isAvailable($validated['staff_id'], $start, $end, $window, (int) ($service->buffer_minutes ?? 0))) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['start_time' => 'Selected slot is no longer available.']);

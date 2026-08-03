@@ -11,15 +11,33 @@ use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $staff = Staff::with('location')
+        $staffs = Staff::with('location')
             ->withCount(['appointments', 'payrolls'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim($request->search);
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('category'), function ($query) use ($request) {
+                $query->where('category', 'like', '%' . $request->category . '%');
+            })
+            ->when($request->filled('access_level'), function ($query) use ($request) {
+                $query->where('access_level', $request->access_level);
+            })
+            ->when($request->filled('location_id'), function ($query) use ($request) {
+                $query->where('location_id', $request->location_id);
+            })
             ->latest()
-            ->paginate(10);
+            ->paginate($this->perPage($request));
         $locations = Location::where('is_active', true)->orderBy('name')->get();
+        $categories = Staff::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
 
-        return view('staff.index', compact('staff', 'locations'));
+        return view('staff.index', compact('staffs', 'locations', 'categories'));
     }
 
     public function create()

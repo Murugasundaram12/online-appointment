@@ -16,9 +16,24 @@ use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = \App\Models\Invoice::with(['client', 'staff'])->latest()->paginate(10);
+        $invoices = \App\Models\Invoice::with(['client', 'staff'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('id', is_numeric($search) ? (int) $search : 0)
+                        ->orWhereHas('client', function ($cq) use ($search) {
+                            $cq->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhere('status', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->latest()
+            ->paginate($this->perPage($request));
         return view('invoices.index', compact('invoices'));
     }
 

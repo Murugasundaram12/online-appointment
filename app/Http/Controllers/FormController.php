@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 class FormController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $forms = \App\Models\Form::paginate(10);
+        $forms = \App\Models\Form::when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('is_active', $request->input('status') === 'active');
+            })
+            ->paginate($this->perPage($request));
         return view('forms.index', compact('forms'));
     }
 

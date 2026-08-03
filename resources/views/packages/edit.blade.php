@@ -47,7 +47,7 @@
                                     <div class="d-flex align-items-center gap-3 mb-2">
                                         <input class="form-check-input" type="checkbox" name="services[{{ $service->id }}][selected]" value="1" id="service_{{ $service->id }}" {{ $selected ? 'checked' : '' }}>
                                         <label class="form-check-label flex-grow-1" for="service_{{ $service->id }}">{{ $service->name }} (${{ number_format($service->price, 2) }})</label>
-                                        <input type="number" class="form-control form-control-sm" name="services[{{ $service->id }}][quantity]" value="{{ $selected ? $selected->pivot->quantity : 1 }}" min="1" style="width:90px">
+                                        <input type="number" class="form-control" name="services[{{ $service->id }}][quantity]" value="{{ $selected ? $selected->pivot->quantity : 1 }}" min="1" style="width:90px">
                                     </div>
                                 @empty
                                     <p class="text-muted small mb-0">No active services available.</p>

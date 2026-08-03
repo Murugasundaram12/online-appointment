@@ -105,24 +105,26 @@
 
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <table class="table mb-0">
-                    <thead><tr><th>Plan</th><th>Dates</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
-                    <tbody>
-                    @forelse($history as $subscription)
-                        <tr>
-                            <td>{{ $subscription->plan->name }}</td>
-                            <td>{{ $subscription->start_date->format('M j, Y') }} - {{ optional($subscription->end_date)->format('M j, Y') ?: '-' }}</td>
-                            <td>{{ ucfirst($subscription->status) }}</td>
-                            <td>${{ number_format($subscription->amount, 2) }}</td>
-                            <td>{{ ucfirst($subscription->payment_status) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="text-center text-muted py-4">No subscription history.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead class="bg-light text-muted small text-uppercase"><tr><th class="ps-4 border-0">Plan</th><th class="border-0">Dates</th><th class="border-0">Status</th><th class="border-0">Amount</th><th class="pe-4 border-0">Payment</th></tr></thead>
+                        <tbody>
+                        @forelse($history as $subscription)
+                            <tr>
+                                <td class="ps-4">{{ $subscription->plan->name }}</td>
+                                <td>{{ $subscription->start_date->format('M j, Y') }} - {{ optional($subscription->end_date)->format('M j, Y') ?: '-' }}</td>
+                                <td>{{ ucfirst($subscription->status) }}</td>
+                                <td>${{ number_format($subscription->amount, 2) }}</td>
+                                <td>{{ ucfirst($subscription->payment_status) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="text-center text-muted py-4">No subscription history.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="card-footer bg-white">{{ $history->links() }}</div>
+            @include('partials.pagination', ['paginator' => $history])
         </div>
     </div>
 @endsection

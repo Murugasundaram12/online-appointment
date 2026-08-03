@@ -11,6 +11,7 @@ use App\Models\StaffSchedule;
 use App\Models\Location;
 use App\Models\Payroll;
 use App\Services\AppointmentEmailService;
+use App\Support\StaffCategoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -27,9 +28,11 @@ class CalendarController extends Controller
      */
     public function index(Request $request)
     {
-        $staffs  = Staff::where('is_active', true)->get(['id', 'name', 'location_id']);
+        $staffs  = Staff::where('is_active', true)->get(['id', 'name', 'location_id', 'category']);
         $clients = Client::orderByDesc('updated_at')->limit(100)->get(['id', 'name', 'email', 'phone']);
-        $services = Service::where('is_active', true)->get(['id', 'name', 'duration_minutes']);
+        $services = Service::where('is_active', true)
+            ->with('category:id,name')
+            ->get(['id', 'name', 'duration_minutes', 'service_category_id']);
         $locations = Location::where('is_active', true)->get(['id', 'name']);
 
         $view = $request->query('view', 'week');
@@ -52,9 +55,30 @@ class CalendarController extends Controller
             'cancelled' => '#f64e60'
         ];
 
-        $monthAppointments = Appointment::with(['staff'])
-            ->whereBetween('start_time', [$monthStart, $monthEnd])
-            ->get();
+        $filters = [
+            'location_id' => $request->query('location_id'),
+            'staff_id' => $request->query('staff_id'),
+            'service_id' => $request->query('service_id'),
+            'status' => $request->query('status'),
+        ];
+
+        $monthAppointmentsQuery = Appointment::with(['staff'])
+            ->whereBetween('start_time', [$monthStart, $monthEnd]);
+
+        if ($request->filled('location_id')) {
+            $monthAppointmentsQuery->where('location_id', $request->query('location_id'));
+        }
+        if ($request->filled('staff_id')) {
+            $monthAppointmentsQuery->where('staff_id', $request->query('staff_id'));
+        }
+        if ($request->filled('service_id')) {
+            $monthAppointmentsQuery->where('service_id', $request->query('service_id'));
+        }
+        if ($request->filled('status')) {
+            $monthAppointmentsQuery->where('status', $request->query('status'));
+        }
+
+        $monthAppointments = $monthAppointmentsQuery->get();
 
         $monthEvents = $monthAppointments->map(function ($appointment) use ($statusColorMap) {
             $staffName = $appointment->staff ? $appointment->staff->name : 'N/A';
@@ -71,7 +95,7 @@ class CalendarController extends Controller
             ];
         })->values();
 
-        return view('calendar.index', compact('staffs', 'clients', 'services', 'locations', 'monthEvents', 'calendarMonth', 'view'));
+        return view('calendar.index', compact('staffs', 'clients', 'services', 'locations', 'monthEvents', 'calendarMonth', 'view', 'filters'));
     }
 
     public function dashboard()
@@ -297,6 +321,13 @@ class CalendarController extends Controller
         $service = Service::where('is_active', true)->findOrFail($validated['service_id']);
         $staff = Staff::where('is_active', true)->findOrFail($validated['staff_id']);
 
+        if (!StaffCategoryService::staffCanProvide($staff, $service)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected service is not available for this staff member.',
+            ], 422);
+        }
+
         $durationValidation = $this->validateAppointmentDuration($validated['start_time'], $validated['end_time'], $service);
         if (!$durationValidation['valid']) {
             return response()->json(['success' => false, 'message' => $durationValidation['message']], 422);
@@ -354,8 +385,8 @@ class CalendarController extends Controller
         $previousAppointment->setRelation('location', $appointment->location);
 
         $validated = $request->validate([
-            'staff_id' => ['nullable', Rule::exists('staff', 'id')->where('is_active', true)],
-            'service_id' => ['nullable', Rule::exists('services', 'id')->where('is_active', true)],
+            'staff_id' => ['nullable', 'exists:staff,id'],
+            'service_id' => ['nullable', 'exists:services,id'],
             'location_id' => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
@@ -370,8 +401,43 @@ class CalendarController extends Controller
             $endTime = $validated['end_time'] ?? $appointment->end_time;
             $staffId = $validated['staff_id'] ?? $appointment->staff_id;
             $serviceId = $validated['service_id'] ?? $appointment->service_id;
-            $service = Service::where('is_active', true)->findOrFail($serviceId);
-            $staff = Staff::where('is_active', true)->findOrFail($staffId);
+
+            $serviceChanged = isset($validated['service_id']) && (int) $validated['service_id'] !== (int) $appointment->service_id;
+            $staffChanged = isset($validated['staff_id']) && (int) $validated['staff_id'] !== (int) $appointment->staff_id;
+
+            $service = Service::with('category')->find($serviceId);
+            $staff = Staff::find($staffId);
+
+            if (!$service || !$staff) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected service is not available for this staff member.',
+                ], 422);
+            }
+
+            // A newly selected service must be active.
+            if ($serviceChanged && !$service->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected service is not available for this staff member.',
+                ], 422);
+            }
+
+            // A newly selected staff member must be active.
+            if ($staffChanged && !$staff->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected staff member is no longer active.',
+                ], 422);
+            }
+
+            // The chosen staff/service combination must be compatible.
+            if (!StaffCategoryService::categoryMatches($staff->category, $service->category?->name)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected service is not available for this staff member.',
+                ], 422);
+            }
 
             $durationValidation = $this->validateAppointmentDuration($startTime, $endTime, $service);
             if (!$durationValidation['valid']) {

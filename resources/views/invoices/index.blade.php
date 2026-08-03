@@ -2,76 +2,6 @@
 
 @section('title', 'Invoices')
 
-@push('styles')
-    <style>
-        .badge-soft-danger {
-            color: #f64e60;
-            background-color: #ffe2e5;
-            font-weight: 500;
-        }
-
-        .badge-soft-success {
-            color: #1bc5bd;
-            background-color: #c9f7f5;
-            font-weight: 500;
-        }
-
-        .text-outstanding {
-            color: #f64e60;
-        }
-
-        .bg-outstanding-soft {
-            background-color: #ffe2e5;
-        }
-
-        .text-paid {
-            color: #1bc5bd;
-        }
-
-        .bg-paid-soft {
-            background-color: #c9f7f5;
-        }
-
-        .dot-active {
-            width: 8px;
-            height: 8px;
-            background-color: white;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .nav-icon-box {
-            width: 40px;
-            height: 40px;
-            background-color: #f3f6f9;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #7e8299;
-            font-size: 1.25rem;
-            position: relative;
-        }
-
-        .plus-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #3699ff;
-            color: white;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-    </style>
-@endpush
-
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
@@ -98,46 +28,26 @@
         <!-- Filters -->
         <div class="row g-2 mb-3">
             <div class="col-md-4">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search">
-                </div>
+                <form method="GET" action="{{ route('invoices.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search">
+                    </div>
+                </form>
             </div>
             <div class="col-md-8 d-flex flex-wrap gap-2 justify-content-end align-items-center">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Date
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Services
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Providers
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
                 <div class="dropdown">
                     <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
                         Status
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invoices.index', request()->except(['status', 'page'])) }}">All</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'outstanding'])) }}">Outstanding</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'paid'])) }}">Paid</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'partially_paid'])) }}">Partially paid</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'void'])) }}">Void</a></li>
                     </ul>
                 </div>
                 <button class="btn btn-link text-muted p-0 ms-2"><i class='bx bx-hide fs-5'></i></button>
@@ -156,8 +66,8 @@
                                 <th scope="col" class="py-3 border-0">Client name</th>
                                 <th scope="col" class="py-3 border-0">Status</th>
                                 <th scope="col" class="py-3 border-0">Invoice number</th>
-                                <th scope="col" class="py-3 border-0">Total price</th>
-                                <th scope="col" class="py-3 border-0">Total paid</th>
+                                <th scope="col" class="py-3 border-0 text-end">Total price</th>
+                                <th scope="col" class="py-3 border-0 text-end">Total paid</th>
                                 <th scope="col" class="py-3 border-0">Provider name</th>
                                 <th scope="col" class="pe-4 py-3 border-0 text-end">Actions</th>
                             </tr>
@@ -196,8 +106,8 @@
                                         @endif
                                     </td>
                                     <td class="text-muted small">{{ $invoice->invoice_number }}</td>
-                                    <td class="small fw-500">${{ number_format($invoice->total_amount, 2) }}</td>
-                                    <td class="text-muted small">${{ number_format($invoice->paid_amount, 2) }}</td>
+                                    <td class="small fw-500 text-end">${{ number_format($invoice->total_amount, 2) }}</td>
+                                    <td class="text-muted small text-end">${{ number_format($invoice->paid_amount, 2) }}</td>
                                     <td class="small">{{ $invoice->staff->name }}</td>
                                     <td class="pe-4 text-end">
                                         <a href="{{ route('invoices.show', $invoice->id) }}"
@@ -216,9 +126,7 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-                {{ $invoices->links() }}
-            </div>
+            @include('partials.pagination', ['paginator' => $invoices])
         </div>
     </div>
 @endsection

@@ -2,123 +2,11 @@
 
 @section('title', 'Staff List')
 
-@push('styles')
-    <style>
-        /* Modal Premium Styles */
-        .modal-content {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-        }
-
-        .modal-title {
-            font-weight: 700;
-            color: #181c32;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .field-group {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-
-        .field-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #a1a5b7;
-            margin-top: 0.5rem;
-        }
-
-        .field-icon i {
-            font-size: 1.5rem;
-        }
-
-        .field-content {
-            flex-grow: 1;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #3f4254;
-            font-size: 0.95rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-body .form-control,
-        .modal-body .form-select {
-            background-color: #f9f9f9;
-            border: 1px solid #e1e3ea;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
-            color: #3f4254;
-        }
-
-        .modal-body .form-control:focus,
-        .modal-body .form-select:focus {
-            background-color: white;
-            border-color: #3699ff;
-            box-shadow: none;
-        }
-
-        .btn-cancel {
-            background-color: #f3f6f9;
-            color: #7e8299;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel:hover {
-            background-color: #eef2f7;
-            color: #3f4254;
-        }
-
-        .btn-submit {
-            background-color: #3699ff;
-            color: white;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-submit:hover {
-            background-color: #187de4;
-        }
-    </style>
-@endpush
-
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
             <h2 class="fs-4 m-0 fw-bold">Staff list</h2>
             <div class="d-flex gap-2">
-                <button class="btn btn-white border btn-sm text-primary fw-500">Category manager</button>
                 <button class="btn btn-primary btn-sm px-4" data-bs-toggle="modal"
                     data-bs-target="#addStaffModal">Add</button>
             </div>
@@ -130,28 +18,31 @@
         <!-- Filters -->
         <div class="row g-2 mb-3">
             <div class="col-md-4">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search">
-                </div>
+                <form method="GET" action="{{ route('staff.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    @if(request('access_level'))
+                        <input type="hidden" name="access_level" value="{{ request('access_level') }}">
+                    @endif
+                    @if(request('category'))
+                        <input type="hidden" name="category" value="{{ request('category') }}">
+                    @endif
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search by name, email or phone">
+                    </div>
+                </form>
             </div>
             <div class="col-md-8 d-flex flex-wrap gap-2 justify-content-end align-items-center">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Staff type
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
                 <div class="dropdown">
                     <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
                         Access level
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
+                        <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['access_level', 'page']), ['access_level' => ''])) }}">All</a></li>
+                        @foreach(['staff', 'practitioner', 'receptionist', 'admin', 'business_owner'] as $level)
+                            <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['access_level', 'page']), ['access_level' => $level])) }}">{{ ucwords(str_replace('_', ' ', $level)) }}</a></li>
+                        @endforeach
                     </ul>
                 </div>
                 <div class="dropdown">
@@ -160,10 +51,13 @@
                         Category
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
+                        <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['category', 'page']), ['category' => ''])) }}">All</a></li>
+                        @foreach($categories ?? [] as $category)
+                            <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['category', 'page']), ['category' => $category])) }}">{{ $category }}</a></li>
+                        @endforeach
                     </ul>
                 </div>
-                <button class="btn btn-link text-muted p-0 ms-2"><i class='bx bx-hide fs-5'></i></button>
+                <a class="btn btn-link text-muted p-0 ms-2" href="{{ route('staff.index', ['per_page' => request('per_page', 10)]) }}" title="Reset filters"><i class='bx bx-hide fs-5'></i></a>
             </div>
         </div>
 
@@ -185,7 +79,7 @@
                             </tr>
                         </thead>
                         <tbody class="border-top-0">
-                            @forelse($staff as $member)
+                            @forelse($staffs as $staff)
                                 <tr>
                                     <td class="ps-4 py-3">
                                         <div class="d-flex align-items-center">
@@ -193,30 +87,30 @@
                                                 style="width: 25px; height: 25px; font-size: 0.7rem;">
                                                 <i class='bx bx-user'></i>
                                             </div>
-                                            <span class="small text-dark fw-500">{{ $member->name }}</span>
+                                            <span class="small text-dark fw-500">{{ $staff->name }}</span>
                                         </div>
                                     </td>
-                                    <td class="small">{{ $member->access_level ? ucfirst($member->access_level) : '-' }}</td>
-                                    <td class="text-muted small">{{ $member->category ?? '-' }}</td>
-                                    <td class="small text-muted">{{ $member->email }}</td>
+                                    <td class="small">{{ $staff->access_level ? ucfirst($staff->access_level) : '-' }}</td>
+                                    <td class="text-muted small">{{ $staff->category ?? '-' }}</td>
+                                    <td class="small text-muted">{{ $staff->email }}</td>
                                     <td class="small text-muted">
-                                        {{ $member->last_login_at ? $member->last_login_at->format('M j, Y') : '-' }}
+                                        {{ $staff->last_login_at ? $staff->last_login_at->format('M j, Y') : '-' }}
                                     </td>
                                     <td class="text-muted small">-</td>
                                     <td class="pe-4 text-end">
                                         <button type="button" class="btn btn-link text-muted p-0 me-2 js-edit-staff"
                                             data-bs-toggle="modal" data-bs-target="#editStaffModal"
-                                            data-update-url="{{ route('staff.update', $member->id) }}"
-                                            data-name="{{ $member->name }}" data-email="{{ $member->email }}"
-                                            data-access_level="{{ $member->access_level }}"
-                                            data-category="{{ $member->category }}" data-salary="{{ $member->salary }}"
-                                            data-location_id="{{ $member->location_id }}"
-                                            data-is_active="{{ $member->is_active ? 1 : 0 }}"
-                                            data-phone="{{ $member->phone }}" data-bio="{{ $member->bio }}"
-                                            data-color="{{ $member->color }}">
+                                            data-update-url="{{ route('staff.update', $staff->id) }}"
+                                            data-name="{{ $staff->name }}" data-email="{{ $staff->email }}"
+                                            data-access_level="{{ $staff->access_level }}"
+                                            data-category="{{ $staff->category }}" data-salary="{{ $staff->salary }}"
+                                            data-location_id="{{ $staff->location_id }}"
+                                            data-is_active="{{ $staff->is_active ? 1 : 0 }}"
+                                            data-phone="{{ $staff->phone }}" data-bio="{{ $staff->bio }}"
+                                            data-color="{{ $staff->color }}">
                                             <i class='bx bx-pencil'></i>
                                         </button>
-                                        <form action="{{ route('staff.destroy', $member->id) }}" method="POST" class="d-inline"
+                                        <form action="{{ route('staff.destroy', $staff->id) }}" method="POST" class="d-inline"
                                             onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')
@@ -234,21 +128,8 @@
                     </table>
                 </div>
             </div>
-            <!-- Pagination Footer -->
-            <div
-                class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center small text-muted">
-                <div class="d-flex align-items-center gap-2">
-                    <span>Rows per page</span>
-                    <select class="form-select form-select-sm border-0 bg-light" style="width: auto;">
-                        <option>10</option>
-                        <option>25</option>
-                        <option>50</option>
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    {{ $staff->links() }}
-                </div>
-            </div>
+
+            @include('partials.pagination', ['paginator' => $staffs])
         </div>
 
     </div>
@@ -386,7 +267,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="edit-staff-form" action="route('staff.update', $staff->id)" method="POST">
+                    <form id="edit-staff-form" action="#" method="POST">
                         @csrf
                         @method('PUT')
                         <div class="row">

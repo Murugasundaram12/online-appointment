@@ -15,66 +15,19 @@
         <!-- Filters -->
         <div class="row g-2 mb-3">
             <div class="col-md-3">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search">
-                </div>
+                <form method="GET" action="{{ route('form-records.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search">
+                    </div>
+                </form>
             </div>
             <div class="col-md-9 d-flex flex-wrap gap-2 justify-content-end">
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Last updated
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Today</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Appointment date
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Status
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Pending</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Services
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Providers
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Client Name
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">All</a></li>
-                    </ul>
-                </div>
+                @if(request()->has('search') && request('search') !== '')
+                    <a href="{{ route('form-records.index', ['per_page' => request('per_page', 10)]) }}"
+                        class="btn btn-white border btn-sm text-muted">Clear search</a>
+                @endif
             </div>
         </div>
 
@@ -138,9 +91,7 @@
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-                {{ $formRecords->links() }}
-            </div>
+            @include('partials.pagination', ['paginator' => $formRecords])
         </div>
     </div>
 @endsection

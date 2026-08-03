@@ -18,6 +18,7 @@
             ['Invoices', 'invoices.index', 'invoices.*', 'bx-receipt'],
             ['Payments', 'payment-records.index', 'payment-records.*', 'bx-credit-card'],
             ['Payroll', 'payroll.index', 'payroll.*', 'bx-wallet'],
+            ['Reports', 'reports.index', 'reports.*', 'bx-bar-chart-alt-2'],
         ],
         'Tools' => [
             ['Forms', 'forms.index', 'forms.*', 'bx-file'],
@@ -53,7 +54,7 @@
         @php
             $visibleItems = collect($items)->filter(function ($item) use ($staffUser) {
                 $route = $item[1];
-                if (in_array($route, ['staff.index', 'payroll.index', 'business-settings.index', 'subscription.index'], true)) {
+                if (in_array($route, ['staff.index', 'payroll.index', 'reports.index', 'business-settings.index', 'subscription.index'], true)) {
                     return $staffUser && in_array($staffUser->access_level, ['admin', 'business_owner'], true);
                 }
                 return true;

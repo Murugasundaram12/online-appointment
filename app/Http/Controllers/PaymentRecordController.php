@@ -10,9 +10,22 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentRecordController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $paymentRecords = PaymentRecord::with('invoice.client')->latest()->paginate(10);
+        $paymentRecords = PaymentRecord::with('invoice.client')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('invoice.client', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    })->orWhere('payment_method', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('payment_method'), function ($query) use ($request) {
+                $query->where('payment_method', $request->input('payment_method'));
+            })
+            ->latest()
+            ->paginate($this->perPage($request));
         $invoices = Invoice::with('client')->where('status', '!=', 'void')->orderByDesc('issued_date')->get();
         $summary = [
             'total' => PaymentRecord::sum('amount'),

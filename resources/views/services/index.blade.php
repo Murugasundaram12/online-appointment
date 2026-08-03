@@ -2,192 +2,6 @@
 
 @section('title', 'Services List')
 
-@push('styles')
-    <style>
-        .service-icon-box {
-            width: 32px;
-            height: 32px;
-            background-color: #f8f9fa;
-            border: 1px solid #eef0f7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            margin-right: 12px;
-        }
-
-        .service-icon-box i {
-            font-size: 1.1rem;
-            color: #7e8299;
-        }
-
-        .table thead th {
-            background-color: #fcfdfe;
-            color: #7e8299;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border-top: none;
-            padding: 1rem;
-        }
-
-        .table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-            font-size: 0.9rem;
-            color: #3f4254;
-            border-bottom: 1px solid #f8f9fa;
-        }
-
-        .filter-select {
-            background-color: #f5f8fa;
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #3f4254;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .search-input {
-            background-color: #f5f8fa;
-            border: none;
-            border-radius: 8px;
-            padding-left: 40px;
-        }
-
-        .search-container {
-            position: relative;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #a1a5b7;
-        }
-
-        .btn-outline-custom {
-            border: 1px solid #eef0f7;
-            color: #3699ff;
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        .btn-outline-custom:hover {
-            background-color: #f1f6ff;
-            color: #3699ff;
-        }
-
-        /* Modal Premium Styles */
-        .modal-content {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-        }
-
-        .modal-title {
-            font-weight: 700;
-            color: #181c32;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #ebedf3;
-            padding: 1.5rem 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .field-group {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-
-        .field-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #a1a5b7;
-            margin-top: 0.5rem;
-        }
-
-        .field-icon i {
-            font-size: 1.5rem;
-        }
-
-        .field-content {
-            flex-grow: 1;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #3f4254;
-            font-size: 0.95rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-body .form-control,
-        .modal-body .form-select {
-            background-color: #f9f9f9;
-            border: 1px solid #e1e3ea;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
-            color: #3f4254;
-        }
-
-        .modal-body .form-control:focus,
-        .modal-body .form-select:focus {
-            background-color: white;
-            border-color: #3699ff;
-            box-shadow: none;
-        }
-
-        .btn-cancel {
-            background-color: #f3f6f9;
-            color: #7e8299;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel:hover {
-            background-color: #eef2f7;
-            color: #3f4254;
-        }
-
-        .btn-submit {
-            background-color: #3699ff;
-            color: white;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.75rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-submit:hover {
-            background-color: #187de4;
-        }
-    </style>
-@endpush
-
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
         <div class="d-flex align-items-center justify-content-between w-100">
@@ -206,14 +20,20 @@
         <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
             <div class="search-container flex-grow-1" style="max-width: 400px;">
                 <i class='bx bx-search'></i>
-                <input type="text" class="form-control search-input" placeholder="Search">
+                <form method="GET" action="{{ route('services.index') }}">
+                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control search-input" placeholder="Search">
+                </form>
             </div>
             <div class="dropdown">
                 <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Category
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Massagetherapy</a></li>
+                    <li><a class="dropdown-item" href="{{ route('services.index', request()->except(['category_id', 'page'])) }}">All</a></li>
+                    @foreach($categories as $category)
+                        <li><a class="dropdown-item" href="{{ route('services.index', array_merge(request()->except(['category_id', 'page']), ['category_id' => $category->id])) }}">{{ $category->name }}</a></li>
+                    @endforeach
                 </ul>
             </div>
             <div class="dropdown">
@@ -246,7 +66,7 @@
                             </th>
                             <th scope="col" class="py-3 border-0">Category</th>
                             <th scope="col" class="py-3 border-0">Service type</th>
-                            <th scope="col" class="py-3 border-0">Price</th>
+                            <th scope="col" class="py-3 border-0 text-end">Price</th>
                             <th scope="col" class="py-3 border-0">Duration</th>
                             <th scope="col" class="pe-4 py-3 border-0 text-end">Actions</th>
                         </tr>
@@ -265,7 +85,7 @@
                                 </td>
                                 <td class="text-muted small">{{ optional($service->category)->name ?? '-' }}</td>
                                 <td class="text-muted small">{{ $service->type ? ucfirst(str_replace('_', ' ', $service->type)) : '-' }}</td>
-                                <td class="text-muted small">{{ is_numeric($service->price) ? '$' . number_format((float) $service->price, 2) : '-' }}</td>
+                                <td class="text-muted small text-end">{{ is_numeric($service->price) ? '$' . number_format((float) $service->price, 2) : '-' }}</td>
                                 <td class="text-muted small">{{ $service->duration_minutes ? $service->duration_minutes . ' mins' : '-' }}</td>
                                 <td class="pe-4 text-end">
                                     <button type="button" class="btn btn-link text-muted p-0 me-2 js-edit-service"
@@ -305,9 +125,7 @@
             </div>
         </div>
         <!-- Pagination -->
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex justify-content-end">
-            {{ $services->links() }}
-        </div>
+        @include('partials.pagination', ['paginator' => $services])
     </div>
     <!-- Add Service Modal -->
     <div class="modal fade app-modal" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel"

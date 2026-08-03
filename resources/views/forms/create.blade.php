@@ -18,24 +18,23 @@
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label for="name" class="form-label">Form Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" required>
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ old('description') }}</textarea>
                         </div>
                         <div class="col-12">
                             <label for="fields_json" class="form-label">Fields JSON</label>
-                            <textarea class="form-control" id="fields_json" name="fields_json" rows="6">[
-  {"name":"notes","label":"Notes","type":"textarea","required":false}
-]</textarea>
+                            @php $defaultFields = '[{"name":"notes","label":"Notes","type":"textarea","required":false}]'; @endphp
+                            <textarea class="form-control" id="fields_json" name="fields_json" rows="6">{{ old('fields_json') ?: $defaultFields }}</textarea>
                             <div class="form-text">Supported types: text, textarea, email, number, date, select, checkbox, radio.</div>
                         </div>
 
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
-                                    checked>
+                                    {{ old('is_active', true) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">
                                     Publish Form
                                 </label>

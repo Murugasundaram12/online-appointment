@@ -7,9 +7,16 @@ use Illuminate\Http\Request;
 
 class PackageController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $packages = \App\Models\Package::with('services')->paginate(10);
+        $packages = \App\Models\Package::with('services')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->input('search') . '%');
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('is_active', $request->input('status') === 'active');
+            })
+            ->paginate($this->perPage($request));
         return view('packages.index', compact('packages'));
     }
 
