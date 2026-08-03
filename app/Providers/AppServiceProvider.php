@@ -30,16 +30,16 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        if (Schema::hasTable('business_settings')) {
-            try {
+        try {
+            if (Schema::hasTable('business_settings')) {
                 $timezone = \App\Models\BusinessSetting::where('key', 'timezone')->value('value');
                 if ($timezone && in_array($timezone, timezone_identifiers_list(), true)) {
                     config(['app.timezone' => $timezone]);
                     date_default_timezone_set($timezone);
                 }
-            } catch (\Throwable $e) {
-                // Ignore database connection/migration errors during boot
             }
+        } catch (\Throwable $e) {
+            // Keep public pages and Artisan available if the database is temporarily unreachable.
         }
     }
 }

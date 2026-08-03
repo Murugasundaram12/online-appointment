@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Staff;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,7 +22,16 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $staff = Staff::where('email', $validated['email'])->first();
+        try {
+            $staff = Staff::where('email', $validated['email'])->first();
+        } catch (QueryException $e) {
+            report($e);
+
+            return back()
+                ->withErrors(['email' => 'Database connection is not configured. Please contact the administrator.'])
+                ->onlyInput('email');
+        }
+
         if (!$staff || !$staff->is_active || !Hash::check($validated['password'], $staff->password)) {
             return back()->withErrors(['email' => 'Invalid credentials or inactive account.'])->onlyInput('email');
         }

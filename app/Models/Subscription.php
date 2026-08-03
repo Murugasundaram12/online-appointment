@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Subscription extends Model
 {
@@ -22,6 +23,10 @@ class Subscription extends Model
 
     public static function checkLimit(string $type): bool
     {
+        if (!Schema::hasTable('subscriptions') || !Schema::hasTable('subscription_plans')) {
+            return true;
+        }
+
         $activeSub = self::with('plan')
             ->where('status', 'active')
             ->where('end_date', '>=', now()->toDateString())

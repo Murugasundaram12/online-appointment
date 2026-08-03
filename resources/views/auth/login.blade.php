@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}&fix=20260801">
     <style>
         body {
             min-height: 100vh;
@@ -85,7 +85,7 @@
                         <div class="brand-mark"><i class='bx bx-calendar-star'></i></div>
                         <div>
                             <div class="fw-bold fs-5">
-                                {{ \App\Models\BusinessSetting::where('key', 'business_name')->value('value') ?: 'Online Appointment' }}
+                                {{ config('app.name', 'Online Appointment') }}
                             </div>
                             {{-- <div class="text-white-50 small">Premium business operations suite</div> --}}
                         </div>

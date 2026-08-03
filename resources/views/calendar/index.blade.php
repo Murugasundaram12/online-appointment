@@ -1389,7 +1389,11 @@
                         }
                     }
                 } catch (_) {
-                    // ignore JSON parse errors and fall back to raw text
+                    // ignore JSON parse errors and fall back to a safe message
+                }
+
+                if (/^\s*</.test(raw) || raw.length > 500) {
+                    return `${fallback}. Server returned an unexpected error (${response.status}).`;
                 }
 
                 return raw || `${fallback} (${response.status})`;
