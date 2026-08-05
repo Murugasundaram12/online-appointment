@@ -1,0 +1,30 @@
+[1mdiff --git a/app/Http/Controllers/AuthController.php b/app/Http/Controllers/AuthController.php[m
+[1mindex d75379b..28ded06 100644[m
+[1m--- a/app/Http/Controllers/AuthController.php[m
+[1m+++ b/app/Http/Controllers/AuthController.php[m
+[36m@@ -4,6 +4,7 @@[m
+ [m
+ use App\Models\Staff;[m
+ use Illuminate\Http\Request;[m
+[32m+[m[32muse Illuminate\Database\QueryException;[m
+ use Illuminate\Support\Facades\Auth;[m
+ use Illuminate\Support\Facades\Hash;[m
+ [m
+[36m@@ -21,7 +22,16 @@[m [mpublic function login(Request $request)[m
+             'password' => 'required|string',[m
+         ]);[m
+ [m
+[31m-        $staff = Staff::where('email', $validated['email'])->first();[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            $staff = Staff::where('email', $validated['email'])->first();[m
+[32m+[m[32m        } catch (QueryException $e) {[m
+[32m+[m[32m            report($e);[m
+[32m+[m
+[32m+[m[32m            return back()[m
+[32m+[m[32m                ->withErrors(['email' => 'Database connection is not configured. Please contact the administrator.'])[m
+[32m+[m[32m                ->onlyInput('email');[m
+[32m+[m[32m        }[m
+[32m+[m
+         if (!$staff || !$staff->is_active || !Hash::check($validated['password'], $staff->password)) {[m
+             return back()->withErrors(['email' => 'Invalid credentials or inactive account.'])->onlyInput('email');[m
+         }[m
