@@ -199,39 +199,58 @@
 
         <!-- Main Schedule Content -->
         <div class="schedule-container">
-            <!-- Top Navbar for Schedule -->
-            <nav class="navbar navbar-light py-3 px-4 border-bottom">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar-box me-3">
-                            <i class='bx bx-group text-danger fs-3'></i>
-                        </div>
-                        <div>
-                            <h2 class="fs-6 m-0 fw-bold">
-                                {{ $currentStaff->name ?? 'Select Staff' }}
-                                @if(!empty($currentStaff?->category))
-                                    <span class="text-muted fw-normal">({{ $currentStaff->category }})</span>
-                                @endif
-                            </h2>
-                            <p class="small text-muted mb-0"><i class='bx bx-calendar-edit me-1'></i> Add or edit the
-                                bookable staff schedule.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <div style="min-width: 250px;">
-                            <label class="small text-muted mb-1">Location</label>
-                            <select class="form-select form-select-sm">
-                                <option>DK REHAB (Eastern Standard Time)</option>
+            <!-- Top Navbar for Schedule Filters -->
+            <nav class="navbar navbar-light py-3 px-4 border-bottom bg-light">
+                <form action="{{ route('schedule.index') }}" method="GET" class="w-100" id="scheduleFilterForm">
+                    <input type="hidden" name="staff_id" value="{{ $currentStaff->id ?? '' }}">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-sm-6 col-md-auto">
+                            <label class="small text-muted fw-bold d-block mb-1">Quick Range</label>
+                            <select name="range" class="form-select form-select-sm" id="filter-range" onchange="this.form.submit()">
+                                <option value="today" {{ ($selectedRange ?? '') == 'today' ? 'selected' : '' }}>Today</option>
+                                <option value="tomorrow" {{ ($selectedRange ?? '') == 'tomorrow' ? 'selected' : '' }}>Tomorrow</option>
+                                <option value="this_week" {{ ($selectedRange ?? '') == 'this_week' ? 'selected' : '' }}>This Week</option>
+                                <option value="this_month" {{ ($selectedRange ?? '') == 'this_month' ? 'selected' : '' }}>This Month</option>
+                                <option value="this_year" {{ ($selectedRange ?? '') == 'this_year' ? 'selected' : '' }}>This Year</option>
+                                <option value="custom" {{ ($selectedRange ?? '') == 'custom' ? 'selected' : '' }}>Custom</option>
                             </select>
                         </div>
-                        @if(isset($currentStaff))
-                            {{-- {{ route('schedule.create', ['staff_id' => $currentStaff->id]) }} --}}
-                            <a href="{{ route('schedule.create', ['staff_id' => $currentStaff->id]) }}"
-                                class="btn btn-primary btn-sm px-4 fw-500 rounded-1" style="margin-top: 1.5rem;">+ NEW
-                                SCHEDULE</a>
-                        @endif
+
+                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}" id="custom-date-from">
+                            <label class="small text-muted fw-bold d-block mb-1">From Date</label>
+                            <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate ?? '' }}" onchange="this.form.submit()">
+                        </div>
+
+                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}" id="custom-date-to">
+                            <label class="small text-muted fw-bold d-block mb-1">To Date</label>
+                            <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate ?? '' }}" onchange="this.form.submit()">
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-auto">
+                            <label class="small text-muted fw-bold d-block mb-1">Location</label>
+                            <select name="location_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Locations</option>
+                                @foreach($locations ?? [] as $loc)
+                                    <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-auto">
+                            <label class="small text-muted fw-bold d-block mb-1">Status</label>
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Statuses</option>
+                                <option value="working" {{ ($statusFilter ?? '') == 'working' ? 'selected' : '' }}>Working</option>
+                                <option value="off" {{ ($statusFilter ?? '') == 'off' ? 'selected' : '' }}>Off / Unavailable</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-auto ms-auto text-end">
+                            <a href="{{ route('schedule.create', ['staff_id' => $currentStaff->id ?? '']) }}"
+                                class="btn btn-primary btn-sm px-4 fw-semibold rounded-pill">+ New Schedule</a>
+                        </div>
                     </div>
-                </div>
+                </form>
             </nav>
 
             <!-- Calendar Toolbar -->

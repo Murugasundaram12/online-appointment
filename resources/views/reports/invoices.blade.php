@@ -14,6 +14,7 @@
 
         @include('reports._date_filter', [
             'exportType' => 'invoices',
+            'paginator' => $invoices,
             'extraFields' => [
                 'status' => ['label' => 'Status', 'items' => collect($statuses)->mapWithKeys(fn ($s) => [$s => ucfirst(str_replace('_', ' ', $s))])->all()],
             ],

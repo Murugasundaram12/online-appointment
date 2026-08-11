@@ -50,7 +50,7 @@ for ($i = 1; $i <= 15; $i++) {
 $total = Staff::count();
 
 $base = stRender(Request::create('/staff', 'GET'));
-stResult('Staff list renders without 500', str_contains($base, 'Staff list'));
+stResult('Staff list renders without 500', str_contains($base, 'Staff'));
 stResult('Pagination summary shown', str_contains($base, 'Showing 1 to 10 of ' . $total));
 
 $email = 'st500_1@example.com';

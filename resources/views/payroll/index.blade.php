@@ -28,7 +28,6 @@
             <div class="d-flex flex-wrap gap-2 no-print">
                 <a href="{{ route('payroll.report') }}" class="btn btn-light border"><i class='bx bx-bar-chart'></i> Reports</a>
                 <a href="{{ route('payroll.export.csv') }}" class="btn btn-light border"><i class='bx bx-download'></i> CSV</a>
-                <a href="{{ route('payroll.create') }}" class="btn btn-primary"><i class='bx bx-plus'></i> Create Payroll</a>
             </div>
         </div>
 
@@ -86,45 +85,36 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm mb-4 no-print">
-            <div class="card-body">
-                <form method="GET" class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Search</label>
-                        <input class="form-control" name="search" value="{{ request('search') }}" placeholder="Staff, payroll ID, status">
+        <x-list-toolbar :paginator="$payrolls" searchAction="{{ route('payroll.index') }}" searchPlaceholder="Staff, payroll ID, status" toolbarClass="no-print">
+            <x-slot name="formExtra">
+                <div class="d-flex flex-column flex-lg-row gap-2 gap-lg-3 flex-wrap">
+                    <select class="form-select form-select-sm" name="staff_id" style="width: auto;">
+                        <option value="">All staff</option>
+                        @foreach($staff as $member)
+                            <option value="{{ $member->id }}" {{ request('staff_id') == $member->id ? 'selected' : '' }}>{{ $member->name }}</option>
+                        @endforeach
+                    </select>
+                    <select class="form-select form-select-sm" name="status" style="width: auto;">
+                        <option value="">All statuses</option>
+                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Paid</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-muted text-nowrap">From</span>
+                        <input type="date" name="period_start" class="form-control form-control-sm" value="{{ request('period_start') }}">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Staff</label>
-                        <select class="form-select" name="staff_id">
-                            <option value="">All staff</option>
-                            @foreach($staff as $member)
-                                <option value="{{ $member->id }}" {{ request('staff_id') == $member->id ? 'selected' : '' }}>{{ $member->name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-muted text-nowrap">To</span>
+                        <input type="date" name="period_end" class="form-control form-control-sm" value="{{ request('period_end') }}">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status">
-                            <option value="">All</option>
-                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Paid</option>
-                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">From</label>
-                        <input type="date" class="form-control" name="period_start" value="{{ request('period_start') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">To</label>
-                        <input type="date" class="form-control" name="period_end" value="{{ request('period_end') }}">
-                    </div>
-                    <div class="col-md-1 d-grid">
-                        <button class="btn btn-primary">Filter</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                    <button class="btn btn-primary btn-sm">Filter</button>
+                </div>
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('payroll.create') }}" class="btn btn-primary btn-sm"><i class='bx bx-plus'></i> Create Payroll</a>
+            </x-slot>
+        </x-list-toolbar>
 
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">

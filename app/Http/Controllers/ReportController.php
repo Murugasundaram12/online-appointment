@@ -50,7 +50,7 @@ class ReportController extends Controller
             ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->input('service_id')))
             ->when($request->filled('location_id'), fn ($q) => $q->where('location_id', $request->input('location_id')));
 
-        $appointments = (clone $query)->orderByDesc('start_time')->paginate(15)->withQueryString();
+        $appointments = (clone $query)->orderByDesc('start_time')->paginate($this->perPage($request, 15))->withQueryString();
 
         $summary = [
             'total' => (clone $query)->count(),
@@ -78,7 +78,7 @@ class ReportController extends Controller
             ->selectRaw('issued_date, COUNT(*) as invoice_count, SUM(total_amount) as billed, SUM(paid_amount) as collected, SUM(total_amount - paid_amount) as balance')
             ->groupBy('issued_date')
             ->orderByDesc('issued_date')
-            ->paginate(15)
+            ->paginate($this->perPage($request, 15))
             ->withQueryString();
 
         $summary = [
@@ -102,7 +102,7 @@ class ReportController extends Controller
             ->whereBetween('issued_date', [$start, $end])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')));
 
-        $invoices = (clone $query)->orderByDesc('issued_date')->paginate(15)->withQueryString();
+        $invoices = (clone $query)->orderByDesc('issued_date')->paginate($this->perPage($request, 15))->withQueryString();
 
         $summary = [
             'total' => (clone $query)->count(),
@@ -128,7 +128,7 @@ class ReportController extends Controller
             ->whereBetween('payment_date', [$start, $end])
             ->when($request->filled('method'), fn ($q) => $q->where('payment_method', $request->input('method')));
 
-        $payments = (clone $query)->orderByDesc('payment_date')->paginate(15)->withQueryString();
+        $payments = (clone $query)->orderByDesc('payment_date')->paginate($this->perPage($request, 15))->withQueryString();
 
         $summary = [
             'total' => (float) (clone $query)->sum('amount'),
@@ -156,7 +156,7 @@ class ReportController extends Controller
             })
             ->when($request->filled('vip'), fn ($q) => $q->where('is_vip', (bool) $request->input('vip')));
 
-        $clients = (clone $query)->orderByDesc('total_spent')->paginate(15)->withQueryString();
+        $clients = (clone $query)->orderByDesc('total_spent')->paginate($this->perPage($request, 15))->withQueryString();
 
         $summary = [
             'new' => (clone $query)->whereNotNull('client_since')->whereBetween('client_since', [$start, $end])->count(),
@@ -181,7 +181,7 @@ class ReportController extends Controller
             ->groupBy('staff_id')
             ->with('staff')
             ->orderByDesc('total')
-            ->paginate(15)
+            ->paginate($this->perPage($request, 15))
             ->withQueryString();
 
         $revenueByStaff = Invoice::where('status', '!=', 'void')

@@ -3,34 +3,26 @@
 @section('title', 'Locations')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-        <div class="d-flex align-items-center justify-content-between w-100">
-            <div class="d-flex align-items-center">
-                <div class="nav-icon-box me-3">
-                    <i class='bx bx-cog'></i>
-                    <span class="plus-badge">+</span>
-                </div>
-                <div class="nav-icon-box">
-                    <i class='bx bx-camera-plus'></i>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <h2 class="fs-4 m-0 fw-bold me-4">Locations</h2>
-                <a href="{{ route('locations.create') }}" class="btn btn-primary px-4 fw-600">Add new location</a>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Locations</h1>
+                <p class="text-muted mb-0">Manage business locations, addresses and contact details.</p>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4">
-
-        <!-- Search -->
-        <div class="search-container">
-            <i class='bx bx-search'></i>
-            <form method="GET" action="{{ route('locations.index') }}">
-                <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                <input type="text" name="search" value="{{ request('search') }}" class="search-input" placeholder="Search">
-            </form>
-        </div>
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$locations" searchAction="{{ route('locations.index') }}" searchPlaceholder="Search locations">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('locations.index', ['per_page' => request('per_page', $locations->perPage())])"
+                    clearLabel="Clear search" />
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('locations.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add New Location</a>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="table-card mb-5">

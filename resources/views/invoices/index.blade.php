@@ -3,44 +3,23 @@
 @section('title', 'Invoices')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <div class="d-flex align-items-center">
-                <div class="nav-icon-box me-3">
-                    <i class='bx bx-cog'></i>
-                    <span class="plus-badge">+</span>
-                </div>
-                <div class="nav-icon-box">
-                    <i class='bx bx-camera-plus'></i>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <h2 class="fs-4 m-0 fw-bold me-4">Invoices</h2>
-                <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm px-4">
-                    <i class='bx bx-plus-circle me-1'></i> Create Invoice
-                </a>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Invoices</h1>
+                <p class="text-muted mb-0">Track billed amounts, payments and invoice status.</p>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4 pt-4">
-
-        <!-- Filters -->
-        <div class="row g-2 mb-3">
-            <div class="col-md-4">
-                <form method="GET" action="{{ route('invoices.index') }}">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search">
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-8 d-flex flex-wrap gap-2 justify-content-end align-items-center">
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$invoices" searchAction="{{ route('invoices.index') }}" searchPlaceholder="Search invoices">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="(request()->has('search') && request('search') !== '') || request()->filled('status')"
+                    :clearUrl="route('invoices.index', ['per_page' => request('per_page', $invoices->perPage())])" />
                 <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Status
+                    <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request()->filled('status') ? ucwords(str_replace('_', ' ', request('status'))) : 'Status' }}
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('invoices.index', request()->except(['status', 'page'])) }}">All</a></li>
@@ -50,9 +29,11 @@
                         <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'void'])) }}">Void</a></li>
                     </ul>
                 </div>
-                <button class="btn btn-link text-muted p-0 ms-2"><i class='bx bx-hide fs-5'></i></button>
-            </div>
-        </div>
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus-circle me-1"></i>Create Invoice</a>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="card shadow-sm border-0 rounded">

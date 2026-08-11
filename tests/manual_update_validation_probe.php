@@ -11,6 +11,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentRecordController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
+use App\Http\Requests\StoreClientRequest;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -25,6 +26,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -47,6 +49,23 @@ function uvValidationField(callable $callback, string $field): bool
     }
 
     return false;
+}
+
+function uvClientRequest(?Client $client, array $data, string $method = 'POST', string $uri = '/clients'): StoreClientRequest
+{
+    $request = StoreClientRequest::create($uri, $method, $data);
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+    if ($client !== null) {
+        $request->setRouteResolver(function () use ($client) {
+            $route = new Route('PUT', '/clients/{client}', []);
+            $route->bind(Request::create('/clients/' . $client->id, 'PUT'));
+            $route->setParameter('client', $client);
+            return $route;
+        });
+    }
+    $request->validateResolved();
+    return $request;
 }
 
 function uvCleanup(): void
@@ -108,56 +127,64 @@ $location = Location::create(['name' => 'UV_PROBE_Main', 'timezone' => config('a
 $clientA = Client::create(['name' => 'UV_PROBE_Client_A', 'email' => 'uv_probe_a@example.com', 'phone' => '900001', 'city' => 'City A']);
 $clientB = Client::create(['name' => 'UV_PROBE_Client_B', 'email' => 'uv_probe_b@example.com', 'phone' => '900002', 'city' => 'City B']);
 
-$clientController->store(uvReq('POST', '/clients', [
-    'name' => 'UV_PROBE_Client_C',
-    'email' => 'uv_probe_c@example.com',
+$clientController->store(uvClientRequest(null, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_C',
     'phone' => '900003',
+    'email' => 'uv_probe_c@example.com',
 ]));
 uvResult('Create client with unique email succeeds', Client::where('email', 'uv_probe_c@example.com')->exists());
-uvResult('Create client with duplicate email rejected', uvValidationField(fn () => $clientController->store(uvReq('POST', '/clients', [
-    'name' => 'UV_PROBE_Duplicate',
+uvResult('Create client with duplicate email rejected', uvValidationField(fn () => $clientController->store(uvClientRequest(null, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Duplicate',
+    'phone' => '900004',
     'email' => 'uv_probe_a@example.com',
 ])), 'email'));
 
-$clientController->update(uvReq('PUT', '/clients/' . $clientA->id, [
-    'name' => 'UV_PROBE_Client_A_Renamed',
+$clientController->update(uvClientRequest($clientA, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_A_Renamed',
     'email' => 'uv_probe_a@example.com',
     'phone' => '900001',
     'city' => 'City A',
-]), (string) $clientA->id);
+], 'PUT', '/clients/' . $clientA->id), (string) $clientA->id);
 $clientA->refresh();
-uvResult('Edit client name only with same email succeeds', $clientA->name === 'UV_PROBE_Client_A_Renamed' && $clientA->email === 'uv_probe_a@example.com');
+uvResult('Edit client name only with same email succeeds', $clientA->name === 'UV_PROBE Client_A_Renamed' && $clientA->email === 'uv_probe_a@example.com');
 
-$clientController->update(uvReq('PUT', '/clients/' . $clientA->id, [
-    'name' => $clientA->name,
+$clientController->update(uvClientRequest($clientA, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_A_Renamed',
     'email' => 'uv_probe_a@example.com',
     'phone' => '900001',
     'city' => 'City A Updated',
-]), (string) $clientA->id);
+], 'PUT', '/clients/' . $clientA->id), (string) $clientA->id);
 $clientA->refresh();
 uvResult('Edit client city only with same email succeeds', $clientA->city === 'City A Updated');
 
-$clientController->update(uvReq('PUT', '/clients/' . $clientA->id, [
-    'name' => $clientA->name,
+$clientController->update(uvClientRequest($clientA, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_A_Renamed',
     'email' => 'uv_probe_a_new@example.com',
     'phone' => '900001',
     'city' => $clientA->city,
-]), (string) $clientA->id);
+], 'PUT', '/clients/' . $clientA->id), (string) $clientA->id);
 $clientA->refresh();
 uvResult('Edit client email to unused email succeeds', $clientA->email === 'uv_probe_a_new@example.com');
-uvResult('Edit client email to another client rejected', uvValidationField(fn () => $clientController->update(uvReq('PUT', '/clients/' . $clientA->id, [
-    'name' => $clientA->name,
+uvResult('Edit client email to another client rejected', uvValidationField(fn () => $clientController->update(uvClientRequest($clientA, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_A_Renamed',
     'email' => 'uv_probe_b@example.com',
     'phone' => '900001',
-]), (string) $clientA->id), 'email'));
+], 'PUT', '/clients/' . $clientA->id), (string) $clientA->id), 'email'));
 
-$clientController->update(uvReq('PUT', '/clients/' . $clientA->id, [
-    'name' => $clientA->name,
+$clientController->update(uvClientRequest($clientA, [
+    'first_name' => 'UV_PROBE',
+    'last_name' => 'Client_A_Renamed',
     'email' => $clientA->email,
     'phone' => '900001',
     'city' => $clientA->city,
-]), (string) $clientA->id);
-uvResult('Edit client unchanged phone succeeds because phone is not unique', Client::whereKey($clientA->id)->exists());
+], 'PUT', '/clients/' . $clientA->id), (string) $clientA->id);
+uvResult('Edit client unchanged phone succeeds (unique rule ignores self)', Client::whereKey($clientA->id)->exists());
 uvResult('No duplicate client row created during updates', Client::where('email', 'uv_probe_a_new@example.com')->count() === 1);
 
 $staffA = Staff::create([

@@ -248,9 +248,10 @@ class CalendarController extends Controller
         $hasWorkingDate = Schema::hasColumn('staff_schedules', 'working_date');
 
         $result = $staff->map(function ($s) use ($startDate, $endDate, $hasWorkingDate) {
-            // Weekly schedules keyed by day_of_week (0=Mon ... 6=Sun)
+            // Weekly templates keyed by day_of_week (0=Mon ... 6=Sun)
             $schedules = [];
-            // Date-specific schedules keyed by YYYY-MM-DD
+            // Date-specific schedules keyed by YYYY-MM-DD (array of segments; a date
+            // with segments always overrides weekly templates, even when empty)
             $schedulesByDate = [];
 
             foreach ($s->schedules as $sch) {
@@ -262,7 +263,8 @@ class CalendarController extends Controller
                 ];
 
                 if ($hasWorkingDate && !empty($sch->working_date)) {
-                    $schedulesByDate[Carbon::parse($sch->working_date)->toDateString()] = $scheduleData;
+                    $dateKey = Carbon::parse($sch->working_date)->toDateString();
+                    $schedulesByDate[$dateKey][] = $scheduleData;
                     continue;
                 }
 
@@ -272,14 +274,23 @@ class CalendarController extends Controller
                 }
             }
 
-            // Build effective date schedule for requested range
+            foreach ($schedulesByDate as $dateKey => $segments) {
+                $schedulesByDate[$dateKey] = collect($segments)->sortBy('start_time')->values()->all();
+            }
+
+            // Build effective date schedule for requested range (segments sorted,
+            // explicit empty array = not scheduled / date override wins over template)
             $effectiveSchedulesByDate = [];
             $cursor = $startDate->copy()->startOfDay();
             $rangeEnd = $endDate->copy()->startOfDay();
             while ($cursor->lte($rangeEnd)) {
                 $dateKey = $cursor->toDateString();
                 $dayIdx = ($cursor->dayOfWeek + 6) % 7; // Carbon 0=Sun -> 0=Mon
-                $effectiveSchedulesByDate[$dateKey] = $schedulesByDate[$dateKey] ?? ($schedules[$dayIdx] ?? null);
+                if (array_key_exists($dateKey, $schedulesByDate)) {
+                    $effectiveSchedulesByDate[$dateKey] = $schedulesByDate[$dateKey];
+                } else {
+                    $effectiveSchedulesByDate[$dateKey] = isset($schedules[$dayIdx]) ? [$schedules[$dayIdx]] : [];
+                }
                 $cursor->addDay();
             }
 
@@ -624,7 +635,7 @@ class CalendarController extends Controller
         if (!$schedule && $dateSchedules->count() > 0) {
             return [
                 'available' => false,
-                'message' => 'Appointment time is outside staff working hours'
+                'message' => 'Staff is not available at the selected time.'
             ];
         }
 
@@ -647,7 +658,7 @@ class CalendarController extends Controller
             if (!$schedule && $weeklySchedules->count() > 0) {
                 return [
                     'available' => false,
-                    'message' => 'Appointment time is outside staff working hours'
+                    'message' => 'Staff is not available at the selected time.'
                 ];
             }
         }
@@ -655,7 +666,7 @@ class CalendarController extends Controller
         if (!$schedule) {
             return [
                 'available' => false,
-                'message' => 'Staff is not scheduled to work on this day'
+                'message' => 'Staff is not available at the selected time.'
             ];
         }
 
@@ -668,7 +679,7 @@ class CalendarController extends Controller
                 if ($startTime->lt($breakEnd) && $endTime->gt($breakStart)) {
                     return [
                         'available' => false,
-                        'message' => 'Appointment conflicts with staff break time'
+                        'message' => 'Staff is not available at the selected time.'
                     ];
                 }
             }
@@ -693,7 +704,7 @@ class CalendarController extends Controller
         if ($query->exists()) {
             return [
                 'available' => false,
-                'message' => 'Staff has a conflicting appointment at this time'
+                'message' => 'This time slot is already booked.'
             ];
         }
 

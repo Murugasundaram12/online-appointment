@@ -3,61 +3,42 @@
 @section('title', 'Services List')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-        <div class="d-flex align-items-center justify-content-between w-100">
-            <h2 class="fs-4 m-0 fw-bold">Services list</h2>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Services</h1>
+                <p class="text-muted mb-0">Manage your service catalog, pricing and availability.</p>
+            </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-custom px-4">Category manager</button>
-                <button class="btn btn-primary px-4 fw-500" data-bs-toggle="modal"
-                    data-bs-target="#addServiceModal">Add</button>
+                <button class="btn btn-light border" onclick="alert('Category manager is not available in this demo.')"><i class="bx bx-category me-1"></i>Category Manager</button>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4">
-
-        <!-- Filters -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-            <div class="search-container flex-grow-1" style="max-width: 400px;">
-                <i class='bx bx-search'></i>
-                <form method="GET" action="{{ route('services.index') }}">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control search-input" placeholder="Search">
-                </form>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Category
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ route('services.index', request()->except(['category_id', 'page'])) }}">All</a></li>
-                    @foreach($categories as $category)
-                        <li><a class="dropdown-item" href="{{ route('services.index', array_merge(request()->except(['category_id', 'page']), ['category_id' => $category->id])) }}">{{ $category->name }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Service type
-                </button>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Price
-                </button>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Duration
-                </button>
-            </div>
-        </div>
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$services" searchAction="{{ route('services.index') }}" searchPlaceholder="Search services">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== '' || request()->filled('category_id')"
+                    :clearUrl="route('services.index', ['per_page' => request('per_page', $services->perPage())])" />
+                <div class="dropdown">
+                    <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request()->filled('category_id') && $categories->firstWhere('id', (int) request('category_id')) ? $categories->firstWhere('id', (int) request('category_id'))->name : 'Category' }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('services.index', request()->except(['category_id', 'page'])) }}">All</a></li>
+                        @foreach($categories as $category)
+                            <li><a class="dropdown-item" href="{{ route('services.index', array_merge(request()->except(['category_id', 'page']), ['category_id' => $category->id])) }}">{{ $category->name }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+            </x-slot>
+            <x-slot name="actions">
+                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addServiceModal"><i class="bx bx-plus me-1"></i>Add Service</button>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="bg-white rounded shadow-sm overflow-hidden mb-5">
-            <div class="d-flex justify-content-end p-3 bg-white border-bottom">
-                <i class='bx bx-hide text-muted fs-5'></i>
-            </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light text-muted small">
@@ -123,9 +104,9 @@
                     </tbody>
                 </table>
             </div>
+            <!-- Pagination -->
+            @include('partials.pagination', ['paginator' => $services])
         </div>
-        <!-- Pagination -->
-        @include('partials.pagination', ['paginator' => $services])
     </div>
     <!-- Add Service Modal -->
     <div class="modal fade app-modal" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel"

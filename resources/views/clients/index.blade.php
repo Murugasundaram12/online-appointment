@@ -3,27 +3,13 @@
 @section('title', 'Clients List')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <div class="d-flex align-items-center">
-                <div class="nav-icon-box me-3">
-                    <i class='bx bx-cog'></i>
-                    <span class="plus-badge">+</span>
-                </div>
-                <div class="nav-icon-box">
-                    <i class='bx bx-camera-plus'></i>
-                </div>
-            </div>
-            <h2 class="fs-4 m-0 fw-bold">Clients list</h2>
-
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal"
-                    data-bs-target="#addClientModal">Add new client</button>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Clients</h1>
+                <p class="text-muted mb-0">Manage your client directory and contact details.</p>
             </div>
         </div>
-    </nav>
-
-    <div class="container-fluid px-4 pt-4">
 
         <!-- Stats Bar -->
         <div class="bg-white border rounded p-3 mb-4 d-flex align-items-center gap-4 text-muted small shadow-sm">
@@ -36,23 +22,18 @@
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="row g-3 mb-3">
-            <div class="col-md-4">
-                <form method="GET" action="{{ route('clients.index') }}" id="clientsSearchForm">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search by name, email, phone or city">
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-8 d-flex justify-content-end gap-2">
-                @if(request()->has('search') && request('search') !== '')
-                    <a href="{{ route('clients.index', ['per_page' => request('per_page', 10)]) }}" class="btn btn-white border text-muted">Clear search</a>
-                @endif
-            </div>
-        </div>
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$clients" searchAction="{{ route('clients.index') }}" searchPlaceholder="Search by name, email, phone or city">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('clients.index', ['per_page' => request('per_page', $clients->perPage())])"
+                    clearLabel="Clear search" />
+            </x-slot>
+            <x-slot name="actions">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addClientModal"><i class="bx bx-plus me-1"></i>Add New Client</button>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="card shadow-sm border-0 rounded">
@@ -79,7 +60,9 @@
                                                 style="width: 32px; height: 32px;">
                                                 {{ substr($client->name, 0, 2) }}
                                             </div>
-                                            <span class="fw-medium text-dark">{{ $client->name }}</span>
+                                            <a href="{{ route('clients.show', $client->id) }}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                                                {{ $client->name }}
+                                            </a>
                                         </div>
                                     </td>
                                     <td class="text-muted small">{{ $client->email ?? '-' }}</td>

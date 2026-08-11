@@ -14,6 +14,7 @@
 
         @include('reports._date_filter', [
             'exportType' => 'payments',
+            'paginator' => $payments,
             'extraFields' => [
                 'method' => ['label' => 'Method', 'items' => $methods->mapWithKeys(fn ($m) => [$m => ucfirst($m)])->all()],
             ],

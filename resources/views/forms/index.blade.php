@@ -3,43 +3,38 @@
 @section('title', 'Forms')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-        <div class="d-flex align-items-center justify-content-between w-100">
-            <h2 class="fs-4 m-0 fw-bold">Forms</h2>
-            <div class="d-flex gap-2">
-                <a href="{{ route('forms.create') }}" class="btn btn-primary px-4 fw-500">Create form</a>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Forms</h1>
+                <p class="text-muted mb-0">Create intake forms and manage submissions.</p>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4">
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$forms" searchAction="{{ route('forms.index') }}" searchPlaceholder="Search forms">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== '' || request()->filled('status')"
+                    :clearUrl="route('forms.index', ['per_page' => request('per_page', $forms->perPage())])" />
+                <div class="dropdown">
+                    <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request()->filled('status') ? (request('status') === 'active' ? 'Published' : 'Draft') : 'Status' }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('forms.index', request()->except(['status', 'page'])) }}">All</a></li>
+                        <li><a class="dropdown-item" href="{{ route('forms.index', array_merge(request()->except(['status', 'page']), ['status' => 'active'])) }}">Published</a></li>
+                        <li><a class="dropdown-item" href="{{ route('forms.index', array_merge(request()->except(['status', 'page']), ['status' => 'inactive'])) }}">Draft</a></li>
+                    </ul>
+                </div>
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('forms.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Create Form</a>
+            </x-slot>
+        </x-list-toolbar>
 
-        <!-- Filters -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-            <div class="search-container flex-grow-1" style="max-width: 400px;">
-                <i class='bx bx-search'></i>
-                <form method="GET" action="{{ route('forms.index') }}">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control search-input" placeholder="Search">
-                </form>
-            </div>
-            <div class="dropdown">
-                <button class="btn filter-select dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Status
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ route('forms.index', request()->except(['status', 'page'])) }}">All</a></li>
-                    <li><a class="dropdown-item" href="{{ route('forms.index', array_merge(request()->except(['status', 'page']), ['status' => 'active'])) }}">Published</a></li>
-                    <li><a class="dropdown-item" href="{{ route('forms.index', array_merge(request()->except(['status', 'page']), ['status' => 'inactive'])) }}">Draft</a></li>
-                </ul>
-            </div>
-        </div>
         <!-- Table -->
         <div class="bg-white rounded shadow-sm overflow-hidden mb-5">
-
-            <div class="d-flex justify-content-end p-3 bg-white border-bottom">
-                <i class='bx bx-hide text-muted fs-5'></i>
-            </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead class="bg-light text-muted small">

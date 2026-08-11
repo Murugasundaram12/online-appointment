@@ -3,33 +3,26 @@
 @section('title', 'Form Records')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <h2 class="fs-4 m-0 fw-bold">Form records</h2>
-            <a href="{{ route('form-records.create') }}" class="btn btn-primary btn-sm px-4">Add record</a>
-        </div>
-    </nav>
-
-    <div class="container-fluid px-4 pt-4">
-
-        <!-- Filters -->
-        <div class="row g-2 mb-3">
-            <div class="col-md-3">
-                <form method="GET" action="{{ route('form-records.index') }}">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search">
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-9 d-flex flex-wrap gap-2 justify-content-end">
-                @if(request()->has('search') && request('search') !== '')
-                    <a href="{{ route('form-records.index', ['per_page' => request('per_page', 10)]) }}"
-                        class="btn btn-white border btn-sm text-muted">Clear search</a>
-                @endif
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Form Records</h1>
+                <p class="text-muted mb-0">Review submissions collected from your forms.</p>
             </div>
         </div>
+
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$formRecords" searchAction="{{ route('form-records.index') }}" searchPlaceholder="Search records">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('form-records.index', ['per_page' => request('per_page', $formRecords->perPage())])"
+                    clearLabel="Clear search" />
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('form-records.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add Record</a>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="card shadow-sm border-0 rounded">

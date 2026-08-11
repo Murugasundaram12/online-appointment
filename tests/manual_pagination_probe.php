@@ -50,6 +50,10 @@ $page1 = pgIndex($controller, 'index', $page1Req);
 pgResult('Page 1 shows 10 of ' . $total . ' clients', str_contains($page1, 'Showing 1 to 10 of ' . $total));
 pgResult('Page 1 renders next page link', preg_match('/page=2/', $page1) === 1);
 pgResult('Rows per page selector rendered', preg_match('/per_page=25/', $page1) === 1);
+pgResult('Per-page selector sits above the table', strpos($page1, 'Rows per page') !== false && strpos($page1, 'Rows per page') < strpos($page1, '<table'));
+pgResult('Bottom footer has no per-page selector', strpos($page1, 'Rows per page') !== false && (strpos($page1, 'card-footer') === false || strpos($page1, 'Rows per page') < strpos($page1, 'card-footer')));
+pgResult('Toolbar is responsive (stacks mobile, row desktop)', str_contains($page1, 'flex-column flex-xl-row') && str_contains($page1, 'ms-xl-auto'));
+pgResult('Add New button sits in the top toolbar', str_contains($page1, 'Add New Client') && strpos($page1, 'Add New Client') < strpos($page1, '<table'));
 pgResult('Pagination uses Bootstrap 5 classes', str_contains($page1, 'class="page-link"') && !str_contains($page1, 'inline-flex items-center'));
 
 $page2Req = Request::create('/clients?per_page=10&page=2', 'GET', ['per_page' => 10, 'page' => 2]);
@@ -62,12 +66,16 @@ pgResult('Empty page renders safely', str_contains($page3, 'Showing ' . (min(20,
 
 $per25Req = Request::create('/clients?per_page=25', 'GET', ['per_page' => 25]);
 $per25 = pgIndex($controller, 'index', $per25Req);
-pgResult('Custom per_page respected', str_contains($per25, 'Showing 1 to 25 of ' . $total));
+pgResult('Custom per_page respected', str_contains($per25, 'Showing 1 to ' . min(25, $total) . ' of ' . $total));
 
 $searchReq = Request::create('/clients?per_page=10&search=PGPROBE_Client_1', 'GET', ['per_page' => 10, 'search' => 'PGPROBE_Client_1']);
 $searchMatches = Client::where('name', 'like', '%PGPROBE_Client_1%')->count();
 $searchPage = pgIndex($controller, 'index', $searchReq);
-pgResult('Search result paginates', str_contains($searchPage, 'of ' . $searchMatches . ' results'));
+pgResult('Search result paginates', str_contains($searchPage, 'of ' . $searchMatches . ' entries'));
+
+$per25SearchReq = Request::create('/clients?per_page=25&search=PGPROBE_Client_1', 'GET', ['per_page' => 25, 'search' => 'PGPROBE_Client_1']);
+$per25SearchPage = pgIndex($controller, 'index', $per25SearchReq);
+pgResult('Per-page preserved in search', str_contains($per25SearchPage, 'per_page=25') && str_contains($per25SearchPage, 'Showing 1 to ' . min(25, $searchMatches) . ' of ' . $searchMatches . ' entries'));
 
 for ($i = 1; $i <= 12; $i++) {
     Service::create(['name' => 'PGPROBE_Service_' . $i, 'type' => 'in_person', 'price' => 10, 'duration_minutes' => 30, 'is_active' => true]);

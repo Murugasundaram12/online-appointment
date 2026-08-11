@@ -14,6 +14,7 @@
 
         @include('reports._date_filter', [
             'exportType' => 'appointments',
+            'paginator' => $appointments,
             'extraFields' => [
                 'status' => ['label' => 'Status', 'items' => $filters['statuses']->mapWithKeys(fn ($s) => [$s => ucfirst($s)])->all()],
                 'staff_id' => ['label' => 'Staff', 'items' => $filters['staff']->pluck('name', 'id')->all()],

@@ -14,6 +14,7 @@
 
         @include('reports._date_filter', [
             'exportType' => 'clients',
+            'paginator' => $clients,
             'textFields' => ['search' => 'Search (name, email, phone)'],
             'extraFields' => [
                 'vip' => ['label' => 'Client type', 'items' => ['0' => 'Regular', '1' => 'VIP']],

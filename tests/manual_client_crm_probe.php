@@ -119,7 +119,7 @@ $controller = app(ClientController::class);
 $view = $controller->show($client->id);
 $html = $view->render();
 
-crmResult('crm show page renders', str_contains($html, 'CRMPROBE_Doe') && str_contains($html, 'Upcoming Appointments') && str_contains($html, 'Appointment History'));
+crmResult('crm show page renders', str_contains($html, 'CRMPROBE_Doe') && str_contains($html, 'Appointment History') && str_contains($html, 'Timeline'));
 crmResult('crm shows VIP badge', str_contains($html, 'VIP'));
 crmResult('crm shows notes', str_contains($html, 'VIP repeat client'));
 crmResult('crm upcoming appointment listed', str_contains($html, 'Booked'));

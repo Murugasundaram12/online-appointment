@@ -6,6 +6,7 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\StaffController;
+use App\Http\Requests\StoreClientRequest;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -17,6 +18,7 @@ use App\Models\StaffSchedule;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -61,6 +63,23 @@ function expectValidation(callable $callback, string $field): bool
     }
 
     return false;
+}
+
+function makeClientRequest(?Client $client, array $data, string $method = 'POST', string $uri = '/clients'): StoreClientRequest
+{
+    $request = StoreClientRequest::create($uri, $method, $data);
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+    if ($client !== null) {
+        $request->setRouteResolver(function () use ($client) {
+            $route = new Route('PUT', '/clients/{client}', []);
+            $route->bind(Request::create('/clients/' . $client->id, 'PUT'));
+            $route->setParameter('client', $client);
+            return $route;
+        });
+    }
+    $request->validateResolved();
+    return $request;
 }
 
 cleanupStaffClientProbe();
@@ -163,43 +182,50 @@ $staffController->update(scRequest('PUT', '/staff/' . $staff->id, [
 $staff->refresh();
 scResult('Staff update keeps hash behavior', $staff->name === 'SC_TEST Staff Updated' && Hash::check('Newpass123', $staff->password));
 
-$clientController->store(scRequest('POST', '/clients', [
-    'name' => 'SC_TEST Client',
-    'email' => 'sctest_client@example.com',
+$clientController->store(makeClientRequest(null, [
+    'first_name' => 'SC_Test',
+    'last_name' => 'Client',
     'phone' => '5551000',
+    'email' => 'sctest_client@example.com',
     'city' => 'Probe City',
-    'client_since' => now()->toDateString(),
-    'tags' => 'VIP',
+    'is_vip' => '1',
 ]));
 $client = Client::where('email', 'sctest_client@example.com')->first();
-scResult('Client create stores valid record', $client !== null && $client->city === 'Probe City');
-scResult('Client VIP derived from tags', $client !== null && $client->is_vip === true);
-scResult('Client duplicate email rejected', expectValidation(fn () => $clientController->store(scRequest('POST', '/clients', [
-    'name' => 'SC_TEST Duplicate Client',
+scResult('Client create stores valid record', $client !== null && $client->city === 'Probe City' && $client->name === 'SC_Test Client');
+scResult('Client VIP flag stored', $client !== null && $client->is_vip === true);
+scResult('Client duplicate email rejected', expectValidation(fn () => $clientController->store(makeClientRequest(null, [
+    'first_name' => 'SC_Test',
+    'last_name' => 'Duplicate',
+    'phone' => '5551999',
     'email' => 'sctest_client@example.com',
 ])), 'email'));
-scResult('Client invalid email rejected', expectValidation(fn () => $clientController->store(scRequest('POST', '/clients', [
-    'name' => 'SC_TEST Bad Client',
+scResult('Client invalid email rejected', expectValidation(fn () => $clientController->store(makeClientRequest(null, [
+    'first_name' => 'SC_Test',
+    'last_name' => 'Bad Email',
+    'phone' => '5551888',
     'email' => 'bad-email',
 ])), 'email'));
-scResult('Client missing name rejected', expectValidation(fn () => $clientController->store(scRequest('POST', '/clients', [
+scResult('Client missing name rejected', expectValidation(fn () => $clientController->store(makeClientRequest(null, [
     'email' => 'sctest_missing_name@example.com',
-])), 'name'));
-scResult('Client invalid since date rejected', expectValidation(fn () => $clientController->store(scRequest('POST', '/clients', [
-    'name' => 'SC_TEST Bad Date',
-    'email' => 'sctest_baddate@example.com',
-    'client_since' => 'not-a-date',
-])), 'client_since'));
+    'phone' => '5551777',
+])), 'first_name'));
+scResult('Client invalid dob rejected', expectValidation(fn () => $clientController->store(makeClientRequest(null, [
+    'first_name' => 'SC_Test',
+    'last_name' => 'Bad Date',
+    'phone' => '5551666',
+    'dob' => 'not-a-date',
+])), 'dob'));
 
-$clientController->update(scRequest('PUT', '/clients/' . $client->id, [
-    'name' => 'SC_TEST Client Updated',
-    'email' => 'sctest_client@example.com',
+$clientController->update(makeClientRequest($client, [
+    'first_name' => 'SC_Test',
+    'last_name' => 'Client Updated',
     'phone' => '5552000',
+    'email' => 'sctest_client@example.com',
     'city' => 'Updated City',
     'is_vip' => '0',
-]), $client->id);
+], 'PUT', '/clients/' . $client->id), $client->id);
 $client->refresh();
-scResult('Client update stores safe fields', $client->name === 'SC_TEST Client Updated' && $client->is_vip === false);
+scResult('Client update stores safe fields', $client->name === 'SC_Test Client Updated' && $client->is_vip === false);
 
 $appointment = Appointment::create([
     'client_id' => $client->id,

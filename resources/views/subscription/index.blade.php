@@ -103,6 +103,16 @@
             </div>
         </div>
 
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <h3 class="fs-5 fw-bold mb-0">Subscription history</h3>
+        </div>
+
+        <x-list-toolbar :paginator="$history" :show-search="false" toolbarClass="mb-4">
+            <x-slot name="filters">
+                <span class="small text-muted">Billing history</span>
+            </x-slot>
+        </x-list-toolbar>
+
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">

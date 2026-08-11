@@ -12,7 +12,7 @@
             <a href="{{ route('reports.index') }}" class="btn btn-light border">All Reports</a>
         </div>
 
-        @include('reports._date_filter', ['exportType' => 'revenue'])
+        @include('reports._date_filter', ['exportType' => 'revenue', 'paginator' => $rows])
 
         <div class="row g-3 mb-4">
             <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Billed</div><div class="fs-4 fw-bold text-primary">${{ number_format($summary['billed'], 2) }}</div></div></div></div>

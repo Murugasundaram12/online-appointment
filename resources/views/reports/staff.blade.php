@@ -12,7 +12,7 @@
             <a href="{{ route('reports.index') }}" class="btn btn-light border">All Reports</a>
         </div>
 
-        @include('reports._date_filter', ['exportType' => 'staff'])
+        @include('reports._date_filter', ['exportType' => 'staff', 'paginator' => $rows])
 
         <div class="row g-3 mb-4">
             <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Appointments</div><div class="fs-4 fw-bold">{{ $summary['total'] }}</div></div></div></div>

@@ -966,8 +966,41 @@
         </div>
     </div>
 
-    <div class="modal fade app-modal" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalTitle" aria-hidden="true">
+    <!-- Step 1 Client Search Modal -->
+    <div class="modal fade app-modal" id="clientSearchModal" tabindex="-1" aria-labelledby="clientSearchModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <div class="modal-icon modal-icon-info" aria-hidden="true"><i class="bx bx-user-search"></i></div>
+                        <div>
+                            <h5 class="modal-title" id="clientSearchModalTitle">Step 1: Select Client</h5>
+                            <p class="modal-subtitle">Search existing patient or create a new client profile.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Search Client</label>
+                        <input type="search" id="client-search-step1-input" class="form-control" placeholder="Search by phone, name, or email..." autocomplete="off" />
+                    </div>
+                    <div id="client-search-step1-results" class="list-group mb-3 d-none" style="max-height: 220px; overflow-y: auto;"></div>
+                    <div id="client-search-step1-empty" class="alert alert-light text-muted small d-none">
+                        No matching client found.
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-new-client" id="step1-open-new-client-modal">+ Create New Client</button>
+                    <button type="button" class="btn btn-new-client-cancel" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 1b Add New Client Modal -->
+    <div class="modal fade app-modal" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <form id="new-client-form" data-app-managed="true">
                     <div class="modal-header">
@@ -980,19 +1013,100 @@
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                         <div id="new-client-form-error" class="alert alert-danger d-none" role="alert"></div>
-                        <div class="mb-2">
-                            <label class="form-label">Client Name <span class="required-mark">*</span></label>
-                            <input type="text" id="new-client-name" class="form-control" required />
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name <span class="required-mark">*</span></label>
+                                <input type="text" id="new-client-first-name" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name <span class="required-mark">*</span></label>
+                                <input type="text" id="new-client-last-name" class="form-control" required />
+                            </div>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Client Email <span class="required-mark">*</span></label>
-                            <input type="email" id="new-client-email" class="form-control" required />
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Gender</label>
+                                <select id="new-client-gender" class="form-select">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="new-client-dob" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Calculated Age</label>
+                                <input type="text" id="new-client-age" class="form-control bg-light" readonly placeholder="Auto-calculated" />
+                            </div>
                         </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone <span class="required-mark">*</span></label>
+                                <input type="text" id="new-client-phone" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Alternate Phone</label>
+                                <input type="text" id="new-client-alt-phone" class="form-control" />
+                            </div>
+                        </div>
+
                         <div class="mb-2">
-                            <label class="form-label">Client Phone</label>
-                            <input type="text" id="new-client-phone" class="form-control" />
+                            <label class="form-label">Email</label>
+                            <input type="email" id="new-client-email" class="form-control" />
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Address Line 1</label>
+                                <input type="text" id="new-client-address1" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Address Line 2</label>
+                                <input type="text" id="new-client-address2" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label">City</label>
+                                <input type="text" id="new-client-city" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">State</label>
+                                <input type="text" id="new-client-state" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Country</label>
+                                <input type="text" id="new-client-country" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" id="new-client-postal-code" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Emergency Contact</label>
+                                <input type="text" id="new-client-emergency-contact" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Emergency Phone</label>
+                                <input type="text" id="new-client-emergency-phone" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Notes</label>
+                            <textarea id="new-client-notes" class="form-control" rows="2"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1269,7 +1383,6 @@
             const readonlyCardStatus = document.getElementById('readonly-card-status');
             const readonlyCardStatusChip = document.getElementById('readonly-card-status-chip');
             const readonlyCardNotes = document.getElementById('readonly-card-notes');
-            const newClientNameField = document.getElementById('new-client-name');
             const newClientEmailField = document.getElementById('new-client-email');
             const newClientPhoneField = document.getElementById('new-client-phone');
 
@@ -1501,17 +1614,22 @@
                 return (hh * 60) + mm;
             }
 
+            function getEffectiveSegments(staff, dateObj) {
+                if (!staff) return [];
+                const dateKey = toLocalDate(dateObj);
+                const dayOfWeek = (dateObj.getDay() + 6) % 7; // 0=Mon ... 6=Sun
+                const byDate = staff.schedules_by_date && staff.schedules_by_date[dateKey];
+                if (Array.isArray(byDate)) return byDate;
+                const byWeek = staff.schedules && staff.schedules[dayOfWeek];
+                return byWeek ? [byWeek] : [];
+            }
+
             function getStaffScheduleForDate(staffId, dateObj) {
                 const schedules = window._calendarSchedules || [];
                 const numericStaffId = Number.parseInt(staffId, 10);
                 const staff = schedules.find(s => Number.parseInt(s.id, 10) === numericStaffId);
                 if (!staff) return null;
-
-                const dateKey = toLocalDate(dateObj);
-                const dayOfWeek = (dateObj.getDay() + 6) % 7; // 0=Mon ... 6=Sun
-                const byDate = staff.schedules_by_date && staff.schedules_by_date[dateKey];
-                const byWeek = staff.schedules && staff.schedules[dayOfWeek];
-                return byDate || byWeek || null;
+                return getEffectiveSegments(staff, dateObj);
             }
 
             function validateAppointmentWithinStaffHours(staffId, startDate, endDate) {
@@ -1522,31 +1640,32 @@
                     return 'Appointment must be within one day and inside staff working hours.';
                 }
 
-                const schedule = getStaffScheduleForDate(staffId, startDate);
-                if (!schedule || !schedule.is_working) {
-                    return 'This staff member is not working on the selected date.';
-                }
-
-                const workingStart = parseTimeToMinutes(schedule.start_time);
-                const workingEnd = parseTimeToMinutes(schedule.end_time);
-                if (workingStart === null || workingEnd === null) {
-                    return 'Staff working hours are not configured for this date.';
+                const segments = getStaffScheduleForDate(staffId, startDate);
+                if (!Array.isArray(segments) || segments.length === 0) {
+                    return 'Staff is not available at the selected time.';
                 }
 
                 const apptStart = (startDate.getHours() * 60) + startDate.getMinutes();
                 const apptEnd = (endDate.getHours() * 60) + endDate.getMinutes();
 
-                if (apptStart < workingStart || apptEnd > workingEnd) {
-                    return `Outside working hours. Allowed time is ${format12Hour(schedule.start_time)} to ${format12Hour(schedule.end_time)}.`;
+                for (const schedule of segments) {
+                    if (!schedule || !schedule.is_working) continue;
+                    const workingStart = parseTimeToMinutes(schedule.start_time);
+                    const workingEnd = parseTimeToMinutes(schedule.end_time);
+                    if (workingStart === null || workingEnd === null) continue;
+                    if (apptStart >= workingStart && apptEnd <= workingEnd) return null;
                 }
 
-                return null;
+                return 'Staff is not available at the selected time.';
             }
 
             function clearNewClientFields() {
-                newClientNameField.value = '';
-                newClientEmailField.value = '';
-                newClientPhoneField.value = '';
+                const newClientFirstNameField = document.getElementById('new-client-first-name');
+                const newClientLastNameField = document.getElementById('new-client-last-name');
+                if (newClientFirstNameField) newClientFirstNameField.value = '';
+                if (newClientLastNameField) newClientLastNameField.value = '';
+                if (newClientEmailField) newClientEmailField.value = '';
+                if (newClientPhoneField) newClientPhoneField.value = '';
             }
 
             function fillSelect(selectEl, items, placeholder, valueKey = 'id', labelKey = 'name') {
@@ -1690,19 +1809,22 @@
                 }
             }
 
-            function isScheduleCoveringSlot(schedule, startDate, endDate) {
-                if (!schedule || !schedule.is_working) return false;
+            function isScheduleCoveringSlot(schedules, startDate, endDate) {
                 if (!(startDate instanceof Date) || !(endDate instanceof Date)) return false;
                 if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return false;
                 if (toLocalDate(startDate) !== toLocalDate(endDate)) return false;
-
-                const workingStart = parseTimeToMinutes(schedule.start_time);
-                const workingEnd = parseTimeToMinutes(schedule.end_time);
-                if (workingStart === null || workingEnd === null) return false;
+                if (!Array.isArray(schedules)) return false;
 
                 const apptStart = (startDate.getHours() * 60) + startDate.getMinutes();
                 const apptEnd = (endDate.getHours() * 60) + endDate.getMinutes();
-                return apptStart >= workingStart && apptEnd <= workingEnd;
+
+                return schedules.some(schedule => {
+                    if (!schedule || !schedule.is_working) return false;
+                    const workingStart = parseTimeToMinutes(schedule.start_time);
+                    const workingEnd = parseTimeToMinutes(schedule.end_time);
+                    if (workingStart === null || workingEnd === null) return false;
+                    return apptStart >= workingStart && apptEnd <= workingEnd;
+                });
             }
 
             function hydrateStaffOptionsForSlot(startDate, endDate) {
@@ -1730,9 +1852,10 @@
                     schedules
                         .filter(s => {
                             const byDate = s.schedules_by_date && s.schedules_by_date[dateKey];
-                            const byWeek = s.schedules && s.schedules[dayOfWeek];
-                            const effectiveSchedule = byDate || byWeek;
-                            return isScheduleCoveringSlot(effectiveSchedule, startDate, endDate);
+                            const segments = Array.isArray(byDate)
+                                ? byDate
+                                : ((s.schedules && s.schedules[dayOfWeek]) ? [s.schedules[dayOfWeek]] : []);
+                            return isScheduleCoveringSlot(segments, startDate, endDate);
                         })
                         .map(s => String(s.id)),
                 );
@@ -1907,15 +2030,25 @@
             }
 
             // Build header and day columns
+            function getScheduledStaffForDate(date) {
+                const schedules = window._calendarSchedules || [];
+                const dateKey = toLocalDate(date);
+                const dayOfWeek = (date.getDay() + 6) % 7;
+                return schedules.filter(staff => {
+                    const byDate = staff.schedules_by_date && staff.schedules_by_date[dateKey];
+                    const segments = Array.isArray(byDate)
+                        ? byDate
+                        : ((staff.schedules && staff.schedules[dayOfWeek]) ? [staff.schedules[dayOfWeek]] : []);
+                    return segments.some(seg => seg && seg.is_working);
+                });
+            }
+
+            // Build header and day columns
             function buildWeekView() {
                 // Generate time column
                 generateTimeColumn();
                 setGridHeight();
-                visibleDays = currentView === 'day' ? 1 : 7;
-                header.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
-                gridBody.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
 
-                // header
                 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -1924,60 +2057,111 @@
                 header.innerHTML = '';
                 header.appendChild(timezoneCell);
 
-                for (let i = 0; i < visibleDays; i++) {
-                    const date = new Date(currentWeekStart);
-                    date.setDate(currentWeekStart.getDate() + i);
-
-                    const headerCell = document.createElement('div');
-                    headerCell.className = 'header-cell';
-                    if (isSameDay(date, new Date())) headerCell.classList.add('active-day');
-
-                    const dayLabel = currentView === 'day' ? date.toLocaleDateString([], { weekday: 'short' }) : days[i];
-                    headerCell.innerHTML = `<span class="day-label">${dayLabel}</span><span class="day-number">${date.getDate()}</span>`;
-
-                    // Add staff schedule display under the date
-                    const scheduleContainer = document.createElement('div');
-                    scheduleContainer.className = 'staff-schedule-container';
-                    scheduleContainer.id = `staff-schedules-${i}`;
-                    scheduleContainer.style.borderTop = '1px solid var(--calendar-border-hourly)';
-
-                    headerCell.appendChild(scheduleContainer);
-                    header.appendChild(headerCell);
-                }
-
-                // Show today's date when this week contains today, otherwise show week start date.
-                const activeCell = header.querySelector('.header-cell.active-day');
-                if (activeCell) {
-                    const dayCells = Array.from(header.querySelectorAll('.header-cell'));
-                    const idx = dayCells.indexOf(activeCell);
-                    if (idx >= 0) {
-                        const activeDate = new Date(currentWeekStart);
-                        activeDate.setDate(currentWeekStart.getDate() + idx);
-                        dateDisplay.textContent = `${activeDate.getDate()} ${monthNames[activeDate.getMonth()]} ${activeDate.getFullYear()}`;
-                    } else {
-                        dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
-                    }
-                } else {
-                    dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
-                }
-
-                // body columns
-                // Keep the first child (time column) and replace the 7 day columns with containers
-                const children = Array.from(gridBody.children);
                 // remove all day columns after the time column
                 while (gridBody.children.length > 1) gridBody.removeChild(gridBody.lastChild);
 
-                for (let i = 0; i < visibleDays; i++) {
-                    const col = document.createElement('div');
-                    col.className = 'grid-cell day-column';
-                    col.style.position = 'relative';
-                    col.dataset.dayIndex = i;
-                    // allow dropping
-                    col.addEventListener('dragover', ev => ev.preventDefault());
-                    col.addEventListener('drop', handleDropOnColumn);
-                    // click to quick create
-                    col.addEventListener('click', handleColumnClick);
-                    gridBody.appendChild(col);
+                if (currentView === 'day') {
+                    const scheduledStaff = getScheduledStaffForDate(currentWeekStart);
+                    const colCount = Math.max(scheduledStaff.length, 1);
+
+                    header.style.gridTemplateColumns = `80px repeat(${colCount}, 1fr)`;
+                    gridBody.style.gridTemplateColumns = `80px repeat(${colCount}, 1fr)`;
+
+                    if (scheduledStaff.length === 0) {
+                        const headerCell = document.createElement('div');
+                        headerCell.className = 'header-cell active-day';
+                        headerCell.innerHTML = `<span class="day-label">${currentWeekStart.toLocaleDateString([], { weekday: 'short' })}</span><span class="day-number">${currentWeekStart.getDate()}</span><div class="small text-muted mt-1">No Staff Scheduled</div>`;
+                        header.appendChild(headerCell);
+
+                        const col = document.createElement('div');
+                        col.className = 'grid-cell day-column';
+                        col.style.position = 'relative';
+                        col.dataset.dayIndex = 0;
+                        col.addEventListener('dragover', ev => ev.preventDefault());
+                        col.addEventListener('drop', handleDropOnColumn);
+                        col.addEventListener('click', handleColumnClick);
+                        gridBody.appendChild(col);
+                    } else {
+                        scheduledStaff.forEach(staff => {
+                            const headerCell = document.createElement('div');
+                            headerCell.className = 'header-cell';
+                            if (isSameDay(currentWeekStart, new Date())) headerCell.classList.add('active-day');
+                            headerCell.innerHTML = `<span class="day-label">${escapeHtml(staff.category || 'Staff')}</span><span class="day-number" style="font-size: 1.1rem; font-weight: 600;">${escapeHtml(staff.name)}</span>`;
+                            const segments = getEffectiveSegments(staff, currentWeekStart);
+                            const hoursHtml = (segments || [])
+                                .filter(s => s && s.is_working)
+                                .map(s => `<div class="staff-schedule-item small"><div class="hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div></div>`)
+                                .join('');
+                            if (hoursHtml) {
+                                const segContainer = document.createElement('div');
+                                segContainer.className = 'staff-schedule-container';
+                                segContainer.innerHTML = hoursHtml;
+                                headerCell.appendChild(segContainer);
+                            }
+                            header.appendChild(headerCell);
+
+                            const col = document.createElement('div');
+                            col.className = 'grid-cell day-column';
+                            col.style.position = 'relative';
+                            col.dataset.dayIndex = 0;
+                            col.dataset.staffId = staff.id;
+                            col.addEventListener('dragover', ev => ev.preventDefault());
+                            col.addEventListener('drop', handleDropOnColumn);
+                            col.addEventListener('click', handleColumnClick);
+                            gridBody.appendChild(col);
+                        });
+                    }
+
+                    dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
+                } else {
+                    visibleDays = 7;
+                    header.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
+                    gridBody.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
+
+                    for (let i = 0; i < visibleDays; i++) {
+                        const date = new Date(currentWeekStart);
+                        date.setDate(currentWeekStart.getDate() + i);
+
+                        const headerCell = document.createElement('div');
+                        headerCell.className = 'header-cell';
+                        if (isSameDay(date, new Date())) headerCell.classList.add('active-day');
+
+                        const dayLabel = days[i];
+                        headerCell.innerHTML = `<span class="day-label">${dayLabel}</span><span class="day-number">${date.getDate()}</span>`;
+
+                        // Add staff schedule display under the date
+                        const scheduleContainer = document.createElement('div');
+                        scheduleContainer.className = 'staff-schedule-container';
+                        scheduleContainer.id = `staff-schedules-${i}`;
+                        scheduleContainer.style.borderTop = '1px solid var(--calendar-border-hourly)';
+
+                        headerCell.appendChild(scheduleContainer);
+                        header.appendChild(headerCell);
+
+                        const col = document.createElement('div');
+                        col.className = 'grid-cell day-column';
+                        col.style.position = 'relative';
+                        col.dataset.dayIndex = i;
+                        col.addEventListener('dragover', ev => ev.preventDefault());
+                        col.addEventListener('drop', handleDropOnColumn);
+                        col.addEventListener('click', handleColumnClick);
+                        gridBody.appendChild(col);
+                    }
+
+                    const activeCell = header.querySelector('.header-cell.active-day');
+                    if (activeCell) {
+                        const dayCells = Array.from(header.querySelectorAll('.header-cell'));
+                        const idx = dayCells.indexOf(activeCell);
+                        if (idx >= 0) {
+                            const activeDate = new Date(currentWeekStart);
+                            activeDate.setDate(currentWeekStart.getDate() + idx);
+                            dateDisplay.textContent = `${activeDate.getDate()} ${monthNames[activeDate.getMonth()]} ${activeDate.getFullYear()}`;
+                        } else {
+                            dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
+                        }
+                    } else {
+                        dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
+                    }
                 }
             }
 
@@ -2021,6 +2205,10 @@
                     window._calendarSchedules = schedJson && schedJson.staff ? schedJson.staff : [];
                     window._calendarEvents = Array.isArray(eventsJson) ? eventsJson : eventsJson.data || [];
 
+                    // Day view columns are built from schedule data; rebuild once the
+                    // fresh data arrives so staff columns/hours always match the date.
+                    if (currentView === 'day') buildWeekView();
+
                     if (currentView === 'month' && monthCalendar) {
                         monthCalendar.removeAllEvents();
                         window._calendarEvents.forEach(ev => {
@@ -2062,22 +2250,23 @@
 
                     // Use effective date-based schedule so staff working status is consistent with server payload.
                     const dateKey = toLocalDate(date);
+                    const dayOfWeek = (date.getDay() + 6) % 7;
 
                     schedules.forEach(staff => {
-                        const byDate = staff.schedules_by_date && staff.schedules_by_date[dateKey]
-                            ? staff.schedules_by_date[dateKey]
-                            : null;
+                        const byDate = staff.schedules_by_date && staff.schedules_by_date[dateKey];
+                        const segments = Array.isArray(byDate)
+                            ? byDate
+                            : ((staff.schedules && staff.schedules[dayOfWeek]) ? [staff.schedules[dayOfWeek]] : []);
 
-                        const sch = byDate;
-
-                        if (sch && sch.is_working) {
+                        segments.forEach(sch => {
+                            if (!sch || !sch.is_working) return;
                             const item = document.createElement('div');
                             item.className = 'staff-schedule-item';
                             const startTime = format12Hour(sch.start_time);
                             const endTime = format12Hour(sch.end_time);
-                            item.innerHTML = `<strong>${staff.name}</strong><div class="hours">${startTime} – ${endTime}</div>`;
+                            item.innerHTML = `<strong>${escapeHtml(staff.name)}</strong><div class="hours">${startTime} – ${endTime}</div>`;
                             container.appendChild(item);
-                        }
+                        });
                     });
                 }
             }
@@ -2100,18 +2289,25 @@
 
                         const eventDayKey = toLocalDate(startIso);
 
-                        let dayIndex = -1;
-                        for (let i = 0; i < visibleDays; i++) {
-                            const dayDate = new Date(currentWeekStart);
-                            dayDate.setDate(currentWeekStart.getDate() + i);
-                            if (toLocalDate(dayDate) === eventDayKey) {
-                                dayIndex = i;
-                                break;
+                        let col = null;
+                        if (currentView === 'day') {
+                            const evStaffId = String(ev.staffId || ev.staff_id || '');
+                            col = cols.find(c => String(c.dataset.staffId || '') === evStaffId) || cols[0];
+                        } else {
+                            let dayIndex = -1;
+                            for (let i = 0; i < visibleDays; i++) {
+                                const dayDate = new Date(currentWeekStart);
+                                dayDate.setDate(currentWeekStart.getDate() + i);
+                                if (toLocalDate(dayDate) === eventDayKey) {
+                                    dayIndex = i;
+                                    break;
+                                }
+                            }
+                            if (dayIndex >= 0 && dayIndex < visibleDays) {
+                                col = cols[dayIndex];
                             }
                         }
-                        if (dayIndex < 0 || dayIndex >= visibleDays) return;
-
-                        const col = cols[dayIndex];
+                        if (!col) return;
                         const colHeight = col.clientHeight || 1200;
 
                         const minutesFromMidnight = startIso.getHours() * 60 + startIso.getMinutes();
@@ -2358,16 +2554,113 @@
             }
 
 
+            const dobInputEl = document.getElementById('new-client-dob');
+            const ageInputEl = document.getElementById('new-client-age');
+            if (dobInputEl && ageInputEl) {
+                dobInputEl.addEventListener('change', function () {
+                    if (!this.value) {
+                        ageInputEl.value = '';
+                        return;
+                    }
+                    const dob = new Date(this.value);
+                    const today = new Date();
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+                    ageInputEl.value = age >= 0 ? `${age} years old` : '';
+                });
+            }
+
+            const clientSearchModalEl = document.getElementById('clientSearchModal');
+            const clientSearchModal = clientSearchModalEl ? new bootstrap.Modal(clientSearchModalEl) : null;
+            const step1Input = document.getElementById('client-search-step1-input');
+            const step1Results = document.getElementById('client-search-step1-results');
+            const step1Empty = document.getElementById('client-search-step1-empty');
+            const step1OpenNewClientBtn = document.getElementById('step1-open-new-client-modal');
+            let step1SlotContext = null;
+
+            if (step1OpenNewClientBtn) {
+                step1OpenNewClientBtn.addEventListener('click', function () {
+                    if (clientSearchModal) clientSearchModal.hide();
+                    clearNewClientFields();
+                    clearNewClientFormError();
+                    newClientModal.show();
+                });
+            }
+
+            let step1SearchTimer = null;
+            if (step1Input) {
+                step1Input.addEventListener('input', function () {
+                    const term = this.value.trim();
+                    if (step1SearchTimer) clearTimeout(step1SearchTimer);
+                    if (term.length < 2) {
+                        step1Results.classList.add('d-none');
+                        step1Empty.classList.add('d-none');
+                        return;
+                    }
+                    step1SearchTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch(calendarUrl(`clients/search?q=${encodeURIComponent(term)}`), {
+                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            const clients = await res.json();
+                            step1Results.innerHTML = '';
+                            if (Array.isArray(clients) && clients.length > 0) {
+                                step1Results.classList.remove('d-none');
+                                step1Empty.classList.add('d-none');
+                                clients.forEach(c => {
+                                    const a = document.createElement('a');
+                                    a.href = '#';
+                                    a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                                    a.innerHTML = `<div><strong>${escapeHtml(c.name)}</strong><br><small class="text-muted">${escapeHtml(c.phone || c.email || '')}</small></div><button class="btn btn-sm btn-outline-primary">Select</button>`;
+                                    a.addEventListener('click', function (ev) {
+                                        ev.preventDefault();
+                                        clientField.value = String(c.id);
+                                        if (clientSearchModal) clientSearchModal.hide();
+                                        if (step1SlotContext) {
+                                            openAppointmentModalForCreate(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId);
+                                        } else {
+                                            appointmentModal.show();
+                                        }
+                                    });
+                                    step1Results.appendChild(a);
+                                });
+                            } else {
+                                step1Results.classList.add('d-none');
+                                step1Empty.classList.remove('d-none');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }, 280);
+                });
+            }
+
             newClientForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 clearNewClientFormError();
 
-                const name = newClientNameField.value.trim();
-                const email = newClientEmailField.value.trim();
-                const phone = newClientPhoneField.value.trim();
+                const firstName = document.getElementById('new-client-first-name')?.value.trim() || '';
+                const lastName = document.getElementById('new-client-last-name')?.value.trim() || '';
+                const phone = document.getElementById('new-client-phone')?.value.trim() || '';
+                const email = document.getElementById('new-client-email')?.value.trim() || null;
+                const gender = document.getElementById('new-client-gender')?.value || null;
+                const dob = document.getElementById('new-client-dob')?.value || null;
+                const altPhone = document.getElementById('new-client-alt-phone')?.value.trim() || null;
+                const address1 = document.getElementById('new-client-address1')?.value.trim() || null;
+                const address2 = document.getElementById('new-client-address2')?.value.trim() || null;
+                const city = document.getElementById('new-client-city')?.value.trim() || null;
+                const state = document.getElementById('new-client-state')?.value.trim() || null;
+                const country = document.getElementById('new-client-country')?.value.trim() || null;
+                const postalCode = document.getElementById('new-client-postal-code')?.value.trim() || null;
+                const emergencyContact = document.getElementById('new-client-emergency-contact')?.value.trim() || null;
+                const emergencyPhone = document.getElementById('new-client-emergency-phone')?.value.trim() || null;
+                const notes = document.getElementById('new-client-notes')?.value.trim() || null;
 
-                if (!name || !email) {
-                    showNewClientFormError('Client name and email are required.');
+                if (!firstName || !lastName || !phone) {
+                    showNewClientFormError('First name, last name, and phone number are required.');
                     return;
                 }
 
@@ -2383,9 +2676,23 @@
                             'X-CSRF-TOKEN': getCsrfToken()
                         },
                         body: JSON.stringify({
-                            name: name,
+                            first_name: firstName,
+                            last_name: lastName,
+                            name: `${firstName} ${lastName}`.trim(),
+                            phone: phone,
                             email: email,
-                            phone: phone || null
+                            gender: gender,
+                            dob: dob,
+                            alternate_phone: altPhone,
+                            address_line1: address1,
+                            address_line2: address2,
+                            city: city,
+                            state: state,
+                            country: country,
+                            postal_code: postalCode,
+                            emergency_contact: emergencyContact,
+                            emergency_phone: emergencyPhone,
+                            notes: notes
                         })
                     });
 
@@ -2502,17 +2809,22 @@
                 const durationMinutes = 30;
                 const endDate = new Date(selectedDate.getTime() + durationMinutes * 60000);
 
-                // Default to first working staff on that day if available
-                const dateKey = toLocalDate(selectedDate);
-                const dayOfWeek = (selectedDate.getDay() + 6) % 7;
-                const schedules = window._calendarSchedules || [];
-                const availableStaff = schedules.filter(s => {
-                    const byDate = s.schedules_by_date && s.schedules_by_date[dateKey];
-                    const byWeek = s.schedules && s.schedules[dayOfWeek];
-                    const effectiveSchedule = byDate || byWeek;
-                    return effectiveSchedule && effectiveSchedule.is_working;
-                });
-                const preferredStaffId = availableStaff.length > 0 ? availableStaff[0].id : '';
+                let preferredStaffId = '';
+                if (currentView === 'day' && col.dataset.staffId) {
+                    preferredStaffId = col.dataset.staffId;
+                } else {
+                    const dateKey = toLocalDate(selectedDate);
+                    const dayOfWeek = (selectedDate.getDay() + 6) % 7;
+                    const schedules = window._calendarSchedules || [];
+                    const availableStaff = schedules.filter(s => {
+                        const byDate = s.schedules_by_date && s.schedules_by_date[dateKey];
+                        const segments = Array.isArray(byDate)
+                            ? byDate
+                            : ((s.schedules && s.schedules[dayOfWeek]) ? [s.schedules[dayOfWeek]] : []);
+                        return segments.some(seg => seg && seg.is_working);
+                    });
+                    preferredStaffId = availableStaff.length > 0 ? availableStaff[0].id : '';
+                }
 
                 openAppointmentModalForCreate(selectedDate, endDate, preferredStaffId);
             }

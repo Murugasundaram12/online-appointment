@@ -3,40 +3,23 @@
 @section('title', 'Staff List')
 
 @section('content')
-    <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <h2 class="fs-4 m-0 fw-bold">Staff list</h2>
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary btn-sm px-4" data-bs-toggle="modal"
-                    data-bs-target="#addStaffModal">Add</button>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="fs-3 fw-bold mb-1">Staff</h1>
+                <p class="text-muted mb-0">Manage team members, access levels and payroll settings.</p>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4 pt-4">
-
-        <!-- Filters -->
-        <div class="row g-2 mb-3">
-            <div class="col-md-4">
-                <form method="GET" action="{{ route('staff.index') }}">
-                    <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
-                    @if(request('access_level'))
-                        <input type="hidden" name="access_level" value="{{ request('access_level') }}">
-                    @endif
-                    @if(request('category'))
-                        <input type="hidden" name="category" value="{{ request('category') }}">
-                    @endif
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class='bx bx-search text-muted'></i></span>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control border-start-0 ps-0" placeholder="Search by name, email or phone">
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-8 d-flex flex-wrap gap-2 justify-content-end align-items-center">
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$staffs" searchAction="{{ route('staff.index') }}" searchPlaceholder="Search by name, email or phone">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="(request()->has('search') && request('search') !== '') || request()->filled('access_level') || request()->filled('category')"
+                    :clearUrl="route('staff.index', ['per_page' => request('per_page', $staffs->perPage())])" />
                 <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Access level
+                    <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request()->filled('access_level') ? ucwords(str_replace('_', ' ', request('access_level'))) : 'Access level' }}
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['access_level', 'page']), ['access_level' => ''])) }}">All</a></li>
@@ -46,9 +29,8 @@
                     </ul>
                 </div>
                 <div class="dropdown">
-                    <button class="btn btn-white border dropdown-toggle btn-sm text-muted" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Category
+                    <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request()->filled('category') ? e(request('category')) : 'Category' }}
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('staff.index', array_merge(request()->except(['category', 'page']), ['category' => ''])) }}">All</a></li>
@@ -57,9 +39,11 @@
                         @endforeach
                     </ul>
                 </div>
-                <a class="btn btn-link text-muted p-0 ms-2" href="{{ route('staff.index', ['per_page' => request('per_page', 10)]) }}" title="Reset filters"><i class='bx bx-hide fs-5'></i></a>
-            </div>
-        </div>
+            </x-slot>
+            <x-slot name="actions">
+                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addStaffModal"><i class="bx bx-plus me-1"></i>Add Staff</button>
+            </x-slot>
+        </x-list-toolbar>
 
         <!-- Table -->
         <div class="card shadow-sm border-0 rounded">
