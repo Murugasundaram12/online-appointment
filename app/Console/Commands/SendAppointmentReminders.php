@@ -30,7 +30,7 @@ class SendAppointmentReminders extends Command
         $this->info("Current time ({$timezone}): {$now->toDateTimeString()}");
         $this->info("Search window: {$windowStart->toDateTimeString()} to {$windowEnd->toDateTimeString()}");
 
-        $appointments = Appointment::whereIn('status', ['pending', 'booked'])
+        $appointments = Appointment::whereIn('status', ['pending', 'booked', 'confirmed'])
             ->whereNull('reminder_sent_at')
             ->whereBetween('start_time', [$windowStart, $windowEnd])
             ->with(['client', 'staff', 'service', 'location'])

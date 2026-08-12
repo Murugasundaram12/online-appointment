@@ -62,6 +62,7 @@ class ClientController extends Controller
                 ->where('status', '!=', 'cancelled'),
             'appointments as completed_appointments_count' => fn ($query) => $query->where('status', 'completed'),
             'appointments as cancelled_appointments_count' => fn ($query) => $query->where('status', 'cancelled'),
+            'appointments as no_show_appointments_count'   => fn ($query) => $query->where('status', 'no_show'),
         ])
         ->withSum(['invoices as total_invoiced' => fn ($query) => $query->where('status', '!=', 'void')], 'total_amount')
         ->withSum(['invoices as total_paid' => fn ($query) => $query->where('status', '!=', 'void')], 'paid_amount')
@@ -74,7 +75,7 @@ class ClientController extends Controller
             ->value('start_time');
 
         $nextAppointment = $client->appointments()
-            ->whereIn('status', ['pending', 'booked'])
+            ->whereIn('status', ['pending', 'booked', 'confirmed'])
             ->where('start_time', '>=', now())
             ->oldest('start_time')
             ->value('start_time');
@@ -117,7 +118,13 @@ class ClientController extends Controller
         ];
 
         foreach ($allAppointments->take(5) as $app) {
-            $statusColor = $app->status === 'completed' ? 'bg-success' : ($app->status === 'cancelled' ? 'bg-danger' : 'bg-info');
+            $statusColor = match ($app->status) {
+                'completed' => 'bg-success',
+                'cancelled' => 'bg-danger',
+                'no_show'   => 'bg-secondary',
+                'confirmed' => 'bg-primary',
+                default     => 'bg-info',
+            };
             $timeline[] = [
                 'title' => "Appointment " . ucfirst($app->status),
                 'date' => $app->created_at ?? $app->start_time,

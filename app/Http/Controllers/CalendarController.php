@@ -49,10 +49,12 @@ class CalendarController extends Controller
         $monthEnd = $calendarMonth->copy()->endOfMonth();
 
         $statusColorMap = [
-            'pending' => '#f59e0b',
-            'booked' => '#3699ff',
+            'pending'   => '#f59e0b',
+            'booked'    => '#3699ff',
+            'confirmed' => '#6366f1',
             'completed' => '#1bc5bd',
-            'cancelled' => '#f64e60'
+            'cancelled' => '#f64e60',
+            'no_show'   => '#8b5cf6',
         ];
 
         $filters = [
@@ -205,10 +207,12 @@ class CalendarController extends Controller
 
         $events = $appointments->map(function ($appointment) {
             $statusColorMap = [
-                'pending' => '#f59e0b',
-                'booked' => '#3699ff',
+                'pending'   => '#f59e0b',
+                'booked'    => '#3699ff',
+                'confirmed' => '#6366f1',
                 'completed' => '#1bc5bd',
-                'cancelled' => '#f64e60'
+                'cancelled' => '#f64e60',
+                'no_show'   => '#8b5cf6',
             ];
 
             return [
@@ -328,7 +332,7 @@ class CalendarController extends Controller
             'location_id' => ['nullable', 'exists:locations,id'],
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'status' => 'nullable|in:pending,booked,completed,cancelled',
+            'status' => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
             'notes' => 'nullable|string'
         ]);
 
@@ -414,6 +418,25 @@ class CalendarController extends Controller
             ], 403);
         }
 
+        // Terminal status lock: completed, cancelled, and no_show appointments cannot be rescheduled.
+        $terminalStatuses = ['completed', 'cancelled', 'no_show'];
+        $currentStatus = $appointment->status;
+        $rescheduleFields = ['start_time', 'end_time', 'staff_id', 'service_id', 'location_id'];
+        $isRescheduling = collect($rescheduleFields)->contains(fn($f) => $request->has($f));
+
+        if ($isRescheduling && in_array($currentStatus, $terminalStatuses, true)) {
+            $label = match ($currentStatus) {
+                'completed' => 'Completed',
+                'cancelled' => 'Cancelled',
+                'no_show'   => 'No-show',
+                default     => ucfirst($currentStatus),
+            };
+            return response()->json([
+                'success' => false,
+                'message' => "{$label} appointments cannot be rescheduled.",
+            ], 422);
+        }
+
         $previousAppointment = $appointment->replicate();
         $previousAppointment->setRelation('client', $appointment->client);
         $previousAppointment->setRelation('service', $appointment->service);
@@ -421,15 +444,27 @@ class CalendarController extends Controller
         $previousAppointment->setRelation('location', $appointment->location);
 
         $validated = $request->validate([
-            'staff_id' => ['nullable', 'exists:staff,id'],
-            'service_id' => ['nullable', 'exists:services,id'],
+            'staff_id'    => ['nullable', 'exists:staff,id'],
+            'service_id'  => ['nullable', 'exists:services,id'],
             'location_id' => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
-            'start_time' => 'nullable|date',
-            'end_time' => 'nullable|date|after:start_time',
-            'status' => 'nullable|in:pending,booked,completed,cancelled',
-            'client_id' => 'sometimes|exists:clients,id',
-            'notes' => 'nullable|string'
+            'start_time'  => 'nullable|date',
+            'end_time'    => 'nullable|date|after:start_time',
+            'status'      => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'client_id'   => 'sometimes|exists:clients,id',
+            'notes'       => 'nullable|string'
         ]);
+
+        // Status transition guard
+        if (isset($validated['status']) && $validated['status'] !== $currentStatus) {
+            $allowed = $this->allowedTransitions();
+            $allowedNext = $allowed[$currentStatus] ?? [];
+            if (!in_array($validated['status'], $allowedNext, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Cannot change appointment status from '{$currentStatus}' to '{$validated['status']}'.",
+                ], 422);
+            }
+        }
 
         // If rescheduling, validate staff availability
         if ($request->has('start_time') || $request->has('end_time') || $request->has('staff_id') || $request->has('service_id') || $request->has('location_id')) {
@@ -881,10 +916,12 @@ class CalendarController extends Controller
     private function formatAppointment($appointment)
     {
         $statusColorMap = [
-            'pending' => '#f59e0b',
-            'booked' => '#3699ff',
+            'pending'   => '#f59e0b',
+            'booked'    => '#3699ff',
+            'confirmed' => '#6366f1',
             'completed' => '#1bc5bd',
-            'cancelled' => '#f64e60'
+            'cancelled' => '#f64e60',
+            'no_show'   => '#8b5cf6',
         ];
 
         return [
@@ -946,5 +983,22 @@ class CalendarController extends Controller
         }
 
         return (int) $user->id === $staffId;
+    }
+
+    /**
+     * Centralized status transition policy.
+     * Returns a map of current_status => allowed_next_statuses.
+     * Terminal statuses (completed, cancelled, no_show) have no allowed outbound transitions.
+     */
+    private function allowedTransitions(): array
+    {
+        return [
+            'pending'   => ['booked', 'confirmed', 'cancelled', 'no_show'],
+            'booked'    => ['confirmed', 'cancelled', 'no_show'],
+            'confirmed' => ['completed', 'cancelled', 'no_show'],
+            'completed' => [],
+            'cancelled' => [],
+            'no_show'   => [],
+        ];
     }
 }
