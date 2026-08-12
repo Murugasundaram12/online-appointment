@@ -179,6 +179,7 @@ class ScheduleController extends Controller
         $endTime = $validated['end_time'] ?? null;
 
         $isEdit = !empty($validated['schedule_id']);
+        $editScope = $validated['edit_scope'] ?? $request->input('edit_scope', 'group');
         $groupId = (string) Str::uuid();
         $excludeIds = [];
         $oldGroupIds = [];
@@ -192,16 +193,24 @@ class ScheduleController extends Controller
 
         if ($isEdit) {
             $original = StaffSchedule::findOrFail($validated['schedule_id']);
-            $existingGroup = $this->resolveScheduleGroup($original);
-            $oldGroupIds = $existingGroup->pluck('id')->all();
-            // Only skip the original rows in the overlap check when the schedule
-            // stays on the same staff; the rows are replaced either way.
-            if ((int) $original->staff_id === (int) $staffId) {
-                $excludeIds = $oldGroupIds;
-            }
-            $existingGroupId = $existingGroup->whereNotNull('recurrence_group_id')->first()?->recurrence_group_id;
-            if ($existingGroupId) {
-                $groupId = $existingGroupId;
+            if ($editScope === 'occurrence') {
+                $oldGroupIds = [$original->id];
+                $excludeIds = [$original->id];
+                $groupId = null;
+                $recurrenceType = 'one_time';
+                if (empty($validated['working_date']) && $original->working_date) {
+                    $validated['working_date'] = $original->working_date->toDateString();
+                }
+            } else {
+                $existingGroup = $this->resolveScheduleGroup($original);
+                $oldGroupIds = $existingGroup->pluck('id')->all();
+                if ((int) $original->staff_id === (int) $staffId) {
+                    $excludeIds = $oldGroupIds;
+                }
+                $existingGroupId = $existingGroup->whereNotNull('recurrence_group_id')->first()?->recurrence_group_id;
+                if ($existingGroupId) {
+                    $groupId = $existingGroupId;
+                }
             }
         }
 
@@ -276,7 +285,28 @@ class ScheduleController extends Controller
             $breaks[] = ['start' => $validated['break_start'], 'end' => $validated['break_end']];
         }
 
+        // Validate existing appointments before applying schedule edit/removal
         if ($isEdit && !empty($oldGroupIds)) {
+            $oldRows = StaffSchedule::whereIn('id', $oldGroupIds)->get();
+            $targetDateStrings = collect($targetDates)->map(fn ($d) => $d->toDateString())->all();
+
+            foreach ($oldRows as $oldRow) {
+                $oldDate = $oldRow->working_date ? $oldRow->working_date->toDateString() : null;
+                if (!$oldDate) continue;
+
+                if (!in_array($oldDate, $targetDateStrings, true) || $isDayOff) {
+                    $conflict = $this->checkAppointmentConflictForSchedule($oldRow->staff_id, [$oldDate], null, null, null, true);
+                    if ($conflict) {
+                        return back()->withInput()->with('error', $conflict);
+                    }
+                }
+            }
+
+            $conflict = $this->checkAppointmentConflictForSchedule($staffId, $targetDates, $startTime, $endTime, $breaks, $isDayOff);
+            if ($conflict) {
+                return back()->withInput()->with('error', $conflict);
+            }
+
             StaffSchedule::whereIn('id', $oldGroupIds)->delete();
         }
 
@@ -321,7 +351,7 @@ class ScheduleController extends Controller
         $message = $isDayOff
             ? "Day off saved for {$staff->name} on {$targetDates[0]->format('d-m-Y')}."
             : ($isEdit
-                ? "Successfully updated {$createdCount} schedule slot(s) for {$staff->name}."
+                ? "Schedule updated successfully."
                 : "Successfully created {$createdCount} schedule slot(s) for {$staff->name}.");
 
         return redirect()->route('schedule.index', ['staff_id' => $staffId, 'range' => 'this_month'])
@@ -338,13 +368,16 @@ class ScheduleController extends Controller
         $schedule = StaffSchedule::find($id);
 
         if ($schedule) {
-            // Group edit: reuse the create form, prefilled from the schedule's
-            // recurrence group (representative row).
-            $editing = $this->resolveScheduleGroup($schedule)->sortBy('working_date')->first() ?? $schedule;
+            $editScope = request('scope', 'group');
+            if ($editScope === 'occurrence') {
+                $editing = $schedule;
+            } else {
+                $editing = $this->resolveScheduleGroup($schedule)->sortBy('working_date')->first() ?? $schedule;
+            }
             $staff = Staff::all();
             $selectedStaff = Staff::find($schedule->staff_id);
 
-            return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule'));
+            return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule', 'editScope'));
         }
 
         // Legacy fallback: weekly day-template editor keyed by staff id.
@@ -378,15 +411,129 @@ class ScheduleController extends Controller
     public function destroy(string $id)
     {
         $schedule = StaffSchedule::findOrFail($id);
+        $scope = request('scope', request('delete_mode', 'group'));
+
+        if ($scope === 'occurrence') {
+            $dateStr = $schedule->working_date ? $schedule->working_date->toDateString() : null;
+            if ($dateStr && !empty($schedule->start_time) && !empty($schedule->end_time)) {
+                $hasAppointment = \App\Models\Appointment::where('staff_id', $schedule->staff_id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('start_time', $dateStr)
+                    ->where('start_time', '<', $dateStr . ' ' . $schedule->end_time)
+                    ->where('end_time', '>', $dateStr . ' ' . $schedule->start_time)
+                    ->exists();
+
+                if ($hasAppointment) {
+                    return redirect()->back()->with('error', 'This schedule cannot be removed because appointments already exist during this time.');
+                }
+            }
+
+            $schedule->delete();
+            return redirect()->back()->with('success', 'Schedule deleted successfully.');
+        }
+
+        if ($scope === 'skip') {
+            $dateStr = $schedule->working_date ? $schedule->working_date->toDateString() : null;
+            if ($dateStr && !empty($schedule->start_time) && !empty($schedule->end_time)) {
+                $hasAppointment = \App\Models\Appointment::where('staff_id', $schedule->staff_id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('start_time', $dateStr)
+                    ->where('start_time', '<', $dateStr . ' ' . $schedule->end_time)
+                    ->where('end_time', '>', $dateStr . ' ' . $schedule->start_time)
+                    ->exists();
+
+                if ($hasAppointment) {
+                    return redirect()->back()->with('error', 'This schedule cannot be removed because appointments already exist during this time.');
+                }
+            }
+
+            $schedule->update([
+                'is_working' => false,
+                'start_time' => null,
+                'end_time' => null,
+                'breaks' => null,
+                'recurrence_type' => 'one_time',
+                'recurrence_group_id' => null,
+            ]);
+
+            return redirect()->back()->with('success', 'Schedule updated successfully.');
+        }
+
+        $groupRows = $this->resolveScheduleGroup($schedule);
+        foreach ($groupRows as $row) {
+            $dateStr = $row->working_date ? $row->working_date->toDateString() : null;
+            if ($dateStr && !empty($row->start_time) && !empty($row->end_time)) {
+                $hasAppointment = \App\Models\Appointment::where('staff_id', $row->staff_id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('start_time', $dateStr)
+                    ->where('start_time', '<', $dateStr . ' ' . $row->end_time)
+                    ->where('end_time', '>', $dateStr . ' ' . $row->start_time)
+                    ->exists();
+
+                if ($hasAppointment) {
+                    return redirect()->back()->with('error', 'This schedule cannot be removed because appointments already exist during this time.');
+                }
+            }
+        }
 
         if (!empty($schedule->recurrence_group_id)) {
-            // Deleting one entry of a recurring schedule removes the whole group.
             StaffSchedule::where('recurrence_group_id', $schedule->recurrence_group_id)->delete();
         } else {
             $schedule->delete();
         }
 
         return redirect()->back()->with('success', 'Schedule deleted successfully.');
+    }
+
+    private function checkAppointmentConflictForSchedule(
+        int $staffId,
+        array $targetDates,
+        ?string $newStartTime,
+        ?string $newEndTime,
+        ?array $newBreaks,
+        bool $isDayOff = false
+    ): ?string {
+        foreach ($targetDates as $d) {
+            $dateStr = $d instanceof \Carbon\Carbon ? $d->toDateString() : (string) $d;
+
+            $appointments = \App\Models\Appointment::where('staff_id', $staffId)
+                ->where('status', '!=', 'cancelled')
+                ->whereDate('start_time', $dateStr)
+                ->get();
+
+            if ($appointments->isEmpty()) {
+                continue;
+            }
+
+            if ($isDayOff || empty($newStartTime) || empty($newEndTime)) {
+                return 'This schedule cannot be removed because appointments already exist during this time.';
+            }
+
+            $workStart = \Carbon\Carbon::parse($dateStr . ' ' . $newStartTime);
+            $workEnd = \Carbon\Carbon::parse($dateStr . ' ' . $newEndTime);
+
+            foreach ($appointments as $apt) {
+                $aptStart = \Carbon\Carbon::parse($apt->start_time);
+                $aptEnd = \Carbon\Carbon::parse($apt->end_time);
+
+                if ($aptStart->lt($workStart) || $aptEnd->gt($workEnd)) {
+                    return 'This change conflicts with an existing appointment.';
+                }
+
+                if (!empty($newBreaks)) {
+                    foreach ($newBreaks as $b) {
+                        $bStart = \Carbon\Carbon::parse($dateStr . ' ' . $b['start']);
+                        $bEnd = \Carbon\Carbon::parse($dateStr . ' ' . $b['end']);
+
+                        if ($aptStart->lt($bEnd) && $aptEnd->gt($bStart)) {
+                            return 'This change conflicts with an existing appointment.';
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function storeApi(Request $request)

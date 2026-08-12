@@ -577,6 +577,130 @@ $r = $scheduleController->store(makeStoreRequest([
 $outsideBreakRow = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2026-12-23')->first();
 probeResult('break outside working hours rejected', responseStatus($r) === 302 && !$outsideBreakRow, 'row created: ' . ($outsideBreakRow ? 'yes' : 'no'));
 
+// ---------------------------------------------------------------------------
+// Test 22: Edit single occurrence vs edit entire recurring group
+// ---------------------------------------------------------------------------
+StaffSchedule::where('staff_id', $staffC->id)->delete();
+$r = $scheduleController->store(makeStoreRequest([
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'weekly',
+    'start_time' => '09:00',
+    'end_time' => '17:00',
+    'start_date' => '2027-01-03',
+    'end_date' => '2027-01-31',
+    'weekly_days' => [0], // Sundays: Jan 3, 10, 17, 24, 31
+]));
+$janRows = StaffSchedule::where('staff_id', $staffC->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2027-01-03', '2027-01-31'])
+    ->orderBy('working_date')->get();
+probeResult('weekly recurring schedule created for Jan 2027', $janRows->count() === 5, 'count ' . $janRows->count());
+
+// Edit occurrence only (Jan 10)
+$occRow = $janRows->first(fn($x) => $x->working_date?->toDateString() === '2027-01-10');
+$r = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $occRow->id,
+    'edit_scope' => 'occurrence',
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2027-01-10',
+    'start_time' => '11:00',
+    'end_time' => '15:00',
+]));
+$updatedJan10 = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2027-01-10')->first();
+$otherJanRows = StaffSchedule::where('staff_id', $staffC->id)
+    ->where('recurrence_group_id', $janRows->first()->recurrence_group_id)
+    ->get();
+
+probeResult('edit occurrence only updates only target date', $updatedJan10 && $updatedJan10->start_time === '11:00:00' && $updatedJan10->end_time === '15:00:00' && $updatedJan10->recurrence_type === 'one_time', 'time ' . ($updatedJan10->start_time ?? 'null'));
+probeResult('edit occurrence only leaves other group dates unchanged', $otherJanRows->count() === 4 && $otherJanRows->every(fn($x) => $x->start_time === '09:00:00'), 'other count ' . $otherJanRows->count());
+
+// ---------------------------------------------------------------------------
+// Test 23: Delete occurrence only vs skip occurrence vs delete group
+// ---------------------------------------------------------------------------
+try {
+    // Skip occurrence (Jan 17)
+    $jan17Row = StaffSchedule::where('staff_id', $staffC->id)->whereDate('working_date', '2027-01-17')->first();
+    if ($jan17Row) {
+        request()->merge(['scope' => 'skip']);
+        $r = $scheduleController->destroy((string) $jan17Row->id);
+        request()->replace([]);
+        $skippedRow = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2027-01-17')->first();
+        probeResult('skip occurrence sets target date to day off (is_working=false)', $skippedRow && $skippedRow->is_working === false, 'is_working ' . var_export($skippedRow?->is_working, true));
+    } else {
+        probeResult('skip occurrence sets target date to day off (is_working=false)', false, 'jan17 row not found');
+    }
+
+    // Delete single occurrence (Jan 24)
+    $jan24Row = StaffSchedule::where('staff_id', $staffC->id)->whereDate('working_date', '2027-01-24')->first();
+    if ($jan24Row) {
+        request()->merge(['scope' => 'occurrence']);
+        $r = $scheduleController->destroy((string) $jan24Row->id);
+        request()->replace([]);
+        $deletedJan24 = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2027-01-24')->first();
+        probeResult('delete occurrence only removes target row', $deletedJan24 === null, 'jan24 exists: ' . ($deletedJan24 ? 'yes' : 'no'));
+    } else {
+        probeResult('delete occurrence only removes target row', false, 'jan24 row not found');
+    }
+
+    // Delete entire group
+    $jan31Row = StaffSchedule::where('staff_id', $staffC->id)->whereDate('working_date', '2027-01-31')->first();
+    if ($jan31Row) {
+        request()->merge(['scope' => 'group']);
+        $r = $scheduleController->destroy((string) $jan31Row->id);
+        request()->replace([]);
+        $remainingGroupRows = StaffSchedule::where('staff_id', $staffC->id)
+            ->whereNotNull('recurrence_group_id')
+            ->count();
+        probeResult('delete entire schedule removes rest of group', $remainingGroupRows === 0, 'remaining group count ' . $remainingGroupRows);
+    } else {
+        probeResult('delete entire schedule removes rest of group', false, 'jan31 row not found');
+    }
+} catch (\Throwable $ex) {
+    echo "EX IN TEST 23: " . $ex->getMessage() . " at " . $ex->getFile() . ":" . $ex->getLine() . PHP_EOL;
+}
+
+// ---------------------------------------------------------------------------
+// Test 24: Appointment protection on schedule deletion & modification
+// ---------------------------------------------------------------------------
+// Create working schedule for Feb 14
+$r = $scheduleController->store(makeStoreRequest([
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2027-02-14',
+    'start_time' => '10:00',
+    'end_time' => '16:00',
+]));
+$feb14Schedule = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2027-02-14')->first();
+
+// Book an appointment during this schedule
+$rBook = book($controller, $staffC, $client, $service, Carbon::parse('2027-02-14')->setTime(11, 0), Carbon::parse('2027-02-14')->setTime(12, 0), 'prot test');
+$aptId = responseJson($rBook)['appointment']['id'] ?? null;
+probeResult('appointment booked on Feb 14', responseStatus($rBook) === 201 && $aptId !== null, 'status ' . responseStatus($rBook));
+
+// Try to delete schedule when appointment exists
+request()->merge(['scope' => 'occurrence']);
+$rDel = $scheduleController->destroy((string) $feb14Schedule->id);
+request()->replace([]);
+$afterDelCheck = StaffSchedule::where('id', $feb14Schedule->id)->first();
+probeResult('delete schedule rejected when appointment exists', $afterDelCheck !== null, 'schedule deleted: ' . ($afterDelCheck ? 'no' : 'yes'));
+
+// Try to edit schedule to hours that exclude existing appointment (e.g. 13:00 - 17:00)
+$rEdit = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $feb14Schedule->id,
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2027-02-14',
+    'start_time' => '13:00',
+    'end_time' => '17:00',
+]));
+$afterEditCheck = StaffSchedule::where('id', $feb14Schedule->id)->first();
+probeResult('edit schedule rejected when new hours exclude existing appointment', $afterEditCheck->start_time === '10:00:00', 'start_time ' . $afterEditCheck->start_time);
+
+if ($aptId) {
+    Appointment::find($aptId)?->delete();
+}
+
 $staffC->forceDelete();
 $staffA->forceDelete();
 $staffB->forceDelete();

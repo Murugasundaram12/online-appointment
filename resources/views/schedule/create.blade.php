@@ -132,6 +132,28 @@ if (!function_exists('ordinalSuffix')) {
                     @csrf
                     <input type="hidden" name="schedule_id" value="{{ old('schedule_id', $schedule?->id) }}">
 
+                    @if($editing && ($schedule?->recurrence_group_id || ($editing->recurrence_type && $editing->recurrence_type !== 'one_time')))
+                        <div class="card bg-light border-0 mb-4">
+                            <div class="card-body p-3">
+                                <label class="form-label small fw-bold text-dark d-block mb-2"><i class="bx bx-edit me-1 text-primary"></i>Edit Recurring Schedule Options</label>
+                                <div class="d-flex flex-wrap gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="edit_scope" id="scope_group" value="group" {{ old('edit_scope', $editScope ?? 'group') === 'group' ? 'checked' : '' }}>
+                                        <label class="form-check-label small fw-semibold" for="scope_group">
+                                            Edit entire recurring schedule
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="edit_scope" id="scope_occurrence" value="occurrence" {{ old('edit_scope', $editScope ?? '') === 'occurrence' ? 'checked' : '' }}>
+                                        <label class="form-check-label small fw-semibold" for="scope_occurrence">
+                                            Edit this occurrence only ({{ $schedule?->working_date ? $schedule->working_date->format('d M Y') : 'Selected Date' }})
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <h5 class="mb-3 schedule-section-title"><i class="bx bx-user me-2 text-primary"></i>Staff & Time Details</h5>
 
                     <div class="row g-3 mb-4">

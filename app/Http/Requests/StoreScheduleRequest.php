@@ -28,6 +28,7 @@ class StoreScheduleRequest extends FormRequest
             'yearly_month' => 'required_if:recurrence_type,yearly|nullable|integer|between:1,12',
             'yearly_day' => 'required_if:recurrence_type,yearly|nullable|integer|between:1,31',
             'schedule_id' => 'nullable|exists:staff_schedules,id',
+            'edit_scope' => 'nullable|in:group,occurrence',
             'break_start' => 'nullable|date_format:H:i',
             'break_end' => 'nullable|required_with:break_start|date_format:H:i|after:break_start',
         ];

@@ -422,13 +422,57 @@ if (!function_exists('ordinalSuffix')) {
                                 </td>
                                 <td class="text-end px-4">
                                     <div class="d-flex justify-content-end gap-2">
-                                        <a href="{{ route('schedule.edit', $entry['id']) }}" class="btn btn-sm btn-light border">Edit</a>
-                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                            onsubmit="return confirm('Delete this schedule? This removes every occurrence of this recurring schedule.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                        </form>
+                                        @if(($entry['recurrence_type'] ?? 'one_time') !== 'one_time' || !empty($entry['recurrence_group_id']))
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Edit
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                    <li><a class="dropdown-item small" href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'occurrence']) }}"><i class="bx bx-calendar-event me-2 text-primary"></i>Edit this occurrence only</a></li>
+                                                    <li><a class="dropdown-item small" href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'group']) }}"><i class="bx bx-repeat me-2 text-primary"></i>Edit entire recurring schedule</a></li>
+                                                </ul>
+                                            </div>
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Delete
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                    <li>
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Delete this occurrence only?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <input type="hidden" name="scope" value="occurrence">
+                                                            <button type="submit" class="dropdown-item small text-danger"><i class="bx bx-calendar-x me-2"></i>Delete this occurrence</button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Skip this occurrence? Staff will be unavailable on this date.');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <input type="hidden" name="scope" value="skip">
+                                                            <button type="submit" class="dropdown-item small text-warning"><i class="bx bx-block me-2"></i>Skip this occurrence</button>
+                                                        </form>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Delete entire recurring schedule group?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <input type="hidden" name="scope" value="group">
+                                                            <button type="submit" class="dropdown-item small text-danger fw-semibold"><i class="bx bx-trash me-2"></i>Delete entire schedule</button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        @else
+                                            <a href="{{ route('schedule.edit', $entry['id']) }}" class="btn btn-sm btn-light border">Edit</a>
+                                            <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                onsubmit="return confirm('Delete this schedule?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
