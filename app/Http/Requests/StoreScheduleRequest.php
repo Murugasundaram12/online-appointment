@@ -8,7 +8,14 @@ class StoreScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = \Illuminate\Support\Facades\Auth::guard('staff')->user();
+        if (!$user) return false;
+        
+        if (in_array($user->access_level, ['admin', 'business_owner'])) {
+            return true;
+        }
+        
+        return (int) $user->id === (int) $this->input('staff_id');
     }
 
     public function rules(): array

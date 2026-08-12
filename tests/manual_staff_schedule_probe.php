@@ -116,13 +116,15 @@ cleanupScheduleProbe();
 $tz = config('app.timezone');
 $location = Location::create(['name' => 'SCHED_TEST_Main', 'address' => 'Test Address', 'timezone' => $tz, 'is_active' => true]);
 $service = Service::create(['name' => 'SCHED_TEST_Service', 'type' => 'in_person', 'price' => 50, 'duration_minutes' => 60, 'buffer_minutes' => 0, 'is_active' => true]);
-$staffA = Staff::create(['location_id' => $location->id, 'name' => 'SCHED_TEST_John', 'email' => 'schedtest_john@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'staff', 'category' => 'Doctor', 'is_active' => true]);
+$staffA = Staff::create(['location_id' => $location->id, 'name' => 'SCHED_TEST_John', 'email' => 'schedtest_john@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'admin', 'category' => 'Doctor', 'is_active' => true]);
 $staffB = Staff::create(['location_id' => $location->id, 'name' => 'SCHED_TEST_Staff_B', 'email' => 'schedtest_b@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'staff', 'category' => 'Nurse', 'is_active' => true]);
 $staffC = Staff::create(['location_id' => $location->id, 'name' => 'SCHED_TEST_Staff_C', 'email' => 'schedtest_c@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'staff', 'category' => 'Nurse', 'is_active' => true]);
 $client = Client::create(['name' => 'SCHED_TEST_Client', 'phone' => '9999999999']);
 
 $controller = app(CalendarController::class);
 $scheduleController = app(ScheduleController::class);
+
+Auth::guard('staff')->login($staffA);
 
 // ---------------------------------------------------------------------------
 // Test 1: One-time schedule + booking within/outside + single clean message
