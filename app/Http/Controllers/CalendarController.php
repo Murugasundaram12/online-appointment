@@ -332,6 +332,13 @@ class CalendarController extends Controller
             'notes' => 'nullable|string'
         ]);
 
+        if (!$this->authorizeAppointmentStaffAccess((int) $validated['staff_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to create appointment for this staff member.'
+            ], 403);
+        }
+
         $service = Service::where('is_active', true)->findOrFail($validated['service_id']);
         $staff = Staff::where('is_active', true)->findOrFail($validated['staff_id']);
 
@@ -392,6 +399,21 @@ class CalendarController extends Controller
     public function updateAppointment(Request $request, $id)
     {
         $appointment = Appointment::with(['client', 'service', 'staff', 'location'])->findOrFail($id);
+
+        if (!$this->authorizeAppointmentStaffAccess((int) $appointment->staff_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to modify this appointment.'
+            ], 403);
+        }
+
+        if ($request->filled('staff_id') && !$this->authorizeAppointmentStaffAccess((int) $request->input('staff_id'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to reassign appointment to this staff member.'
+            ], 403);
+        }
+
         $previousAppointment = $appointment->replicate();
         $previousAppointment->setRelation('client', $appointment->client);
         $previousAppointment->setRelation('service', $appointment->service);
@@ -505,6 +527,13 @@ class CalendarController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
+        if (!$this->authorizeAppointmentStaffAccess((int) $appointment->staff_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to modify this appointment.'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id'
         ]);
@@ -541,11 +570,49 @@ class CalendarController extends Controller
      */
     public function quickCreateClient(Request $request)
     {
+        if (!$request->filled('first_name') && $request->filled('name')) {
+            $parts = explode(' ', trim((string) $request->input('name')), 2);
+            $request->merge([
+                'first_name' => $parts[0] ?? '',
+                'last_name' => $parts[1] ?? '',
+            ]);
+        }
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:clients,email',
-            'phone' => 'nullable|string|max:30'
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'gender' => 'nullable|string|in:male,female,other',
+            'dob' => 'nullable|date|before:today',
+            'phone' => [
+                'required',
+                'string',
+                'max:30',
+                Rule::unique('clients', 'phone'),
+            ],
+            'alternate_phone' => 'nullable|string|max:30',
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('clients', 'email'),
+            ],
+            'address_line1' => 'nullable|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'emergency_contact' => 'nullable|string|max:255',
+            'emergency_phone' => 'nullable|string|max:30',
+            'notes' => 'nullable|string|max:5000',
+            'is_vip' => 'nullable|boolean',
+        ], [
+            'phone.unique' => 'A client with this phone number already exists.',
+            'email.unique' => 'A client with this email address already exists.',
+            'dob.before' => 'Date of birth must be a past date.',
         ]);
+
+        $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
         $client = Client::create($validated);
 
@@ -554,6 +621,9 @@ class CalendarController extends Controller
             'client' => [
                 'id' => $client->id,
                 'name' => $client->name,
+                'first_name' => $client->first_name,
+                'last_name' => $client->last_name,
+                'email' => $client->email,
                 'phone' => $client->phone,
             ]
         ], 201);
@@ -862,5 +932,19 @@ class CalendarController extends Controller
         return $baseMessage . '. ' . (($emailResult['sent'] ?? false)
             ? 'Confirmation email sent.'
             : 'Confirmation email could not be sent.');
+    }
+
+    private function authorizeAppointmentStaffAccess(int $staffId): bool
+    {
+        $user = \Illuminate\Support\Facades\Auth::guard('staff')->user();
+        if (!$user) {
+            return false;
+        }
+
+        if (in_array($user->access_level, ['admin', 'business_owner', 'receptionist'], true)) {
+            return true;
+        }
+
+        return (int) $user->id === $staffId;
     }
 }
