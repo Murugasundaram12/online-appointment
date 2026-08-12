@@ -7,9 +7,11 @@ use App\Models\Appointment;
 use App\Models\BusinessSetting;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\PaymentRecord;
 use App\Models\Staff;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -18,7 +20,16 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $invoices = \App\Models\Invoice::with(['client', 'staff'])
+        $staff = Auth::guard('staff')->user();
+
+        $invoices = Invoice::with(['client', 'staff'])
+            ->when($staff && !in_array($staff->access_level, ['admin', 'business_owner'], true) && !is_null($staff->location_id), function ($query) use ($staff) {
+                $query->where(function ($q) use ($staff) {
+                    $q->where('staff_id', $staff->id)
+                        ->orWhereHas('staff', fn ($sq) => $sq->where('location_id', $staff->location_id))
+                        ->orWhereHas('appointment', fn ($aq) => $aq->where('location_id', $staff->location_id));
+                });
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
@@ -34,6 +45,7 @@ class InvoiceController extends Controller
             })
             ->latest()
             ->paginate($this->perPage($request));
+
         return view('invoices.index', compact('invoices'));
     }
 
@@ -78,6 +90,12 @@ class InvoiceController extends Controller
             if (!empty($validated['appointment_id'])) {
                 $appointment = Appointment::with(['client', 'staff', 'service'])->findOrFail($validated['appointment_id']);
 
+                if ($appointment->status === 'cancelled') {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'appointment_id' => 'Cannot create an invoice for a cancelled appointment.',
+                    ]);
+                }
+
                 if ($appointment->invoice()->exists()) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'appointment_id' => 'An invoice already exists for the selected appointment.',
@@ -86,10 +104,29 @@ class InvoiceController extends Controller
             }
 
             $validated['invoice_number'] = $validated['invoice_number'] ?? $this->nextInvoiceNumber();
-            $validated['paid_amount'] = min((float) ($validated['paid_amount'] ?? 0), (float) $validated['total_amount']);
-            $validated['status'] = $validated['status'] ?? $this->statusForAmounts($validated['paid_amount'], $validated['total_amount']);
+            $initialPaid = min((float) ($validated['paid_amount'] ?? 0), (float) $validated['total_amount']);
+            $totalAmount = (float) $validated['total_amount'];
 
-            return Invoice::create($validated);
+            $validated['paid_amount'] = 0;
+            $validated['status'] = ($validated['status'] ?? null) === 'void' ? 'void' : 'outstanding';
+
+            $invoice = Invoice::create($validated);
+
+            if ($initialPaid > 0 && $invoice->status !== 'void') {
+                PaymentRecord::create([
+                    'invoice_id' => $invoice->id,
+                    'amount' => $initialPaid,
+                    'payment_method' => 'cash',
+                    'payment_date' => $validated['issued_date'] ?? now()->toDateString(),
+                    'transaction_id' => 'INIT-' . $invoice->id,
+                ]);
+
+                $invoice->paid_amount = $initialPaid;
+                $invoice->status = $this->statusForAmounts($initialPaid, $totalAmount);
+                $invoice->save();
+            }
+
+            return $invoice;
         });
 
         return redirect()->route('invoices.show', $invoice->id)->with('success', 'Invoice created successfully.');
@@ -98,6 +135,7 @@ class InvoiceController extends Controller
     public function show(string $id)
     {
         $invoice = $this->invoiceQuery()->findOrFail($id);
+        $this->authorizeInvoiceAccess($invoice);
 
         return view('invoices.show', $this->invoiceViewData($invoice));
     }
@@ -105,6 +143,8 @@ class InvoiceController extends Controller
     public function download(string $id)
     {
         $invoice = $this->invoiceQuery()->findOrFail($id);
+        $this->authorizeInvoiceAccess($invoice);
+
         $data = $this->invoiceViewData($invoice, true);
         $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
 
@@ -125,45 +165,93 @@ class InvoiceController extends Controller
 
     public function edit(string $id)
     {
-        $invoice = \App\Models\Invoice::findOrFail($id);
+        $invoice = Invoice::with(['staff', 'appointment'])->findOrFail($id);
+        $this->authorizeInvoiceAccess($invoice);
+
         return view('invoices.edit', compact('invoice'));
     }
 
     public function update(Request $request, string $id)
     {
-        $invoice = \App\Models\Invoice::findOrFail($id);
+        $invoice = Invoice::with(['staff', 'appointment', 'payments'])->findOrFail($id);
+        $this->authorizeInvoiceAccess($invoice);
+
         $validated = $request->validate([
             'appointment_id' => 'nullable|exists:appointments,id',
             'client_id' => 'required|exists:clients,id',
             'staff_id' => 'required|exists:staff,id',
             'invoice_number' => ['required', 'string', 'max:255', Rule::unique('invoices', 'invoice_number')->ignore($invoice->id)],
             'total_amount' => 'required|numeric|min:0.01',
-            'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'required|in:outstanding,paid,partially_paid,void',
             'issued_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:issued_date',
         ], [
             'invoice_number.unique' => 'This invoice number is already used by another invoice.',
         ]);
-        $validated['paid_amount'] = min((float) ($validated['paid_amount'] ?? 0), (float) $validated['total_amount']);
-        if ($validated['status'] !== 'void') {
-            $validated['status'] = $this->statusForAmounts($validated['paid_amount'], $validated['total_amount']);
-        }
-        $invoice->update($validated);
+
+        DB::transaction(function () use ($invoice, $validated) {
+            $totalAmount = (float) $validated['total_amount'];
+            $actualPaidFromRecords = (float) $invoice->payments()->sum('amount');
+
+            if ($totalAmount < $actualPaidFromRecords) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'total_amount' => 'Total amount ($' . number_format($totalAmount, 2) . ') cannot be less than total recorded payments ($' . number_format($actualPaidFromRecords, 2) . ').',
+                ]);
+            }
+
+            // Payment records are source of truth for paid_amount
+            $validated['paid_amount'] = min($actualPaidFromRecords, $totalAmount);
+
+            if ($validated['status'] !== 'void') {
+                $validated['status'] = $this->statusForAmounts($validated['paid_amount'], $totalAmount);
+            }
+
+            $invoice->update($validated);
+        });
 
         return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully.');
     }
 
     public function destroy(string $id)
     {
-        \App\Models\Invoice::findOrFail($id)->delete();
+        $invoice = Invoice::with(['staff', 'appointment'])->findOrFail($id);
+        $this->authorizeInvoiceAccess($invoice);
+
+        $invoice->delete();
         return redirect()->route('invoices.index')->with('success', 'Invoice deleted successfully.');
+    }
+
+    private function authorizeInvoiceAccess(Invoice $invoice): void
+    {
+        $staff = Auth::guard('staff')->user();
+        if (!$staff) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (in_array($staff->access_level, ['admin', 'business_owner'], true)) {
+            return;
+        }
+
+        if (is_null($staff->location_id)) {
+            return;
+        }
+
+        $invoiceStaffLocation = $invoice->staff?->location_id;
+        $appointmentLocation = $invoice->appointment?->location_id;
+
+        $matchesLocation = ($invoiceStaffLocation && (int) $invoiceStaffLocation === (int) $staff->location_id)
+            || ($appointmentLocation && (int) $appointmentLocation === (int) $staff->location_id)
+            || ((int) $invoice->staff_id === (int) $staff->id);
+
+        if (!$matchesLocation) {
+            abort(403, 'Unauthorized access to invoice at another location.');
+        }
     }
 
     private function nextInvoiceNumber(): string
     {
-        $prefix = \App\Models\BusinessSetting::where('key', 'invoice_prefix')->value('value') ?: 'INV';
-        return $prefix . '-' . now()->format('Ymd') . '-' . str_pad((string) ((\App\Models\Invoice::max('id') ?? 0) + 1), 4, '0', STR_PAD_LEFT);
+        $prefix = BusinessSetting::where('key', 'invoice_prefix')->value('value') ?: 'INV';
+        return $prefix . '-' . now()->format('Ymd') . '-' . str_pad((string) ((Invoice::max('id') ?? 0) + 1), 4, '0', STR_PAD_LEFT);
     }
 
     private function statusForAmounts(float $paid, float $total): string

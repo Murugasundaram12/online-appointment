@@ -6,13 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PaymentRecordController extends Controller
 {
     public function index(Request $request)
     {
-        $paymentRecords = PaymentRecord::with('invoice.client')
+        $staff = Auth::guard('staff')->user();
+
+        $paymentRecords = PaymentRecord::with('invoice.client', 'invoice.staff', 'invoice.appointment')
+            ->when($staff && !in_array($staff->access_level, ['admin', 'business_owner'], true) && !is_null($staff->location_id), function ($query) use ($staff) {
+                $query->whereHas('invoice', function ($iq) use ($staff) {
+                    $iq->where('staff_id', $staff->id)
+                        ->orWhereHas('staff', fn ($sq) => $sq->where('location_id', $staff->location_id))
+                        ->orWhereHas('appointment', fn ($aq) => $aq->where('location_id', $staff->location_id));
+                });
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
@@ -26,13 +37,16 @@ class PaymentRecordController extends Controller
             })
             ->latest()
             ->paginate($this->perPage($request));
+
         $invoices = Invoice::with('client')->where('status', '!=', 'void')->orderByDesc('issued_date')->get();
+
         $summary = [
             'total' => PaymentRecord::sum('amount'),
             'cash' => PaymentRecord::where('payment_method', 'cash')->sum('amount'),
             'card' => PaymentRecord::where('payment_method', 'card')->sum('amount'),
             'transfer' => PaymentRecord::where('payment_method', 'transfer')->sum('amount'),
         ];
+
         return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary'));
     }
 
@@ -53,7 +67,9 @@ class PaymentRecordController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                $invoice = Invoice::lockForUpdate()->findOrFail($validated['invoice_id']);
+                $invoice = Invoice::with(['staff', 'appointment'])->lockForUpdate()->findOrFail($validated['invoice_id']);
+                $this->authorizeInvoiceAccess($invoice);
+
                 if ($invoice->status === 'void') {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'invoice_id' => 'Payments cannot be added to a void invoice.',
@@ -71,6 +87,8 @@ class PaymentRecordController extends Controller
                 $this->syncInvoicePaymentStatus($invoice);
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (HttpException $e) {
             throw $e;
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', 'Payment could not be saved: ' . $e->getMessage());
@@ -98,16 +116,47 @@ class PaymentRecordController extends Controller
     {
         try {
             DB::transaction(function () use ($id) {
-                $payment = PaymentRecord::with('invoice')->findOrFail($id);
+                $payment = PaymentRecord::with('invoice.staff', 'invoice.appointment')->findOrFail($id);
+                $this->authorizeInvoiceAccess($payment->invoice);
+
                 $invoice = Invoice::lockForUpdate()->findOrFail($payment->invoice_id);
                 $payment->delete();
                 $this->syncInvoicePaymentStatus($invoice);
             });
+        } catch (HttpException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return back()->with('error', 'Payment could not be deleted: ' . $e->getMessage());
         }
 
         return redirect()->route('payment-records.index')->with('success', 'Payment Record deleted successfully.');
+    }
+
+    private function authorizeInvoiceAccess(Invoice $invoice): void
+    {
+        $staff = Auth::guard('staff')->user();
+        if (!$staff) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (in_array($staff->access_level, ['admin', 'business_owner'], true)) {
+            return;
+        }
+
+        if (is_null($staff->location_id)) {
+            return;
+        }
+
+        $invoiceStaffLocation = $invoice->staff?->location_id;
+        $appointmentLocation = $invoice->appointment?->location_id;
+
+        $matchesLocation = ($invoiceStaffLocation && (int) $invoiceStaffLocation === (int) $staff->location_id)
+            || ($appointmentLocation && (int) $appointmentLocation === (int) $staff->location_id)
+            || ((int) $invoice->staff_id === (int) $staff->id);
+
+        if (!$matchesLocation) {
+            abort(403, 'Unauthorized access to invoice at another location.');
+        }
     }
 
     private function syncInvoicePaymentStatus(Invoice $invoice): void

@@ -210,15 +210,24 @@ class OnlineBookingController extends Controller
             }
         }
 
-        $queryStart = $start->copy();
-        $queryEnd = $end->copy()->addMinutes(max(0, $newBufferMinutes));
+        $qs = $queryStart->copy();
+        $qe = $queryEnd->copy();
 
-        return !Appointment::where('staff_id', $staffId)
+        $existingAppointments = Appointment::with('service')
+            ->where('staff_id', $staffId)
             ->whereIn('status', ['pending', 'booked', 'confirmed'])
-            ->where(function ($q) use ($queryStart, $queryEnd) {
-                $q->where('start_time', '<', $queryEnd)
-                    ->whereRaw('DATE_ADD(end_time, INTERVAL COALESCE((SELECT buffer_minutes FROM services WHERE services.id = appointments.service_id), 0) MINUTE) > ?', [$queryStart]);
-            })
-            ->exists();
+            ->where('start_time', '<', $qe->toDateTimeString())
+            ->where('end_time', '>', $qs->copy()->subHours(12)->toDateTimeString())
+            ->get();
+
+        foreach ($existingAppointments as $existingAppt) {
+            $buffer = (int) ($existingAppt->service?->buffer_minutes ?? 0);
+            $effectiveEnd = $existingAppt->end_time->copy()->addMinutes($buffer);
+            if ($existingAppt->start_time->lt($qe) && $effectiveEnd->gt($qs)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

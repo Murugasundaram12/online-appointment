@@ -143,7 +143,7 @@ class CalendarController extends Controller
             'pending_appointments' => Appointment::where('status', 'pending')->count(),
             'completed_appointments' => Appointment::where('status', 'completed')->count(),
             'cancelled_appointments' => Appointment::where('status', 'cancelled')->count(),
-            'outstanding_invoice_amount' => \App\Models\Invoice::where('status', '!=', 'void')->sum(\Illuminate\Support\Facades\DB::raw('GREATEST(total_amount - paid_amount, 0)')),
+            'outstanding_invoice_amount' => (float) max(0, \App\Models\Invoice::where('status', '!=', 'void')->selectRaw('SUM(total_amount - paid_amount) as bal')->value('bal') ?? 0),
             'paid_invoice_amount' => \App\Models\Invoice::where('status', '!=', 'void')->sum('paid_amount'),
             'pending_payroll_count' => Payroll::where('status', 'pending')->count(),
             'monthly_payroll_amount' => Payroll::whereBetween('payment_date', [$monthStart, $monthEnd])
@@ -923,22 +923,26 @@ class CalendarController extends Controller
         $queryStart = $startTime->copy();
         $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes));
 
-        $query = Appointment::where('staff_id', $staffId)
+        $qs = Carbon::parse($queryStart);
+        $qe = Carbon::parse($queryEnd);
+
+        $existingAppointments = Appointment::with('service')
+            ->where('staff_id', $staffId)
             ->whereIn('status', ['pending', 'booked', 'confirmed'])
-            ->where(function ($q) use ($queryStart, $queryEnd) {
-                $q->where('start_time', '<', $queryEnd)
-                    ->whereRaw('DATE_ADD(end_time, INTERVAL COALESCE((SELECT buffer_minutes FROM services WHERE services.id = appointments.service_id), 0) MINUTE) > ?', [$queryStart]);
-            });
+            ->where('start_time', '<', $qe->toDateTimeString())
+            ->where('end_time', '>', $qs->copy()->subHours(12)->toDateTimeString())
+            ->when($excludeAppointmentId, fn ($q) => $q->where('id', '!=', $excludeAppointmentId))
+            ->get();
 
-        if ($excludeAppointmentId) {
-            $query->where('id', '!=', $excludeAppointmentId);
-        }
-
-        if ($query->exists()) {
-            return [
-                'available' => false,
-                'message' => 'This time slot is already booked.'
-            ];
+        foreach ($existingAppointments as $existingAppt) {
+            $buffer = (int) ($existingAppt->service?->buffer_minutes ?? 0);
+            $effectiveEnd = $existingAppt->end_time->copy()->addMinutes($buffer);
+            if ($existingAppt->start_time->lt($qe) && $effectiveEnd->gt($qs)) {
+                return [
+                    'available' => false,
+                    'message' => 'This time slot is already booked.'
+                ];
+            }
         }
 
         return [
