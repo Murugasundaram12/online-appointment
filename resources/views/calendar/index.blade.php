@@ -647,6 +647,13 @@
             border: 1px solid #ffdeaa;
         }
 
+        #appointment-details-card .card-status-chip.status-pending { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
+        #appointment-details-card .card-status-chip.status-booked { color: #1e40af; background: #dbeafe; border: 1px solid #bfdbfe; }
+        #appointment-details-card .card-status-chip.status-confirmed { color: #3730a3; background: #e0e7ff; border: 1px solid #c7d2fe; }
+        #appointment-details-card .card-status-chip.status-completed { color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; }
+        #appointment-details-card .card-status-chip.status-cancelled { color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; }
+        #appointment-details-card .card-status-chip.status-no_show { color: #5b21b6; background: #ede9fe; border: 1px solid #ddd6fe; }
+
         #appointment-details-card .card-close {
             border: 0;
             background: transparent;
@@ -780,8 +787,10 @@
                         <option value="">All statuses</option>
                         <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
+                        <option value="confirmed" {{ ($filters['status'] ?? '') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                         <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show</option>
                     </select>
                     <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
                 </div>
@@ -852,6 +861,12 @@
                 <div class="detail-value" id="readonly-card-notes"></div>
             </div>
         </div>
+        <div id="card-quick-actions" class="p-2 border-top d-flex gap-1 flex-wrap align-items-center">
+            <button type="button" class="btn btn-sm btn-outline-primary btn-quick-status d-none" data-status="confirmed"><i class='bx bx-check-double me-1'></i>Confirm</button>
+            <button type="button" class="btn btn-sm btn-outline-success btn-quick-status d-none" data-status="completed"><i class='bx bx-check-circle me-1'></i>Complete</button>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-quick-status d-none" data-status="cancelled"><i class='bx bx-x-circle me-1'></i>Cancel</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-quick-status d-none" data-status="no_show"><i class='bx bx-user-x me-1'></i>No-Show</button>
+        </div>
     </div>
 
     <div class="modal fade app-modal" id="appointmentModal" tabindex="-1" aria-labelledby="appointment-modal-title" aria-hidden="true">
@@ -915,8 +930,10 @@
                                 <select id="appt-status" class="form-select" required>
                                     <option value="pending">Pending</option>
                                     <option value="booked">Booked</option>
+                                    <option value="confirmed">Confirmed</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
+                                    <option value="no_show">No Show</option>
                                 </select>
                             </div>
 
@@ -1412,23 +1429,64 @@
             }
 
             function fillReadonlyAppointmentCard(appt) {
+                if (appointmentDetailsCard) {
+                    appointmentDetailsCard.dataset.appointmentId = appt.id || '';
+                }
                 if (readonlyCardStaff) readonlyCardStaff.textContent = appt.staff || 'N/A';
                 if (readonlyCardService) readonlyCardService.textContent = appt.service || 'N/A';
                 if (readonlyCardClient) readonlyCardClient.textContent = appt.title || 'Unassigned';
                 if (readonlyCardStart) readonlyCardStart.textContent = formatDateTimeLong(appt.start);
                 if (readonlyCardEnd) readonlyCardEnd.textContent = formatDateTimeLong(appt.end);
-                if (readonlyCardStatus) readonlyCardStatus.textContent = appt.status || '-';
+                
+                const status = String(appt.status || '').toLowerCase();
+                const labelMap = {
+                    pending: 'Pending',
+                    booked: 'Booked',
+                    confirmed: 'Confirmed',
+                    completed: 'Completed',
+                    cancelled: 'Cancelled',
+                    no_show: 'No Show'
+                };
+                if (readonlyCardStatus) readonlyCardStatus.textContent = labelMap[status] || appt.status || '-';
                 if (readonlyCardNotes) readonlyCardNotes.textContent = appt.notes || '-';
                 if (readonlyCardStatusChip) {
-                    const status = String(appt.status || '').toLowerCase();
                     readonlyCardStatusChip.className = 'card-status-chip d-none';
                     readonlyCardStatusChip.textContent = '';
-                    if (status === 'tentative') {
+                    const chipMap = {
+                        pending: { class: 'status-pending', text: 'Pending' },
+                        booked: { class: 'status-booked', text: 'Booked' },
+                        confirmed: { class: 'status-confirmed', text: 'Confirmed' },
+                        completed: { class: 'status-completed', text: 'Completed' },
+                        cancelled: { class: 'status-cancelled', text: 'Cancelled' },
+                        no_show: { class: 'status-no_show', text: 'No Show' },
+                        tentative: { class: 'status-tentative', text: 'Tentative' }
+                    };
+                    if (chipMap[status]) {
                         readonlyCardStatusChip.classList.remove('d-none');
-                        readonlyCardStatusChip.classList.add('status-tentative');
-                        readonlyCardStatusChip.textContent = 'Tentative';
+                        readonlyCardStatusChip.classList.add(chipMap[status].class);
+                        readonlyCardStatusChip.textContent = chipMap[status].text;
                     }
                 }
+
+                // Update Quick Action Buttons Visibility
+                const allowedMap = {
+                    pending: ['confirmed', 'cancelled', 'no_show'],
+                    booked: ['confirmed', 'cancelled', 'no_show'],
+                    confirmed: ['completed', 'cancelled', 'no_show'],
+                    completed: [],
+                    cancelled: [],
+                    no_show: []
+                };
+                const validNext = allowedMap[status] || [];
+                const quickActionBtns = document.querySelectorAll('#card-quick-actions .btn-quick-status');
+                quickActionBtns.forEach(btn => {
+                    const targetStatus = btn.dataset.status;
+                    if (validNext.includes(targetStatus)) {
+                        btn.classList.remove('d-none');
+                    } else {
+                        btn.classList.add('d-none');
+                    }
+                });
             }
 
             function positionAppointmentDetailsCard(clickEvent) {
@@ -2828,6 +2886,40 @@
 
                 openAppointmentModalForCreate(selectedDate, endDate, preferredStaffId);
             }
+            // Quick status action buttons on details card
+            document.querySelectorAll('#card-quick-actions .btn-quick-status').forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const apptId = appointmentDetailsCard ? appointmentDetailsCard.dataset.appointmentId : null;
+                    const newStatus = this.dataset.status;
+                    if (!apptId || !newStatus) return;
+
+                    this.disabled = true;
+                    try {
+                        const res = await fetch(calendarUrl(`appointments/${apptId}`), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': getCsrfToken()
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            hideAppointmentDetailsCard();
+                            showPageNotice(`Appointment status updated to ${newStatus.replace('_', ' ')}.`, 'success');
+                            await loadDataAndRender();
+                        } else {
+                            showPageNotice(data.message || 'Failed to update status', 'danger');
+                        }
+                    } catch (err) {
+                        showPageNotice('Error updating status: ' + err.message, 'danger');
+                    } finally {
+                        this.disabled = false;
+                    }
+                });
+            });
+
             function getCsrfToken() {
                 const meta = document.querySelector('meta[name="csrf-token"]');
                 return meta ? meta.getAttribute('content') : '';

@@ -170,6 +170,13 @@
 
             <div class="col-6 col-md-4 col-lg-2">
                 <div class="card profile-card p-3 text-center">
+                    <div class="text-muted small fw-semibold">No Show</div>
+                    <div class="stat-card-metric text-secondary mt-1">{{ $client->no_show_appointments_count ?? 0 }}</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card profile-card p-3 text-center">
                     <div class="text-muted small fw-semibold">Lifetime Revenue</div>
                     <div class="stat-card-metric text-success mt-1">${{ number_format($totalPaid, 2) }}</div>
                 </div>
@@ -273,8 +280,18 @@
                                             <td>{{ $app->staff?->name ?? 'N/A' }}</td>
                                             <td>{{ $app->location?->name ?? 'Flexible' }}</td>
                                             <td>
-                                                <span class="badge {{ $app->status === 'completed' ? 'bg-success' : ($app->status === 'cancelled' ? 'bg-danger' : 'bg-warning') }} text-white">
-                                                    {{ ucfirst($app->status) }}
+                                                @php
+                                                    $badgeClass = match($app->status) {
+                                                        'completed' => 'bg-success',
+                                                        'cancelled' => 'bg-danger',
+                                                        'confirmed' => 'bg-primary',
+                                                        'no_show'   => 'bg-secondary',
+                                                        'pending'   => 'bg-warning text-dark',
+                                                        default     => 'bg-info',
+                                                    };
+                                                @endphp
+                                                <span class="badge {{ $badgeClass }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $app->status)) }}
                                                 </span>
                                             </td>
                                             <td>

@@ -806,7 +806,7 @@ class CalendarController extends Controller
         $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes));
 
         $query = Appointment::where('staff_id', $staffId)
-            ->where('status', '!=', 'cancelled')
+            ->whereIn('status', ['pending', 'booked', 'confirmed'])
             ->where(function ($q) use ($queryStart, $queryEnd) {
                 $q->where('start_time', '<', $queryEnd)
                     ->whereRaw('DATE_ADD(end_time, INTERVAL COALESCE((SELECT buffer_minutes FROM services WHERE services.id = appointments.service_id), 0) MINUTE) > ?', [$queryStart]);
