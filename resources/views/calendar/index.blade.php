@@ -861,6 +861,11 @@
                 <div class="detail-value" id="readonly-card-notes"></div>
             </div>
         </div>
+        <div id="card-quick-links" class="px-3 py-2 border-top bg-light d-flex gap-2 flex-wrap align-items-center" style="font-size: 0.8rem;">
+            <a id="card-link-client" href="#" target="_blank" class="text-primary text-decoration-none fw-semibold"><i class="bx bx-user me-1"></i>View Client</a>
+            <a id="card-link-invoice" href="#" target="_blank" class="text-success text-decoration-none fw-semibold d-none"><i class="bx bx-receipt me-1"></i>View Invoice (<span id="card-link-invoice-num"></span>)</a>
+            <a id="card-link-forms" href="#" target="_blank" class="text-info text-decoration-none fw-semibold d-none"><i class="bx bx-file me-1"></i>View Forms</a>
+        </div>
         <div id="card-quick-actions" class="p-2 border-top d-flex gap-1 flex-wrap align-items-center">
             <button type="button" class="btn btn-sm btn-outline-primary btn-quick-status d-none" data-status="confirmed"><i class='bx bx-check-double me-1'></i>Confirm</button>
             <button type="button" class="btn btn-sm btn-outline-success btn-quick-status d-none" data-status="completed"><i class='bx bx-check-circle me-1'></i>Complete</button>
@@ -911,6 +916,25 @@
                                     <select id="appt-client" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
                                         New</button>
+                                </div>
+                                <div id="appt-client-snapshot" class="alert alert-light border p-3 mt-2 d-none" style="font-size: 0.82rem; border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <strong id="snapshot-client-name" class="fs-6 text-dark"></strong>
+                                            <span id="snapshot-vip-badge" class="badge bg-warning text-dark ms-1 d-none"><i class="bx bx-star"></i> VIP</span>
+                                        </div>
+                                        <a id="snapshot-full-profile-link" href="#" target="_blank" class="btn btn-xs btn-outline-primary fw-semibold"><i class="bx bx-external-link me-1"></i>View Full Client</a>
+                                    </div>
+                                    <div class="row g-2 text-muted mb-2">
+                                        <div class="col-6 col-sm-3">Last Visit: <strong id="snapshot-last-visit" class="text-dark">-</strong></div>
+                                        <div class="col-6 col-sm-3">Next Appt: <strong id="snapshot-next-appt" class="text-dark">-</strong></div>
+                                        <div class="col-6 col-sm-3">Total Visits: <strong id="snapshot-total-appts" class="text-dark">0</strong></div>
+                                        <div class="col-6 col-sm-3">No Shows: <strong id="snapshot-no-show" class="text-danger">0</strong></div>
+                                    </div>
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top">
+                                        <div>Outstanding: <strong id="snapshot-outstanding" class="text-dark">$0.00</strong></div>
+                                        <div id="snapshot-notes-container" class="text-muted text-truncate d-none" style="max-width: 250px;">Note: <span id="snapshot-notes"></span></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1487,6 +1511,39 @@
                         btn.classList.add('d-none');
                     }
                 });
+
+                // Quick links update
+                const cardLinkClient = document.getElementById('card-link-client');
+                const cardLinkInvoice = document.getElementById('card-link-invoice');
+                const cardLinkInvoiceNum = document.getElementById('card-link-invoice-num');
+                const cardLinkForms = document.getElementById('card-link-forms');
+
+                const clientId = appt.clientId || appt.client_id;
+                if (cardLinkClient) {
+                    if (clientId) {
+                        cardLinkClient.href = `/clients/${clientId}`;
+                        cardLinkClient.classList.remove('d-none');
+                    } else {
+                        cardLinkClient.classList.add('d-none');
+                    }
+                }
+                if (cardLinkInvoice) {
+                    if (appt.invoiceId) {
+                        cardLinkInvoice.href = `/invoices/${appt.invoiceId}`;
+                        if (cardLinkInvoiceNum) cardLinkInvoiceNum.textContent = appt.invoiceNumber || appt.invoiceId;
+                        cardLinkInvoice.classList.remove('d-none');
+                    } else {
+                        cardLinkInvoice.classList.add('d-none');
+                    }
+                }
+                if (cardLinkForms) {
+                    if (appt.hasForms && clientId) {
+                        cardLinkForms.href = `/clients/${clientId}#tab-forms`;
+                        cardLinkForms.classList.remove('d-none');
+                    } else {
+                        cardLinkForms.classList.add('d-none');
+                    }
+                }
             }
 
             function positionAppointmentDetailsCard(clickEvent) {
@@ -2919,6 +2976,60 @@
                     }
                 });
             });
+
+            async function loadClientSnapshot(clientId) {
+                const snapshotBox = document.getElementById('appt-client-snapshot');
+                if (!snapshotBox) return;
+                if (!clientId) {
+                    snapshotBox.classList.add('d-none');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(calendarUrl(`clients/${clientId}/snapshot`));
+                    if (!res.ok) { snapshotBox.classList.add('d-none'); return; }
+                    const data = await res.json();
+                    if (!data.success || !data.client) { snapshotBox.classList.add('d-none'); return; }
+
+                    const c = data.client;
+                    const nameEl = document.getElementById('snapshot-client-name');
+                    const vipEl = document.getElementById('snapshot-vip-badge');
+                    const linkEl = document.getElementById('snapshot-full-profile-link');
+                    const lastVisitEl = document.getElementById('snapshot-last-visit');
+                    const nextApptEl = document.getElementById('snapshot-next-appt');
+                    const totalApptsEl = document.getElementById('snapshot-total-appts');
+                    const noShowEl = document.getElementById('snapshot-no-show');
+                    const outstandingEl = document.getElementById('snapshot-outstanding');
+                    const notesContainer = document.getElementById('snapshot-notes-container');
+                    const notesSpan = document.getElementById('snapshot-notes');
+
+                    if (nameEl) nameEl.textContent = c.name;
+                    if (vipEl) vipEl.classList.toggle('d-none', !c.is_vip);
+                    if (linkEl) linkEl.href = `/clients/${c.id}`;
+                    if (lastVisitEl) lastVisitEl.textContent = c.last_visit || 'None';
+                    if (nextApptEl) nextApptEl.textContent = c.next_appointment || 'None';
+                    if (totalApptsEl) totalApptsEl.textContent = c.total_appointments || '0';
+                    if (noShowEl) noShowEl.textContent = c.no_show_count || '0';
+                    if (outstandingEl) outstandingEl.textContent = '$' + (c.outstanding_amount || 0).toFixed(2);
+
+                    if (c.notes && notesContainer && notesSpan) {
+                        notesSpan.textContent = c.notes;
+                        notesContainer.classList.remove('d-none');
+                    } else if (notesContainer) {
+                        notesContainer.classList.add('d-none');
+                    }
+
+                    snapshotBox.classList.remove('d-none');
+                } catch (e) {
+                    snapshotBox.classList.add('d-none');
+                }
+            }
+
+            if (clientField) {
+                clientField.addEventListener('change', function () {
+                    loadClientSnapshot(this.value);
+                });
+            }
 
             function getCsrfToken() {
                 const meta = document.querySelector('meta[name="csrf-token"]');

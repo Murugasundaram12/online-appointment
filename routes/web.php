@@ -53,6 +53,7 @@ Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.in
 Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
 Route::get('/calendar/staff-schedules', [CalendarController::class, 'getStaffSchedules'])->name('calendar.staffSchedules');
 Route::get('/calendar/clients/search', [CalendarController::class, 'searchClients'])->name('calendar.clients.search');
+Route::get('/calendar/clients/{id}/snapshot', [CalendarController::class, 'clientSnapshot'])->name('calendar.clients.snapshot');
 Route::post('/calendar/appointments', [CalendarController::class, 'storeAppointment'])->name('calendar.store');
 Route::get('/calendar/appointments/{id}', [CalendarController::class, 'getAppointment'])->name('calendar.show');
 Route::put('/calendar/appointments/{id}', [CalendarController::class, 'updateAppointment'])->name('calendar.update');

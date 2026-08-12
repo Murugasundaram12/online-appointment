@@ -120,6 +120,7 @@
                             </div>
                             <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mt-1">
                                 <span><i class="bx bx-calendar-check me-1 text-primary"></i> Created: {{ $client->client_since ? $client->client_since->format('M d, Y') : $client->created_at->format('M d, Y') }}</span>
+                                @if($client->dob) <span><i class="bx bx-cake me-1 text-danger"></i> Age: {{ $client->age ?? 'N/A' }} ({{ $client->dob->format('M d, Y') }})</span> @endif
                                 <span><i class="bx bx-time me-1 text-info"></i> Last Visit: {{ $lastVisit ? $lastVisit->format('M d, Y') : 'No past visits' }}</span>
                                 <span><i class="bx bx-calendar-event me-1 text-success"></i> Next Appointment: {{ $nextAppointment ? $nextAppointment->format('M d, Y g:i A') : 'None scheduled' }}</span>
                             </div>
@@ -233,8 +234,7 @@
                                     <tr><td class="text-muted">Last Name</td><td class="fw-semibold">{{ $client->last_name ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Full Name</td><td class="fw-semibold">{{ $client->name }}</td></tr>
                                     <tr><td class="text-muted">Gender</td><td class="fw-semibold text-capitalize">{{ $client->gender ?: '-' }}</td></tr>
-                                    <tr><td class="text-muted">Date of Birth</td><td class="fw-semibold">{{ $client->dob ? $client->dob->format('M d, Y') : '-' }}</td></tr>
-                                    <tr><td class="text-muted">Auto-calculated Age</td><td class="fw-semibold">{{ $client->age ? $client->age . ' years old' : '-' }}</td></tr>
+                                    <tr><td class="text-muted">Date of Birth</td><td class="fw-semibold">{{ $client->dob ? $client->dob->format('M d, Y') . ' (' . ($client->age ? $client->age . ' yrs' : '') . ')' : '-' }}</td></tr>
                                     <tr><td class="text-muted">Phone Number</td><td class="fw-semibold">{{ $client->phone ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Alternate Phone</td><td class="fw-semibold">{{ $client->alternate_phone ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Email Address</td><td class="fw-semibold">{{ $client->email ?: '-' }}</td></tr>
@@ -259,6 +259,51 @@
 
                     <!-- TAB 2: APPOINTMENT HISTORY -->
                     <div class="tab-pane fade" id="tab-appts" role="tabpanel">
+                        @if(isset($upcomingAppointments) && $upcomingAppointments->isNotEmpty())
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-dark mb-3"><i class="bx bx-calendar-event me-2 text-primary"></i>Upcoming Appointments ({{ $upcomingAppointments->count() }})</h6>
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-hover align-middle border">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Date & Time</th>
+                                                <th>Service</th>
+                                                <th>Staff</th>
+                                                <th>Location</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($upcomingAppointments as $uApp)
+                                                <tr>
+                                                    <td class="fw-semibold text-primary">{{ $uApp->start_time ? $uApp->start_time->format('M d, Y g:i A') : '-' }}</td>
+                                                    <td>{{ $uApp->service?->name ?? 'N/A' }}</td>
+                                                    <td>{{ $uApp->staff?->name ?? 'N/A' }}</td>
+                                                    <td>{{ $uApp->location?->name ?? 'Flexible' }}</td>
+                                                    <td>
+                                                        @php
+                                                            $uBadgeClass = match($uApp->status) {
+                                                                'confirmed' => 'bg-primary',
+                                                                'booked'    => 'bg-info',
+                                                                'pending'   => 'bg-warning text-dark',
+                                                                default     => 'bg-secondary',
+                                                            };
+                                                        @endphp
+                                                        <span class="badge {{ $uBadgeClass }}">{{ ucfirst(str_replace('_', ' ', $uApp->status)) }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ route('calendar.index', ['staff_id' => $uApp->staff_id]) }}" class="btn btn-sm btn-outline-primary me-1"><i class="bx bx-calendar me-1"></i>View Calendar</a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+
+                        <h6 class="fw-bold text-dark mb-3"><i class="bx bx-history me-2 text-muted"></i>All Appointment History</h6>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">

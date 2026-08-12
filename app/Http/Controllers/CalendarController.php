@@ -106,11 +106,40 @@ class CalendarController extends Controller
         $monthStart = Carbon::now()->startOfMonth();
         $monthEnd = Carbon::now()->endOfMonth();
 
+        // Today's appointment counts by status
+        $todayAppointmentsQuery = Appointment::whereDate('start_time', $today);
+        $todayTotal = (clone $todayAppointmentsQuery)->count();
+        $todayPending = (clone $todayAppointmentsQuery)->where('status', 'pending')->count();
+        $todayBooked = (clone $todayAppointmentsQuery)->where('status', 'booked')->count();
+        $todayConfirmed = (clone $todayAppointmentsQuery)->where('status', 'confirmed')->count();
+        $todayCompleted = (clone $todayAppointmentsQuery)->where('status', 'completed')->count();
+        $todayCancelled = (clone $todayAppointmentsQuery)->where('status', 'cancelled')->count();
+        $todayNoShow = (clone $todayAppointmentsQuery)->where('status', 'no_show')->count();
+
+        // Today's revenue (collected payment records + paid invoices today)
+        $todayRevenue = (float) \App\Models\PaymentRecord::whereDate('payment_date', $today)->sum('amount');
+        if ($todayRevenue <= 0) {
+            $todayRevenue = (float) \App\Models\Invoice::whereDate('issued_date', $today)
+                ->where('status', '!=', 'void')
+                ->sum('paid_amount');
+        }
+
+        $todayStats = [
+            'total' => $todayTotal,
+            'pending' => $todayPending,
+            'booked' => $todayBooked,
+            'confirmed' => $todayConfirmed,
+            'completed' => $todayCompleted,
+            'cancelled' => $todayCancelled,
+            'no_show' => $todayNoShow,
+            'revenue' => $todayRevenue,
+        ];
+
         $stats = [
             'clients' => Client::count(),
             'active_staff' => Staff::where('is_active', true)->count(),
             'active_services' => Service::where('is_active', true)->count(),
-            'today_appointments' => Appointment::whereDate('start_time', $today)->count(),
+            'today_appointments' => $todayTotal,
             'pending_appointments' => Appointment::where('status', 'pending')->count(),
             'completed_appointments' => Appointment::where('status', 'completed')->count(),
             'cancelled_appointments' => Appointment::where('status', 'cancelled')->count(),
@@ -125,17 +154,36 @@ class CalendarController extends Controller
                 ->count(),
         ];
 
+        $todaySchedule = Appointment::with(['client', 'staff', 'service', 'location', 'invoice'])
+            ->whereDate('start_time', $today)
+            ->orderBy('start_time')
+            ->get();
+
         $recentAppointments = Appointment::with(['client', 'staff', 'service'])
             ->latest()
             ->limit(5)
             ->get();
 
-        $upcomingAppointments = Appointment::with(['client', 'staff', 'service'])
+        $upcomingAppointments = Appointment::with(['client', 'staff', 'service', 'location'])
             ->where('start_time', '>=', now())
             ->where('status', '!=', 'cancelled')
             ->orderBy('start_time')
-            ->limit(5)
+            ->limit(10)
             ->get();
+
+        // Staff daily workload summary
+        $allActiveStaff = Staff::where('is_active', true)->get();
+        $staffWorkload = $allActiveStaff->map(function ($staffMember) use ($todaySchedule) {
+            $staffAppts = $todaySchedule->where('staff_id', $staffMember->id);
+            return [
+                'staff' => $staffMember,
+                'total' => $staffAppts->count(),
+                'confirmed' => $staffAppts->where('status', 'confirmed')->count(),
+                'completed' => $staffAppts->where('status', 'completed')->count(),
+                'no_show' => $staffAppts->where('status', 'no_show')->count(),
+                'cancelled' => $staffAppts->where('status', 'cancelled')->count(),
+            ];
+        });
 
         $monthlyAppointments = Appointment::whereBetween('start_time', [$monthStart, $monthEnd])->count();
         $monthlyRevenue = \App\Models\Invoice::whereBetween('issued_date', [$monthStart, $monthEnd])
@@ -171,7 +219,20 @@ class CalendarController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        return view('dashboard.index', compact('stats', 'recentAppointments', 'upcomingAppointments', 'monthlyAppointments', 'monthlyRevenue', 'dailyLabels', 'dailyAppointmentCounts', 'dailyRevenueCounts', 'statusSummary'));
+        return view('dashboard.index', compact(
+            'stats',
+            'todayStats',
+            'todaySchedule',
+            'recentAppointments',
+            'upcomingAppointments',
+            'staffWorkload',
+            'monthlyAppointments',
+            'monthlyRevenue',
+            'dailyLabels',
+            'dailyAppointmentCounts',
+            'dailyRevenueCounts',
+            'statusSummary'
+        ));
     }
 
     /**
@@ -187,7 +248,7 @@ class CalendarController extends Controller
         $endDate = $end ? Carbon::parse($end)->endOfDay() : Carbon::now()->endOfWeek();
 
         // Get all appointments
-        $appointmentsQuery = Appointment::with(['client:id,name', 'service:id,name', 'staff:id,name', 'location:id,name,is_active'])
+        $appointmentsQuery = Appointment::with(['client:id,name', 'service:id,name', 'staff:id,name', 'location:id,name,is_active', 'invoice:id,appointment_id,invoice_number'])
             ->whereBetween('start_time', [$startDate, $endDate]);
 
         if ($request->filled('staff_id')) {
@@ -231,6 +292,9 @@ class CalendarController extends Controller
                 'hasClient' => !is_null($appointment->client_id),
                 'color' => $statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff',
                 'notes' => $appointment->notes,
+                'invoiceId' => $appointment->invoice?->id,
+                'invoiceNumber' => $appointment->invoice?->invoice_number,
+                'hasForms' => $appointment->client_id ? \App\Models\FormRecord::where('client_id', $appointment->client_id)->exists() : false,
             ];
         });
 
@@ -685,6 +749,60 @@ class CalendarController extends Controller
     }
 
     /**
+     * Return compact client snapshot for appointment modal
+     */
+    public function clientSnapshot($id)
+    {
+        $client = Client::withCount([
+            'appointments',
+            'appointments as completed_count' => fn ($q) => $q->where('status', 'completed'),
+            'appointments as cancelled_count' => fn ($q) => $q->where('status', 'cancelled'),
+            'appointments as no_show_count'   => fn ($q) => $q->where('status', 'no_show'),
+        ])
+        ->withSum(['invoices as total_invoiced' => fn ($q) => $q->where('status', '!=', 'void')], 'total_amount')
+        ->withSum(['invoices as total_paid' => fn ($q) => $q->where('status', '!=', 'void')], 'paid_amount')
+        ->find($id);
+
+        if (!$client) {
+            return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+        }
+
+        $lastVisit = $client->appointments()
+            ->where('status', 'completed')
+            ->where('start_time', '<=', now())
+            ->latest('start_time')
+            ->value('start_time');
+
+        $nextAppointment = $client->appointments()
+            ->whereIn('status', ['pending', 'booked', 'confirmed'])
+            ->where('start_time', '>=', now())
+            ->oldest('start_time')
+            ->value('start_time');
+
+        $outstanding = max(0, (float) ($client->total_invoiced ?? 0) - (float) ($client->total_paid ?? 0));
+
+        return response()->json([
+            'success' => true,
+            'client' => [
+                'id' => $client->id,
+                'name' => $client->name,
+                'email' => $client->email,
+                'phone' => $client->phone,
+                'is_vip' => (bool) $client->is_vip,
+                'age' => $client->age,
+                'last_visit' => $lastVisit ? Carbon::parse($lastVisit)->format('M d, Y') : null,
+                'next_appointment' => $nextAppointment ? Carbon::parse($nextAppointment)->format('M d, Y g:i A') : null,
+                'total_appointments' => $client->appointments_count,
+                'completed_count' => $client->completed_count,
+                'no_show_count' => $client->no_show_count,
+                'cancelled_count' => $client->cancelled_count,
+                'outstanding_amount' => $outstanding,
+                'notes' => $client->notes,
+            ]
+        ]);
+    }
+
+    /**
      * Validate staff availability for given time slot
      */
     private function validateStaffAvailability($staffId, $startTime, $endTime, $excludeAppointmentId = null, int $newBufferMinutes = 0)
@@ -924,6 +1042,10 @@ class CalendarController extends Controller
             'no_show'   => '#8b5cf6',
         ];
 
+        $appointment->loadMissing('invoice');
+        $invoice = $appointment->invoice;
+        $hasForms = $appointment->client_id ? \App\Models\FormRecord::where('client_id', $appointment->client_id)->exists() : false;
+
         return [
             'id' => $appointment->id,
             'title' => $appointment->client ? $appointment->client->name : 'Unassigned',
@@ -944,6 +1066,9 @@ class CalendarController extends Controller
             'hasClient' => !is_null($appointment->client_id),
             'color' => $statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff',
             'notes' => $appointment->notes,
+            'invoiceId' => $invoice?->id,
+            'invoiceNumber' => $invoice?->invoice_number,
+            'hasForms' => $hasForms,
         ];
     }
 

@@ -63,11 +63,12 @@ $dateSpecific = $monday->copy()->addWeek();
 $location = Location::create(['name' => 'CAL_TEST_Main', 'address' => 'Test Address', 'timezone' => $tz, 'is_active' => true]);
 $inactiveLocation = Location::create(['name' => 'CAL_TEST_Inactive', 'timezone' => $tz, 'is_active' => false]);
 $staff = Staff::create(['location_id' => $location->id, 'name' => 'CAL_TEST_Admin', 'email' => 'caltest_staff@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'admin', 'category' => 'Tester', 'is_active' => true]);
+\Illuminate\Support\Facades\Auth::guard('staff')->login($staff);
 $inactiveStaff = Staff::create(['location_id' => $location->id, 'name' => 'CAL_TEST_Inactive_Staff', 'email' => 'caltest_inactive_staff@example.com', 'password' => Hash::make('secret123'), 'access_level' => 'staff', 'category' => 'Tester', 'is_active' => false]);
 $service = Service::create(['name' => 'CAL_TEST_Service', 'type' => 'in_person', 'price' => 50, 'duration_minutes' => 60, 'buffer_minutes' => 15, 'is_active' => true]);
 $inactiveService = Service::create(['name' => 'CAL_TEST_Inactive_Service', 'type' => 'in_person', 'price' => 50, 'duration_minutes' => 60, 'buffer_minutes' => 0, 'is_active' => false]);
-$clientA = Client::create(['name' => 'CAL_TEST_Client_A', 'email' => 'caltest_a@example.com', 'phone' => '111']);
-$clientB = Client::create(['name' => 'CAL_TEST_Client_B', 'email' => 'caltest_b@example.com', 'phone' => '222']);
+$clientA = Client::create(['first_name' => 'CAL_TEST', 'last_name' => 'Client_A', 'name' => 'CAL_TEST Client_A', 'email' => 'caltest_a@example.com', 'phone' => '111']);
+$clientB = Client::create(['first_name' => 'CAL_TEST', 'last_name' => 'Client_B', 'name' => 'CAL_TEST Client_B', 'email' => 'caltest_b@example.com', 'phone' => '222']);
 
 StaffSchedule::create(['staff_id' => $staff->id, 'day_of_week' => (string) ($monday->dayOfWeekIso - 1), 'start_time' => '10:00', 'end_time' => '18:00', 'is_working' => true, 'breaks' => [['start' => '13:00', 'end' => '14:00']]]);
 StaffSchedule::create(['staff_id' => $staff->id, 'day_of_week' => (string) ($tuesday->dayOfWeekIso - 1), 'start_time' => '10:00', 'end_time' => '18:00', 'is_working' => true, 'breaks' => []]);

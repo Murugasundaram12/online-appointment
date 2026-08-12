@@ -85,6 +85,13 @@ class ClientController extends Controller
             ->orderByDesc('start_time')
             ->paginate(10, ['*'], 'appts_page');
 
+        $upcomingAppointments = $client->appointments()
+            ->with(['staff', 'service', 'location'])
+            ->where('start_time', '>=', now())
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('start_time')
+            ->get();
+
         $invoices = $client->invoices()
             ->with('staff')
             ->orderByDesc('issued_date')
@@ -126,7 +133,7 @@ class ClientController extends Controller
                 default     => 'bg-info',
             };
             $timeline[] = [
-                'title' => "Appointment " . ucfirst($app->status),
+                'title' => "Appointment " . ucfirst(str_replace('_', ' ', $app->status)),
                 'date' => $app->created_at ?? $app->start_time,
                 'icon' => 'bx-calendar',
                 'color' => $statusColor,
@@ -144,6 +151,36 @@ class ClientController extends Controller
             ];
         }
 
+        foreach ($payments->take(5) as $pmt) {
+            $timeline[] = [
+                'title' => "Payment Received ($" . number_format($pmt->amount, 2) . ")",
+                'date' => $pmt->payment_date ?? $pmt->created_at,
+                'icon' => 'bx-credit-card',
+                'color' => 'bg-success',
+                'description' => "Payment method: " . ucfirst($pmt->payment_method ?? 'Cash') . ($pmt->invoice ? " for Invoice #{$pmt->invoice->invoice_number}" : ''),
+            ];
+        }
+
+        foreach ($formRecords->take(5) as $fr) {
+            $timeline[] = [
+                'title' => "Form Submitted: " . ($fr->form?->name ?? 'Client Form'),
+                'date' => $fr->submitted_at ?? $fr->created_at,
+                'icon' => 'bx-file',
+                'color' => 'bg-info',
+                'description' => "Form submission recorded for {$client->name}.",
+            ];
+        }
+
+        if (!empty($client->notes)) {
+            $timeline[] = [
+                'title' => "Client Note Recorded",
+                'date' => $client->updated_at ?? $client->created_at,
+                'icon' => 'bx-note',
+                'color' => 'bg-secondary',
+                'description' => \Illuminate\Support\Str::limit($client->notes, 120),
+            ];
+        }
+
         usort($timeline, fn($a, $b) => strtotime((string)$b['date']) <=> strtotime((string)$a['date']));
 
         return view('clients.show', compact(
@@ -151,6 +188,7 @@ class ClientController extends Controller
             'lastVisit',
             'nextAppointment',
             'allAppointments',
+            'upcomingAppointments',
             'invoices',
             'payments',
             'packages',
