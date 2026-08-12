@@ -108,6 +108,8 @@ Route::get('schedule/{schedule}', [ScheduleController::class, 'show'])->name('sc
 Route::get('schedule/{schedule}/edit', [ScheduleController::class, 'edit'])->name('schedule.edit');
 Route::put('schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
 Route::delete('schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
+Route::post('schedule/holidays', [ScheduleController::class, 'addHoliday'])->name('schedule.holidays.store');
+Route::delete('schedule/holidays/{date}', [ScheduleController::class, 'removeHoliday'])->name('schedule.holidays.destroy');
 
 Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
 Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');

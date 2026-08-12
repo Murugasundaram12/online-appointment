@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreScheduleRequest;
+use App\Models\BusinessSetting;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Models\StaffSchedule;
@@ -78,9 +79,19 @@ class ScheduleController extends Controller
         }
 
         $schedules = $query->orderBy('working_date')->orderBy('start_time')->get();
+
+        // Attach human-readable recurrence summaries (server-side, keeps Blade lean).
+        $schedules = $schedules->map(function ($s) {
+            $data = $s->toArray();
+            $data['summary'] = $this->describeSchedule($s);
+            return $data;
+        });
+
         $currentStaff = $currentStaffId ? $staff->find($currentStaffId) : $staff->first();
         $weekStart = $start;
         $weekEnd = $end;
+
+        $holidays = $this->holidayDates();
 
         return view('schedule.index', compact(
             'staff',
@@ -94,8 +105,57 @@ class ScheduleController extends Controller
             'toDate',
             'currentStaffId',
             'locationId',
-            'statusFilter'
+            'statusFilter',
+            'holidays'
         ));
+    }
+
+    public function addHoliday(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date|after_or_equal:today',
+        ]);
+
+        $date = Carbon::parse($validated['date'])->toDateString();
+        $holidays = $this->holidayDates();
+        if (!in_array($date, $holidays, true)) {
+            $holidays[] = $date;
+            sort($holidays);
+            BusinessSetting::updateOrCreate(
+                ['key' => 'holiday_dates'],
+                ['value' => json_encode($holidays), 'group' => 'booking']
+            );
+        }
+
+        return redirect()->route('schedule.index')->with('success', "Holiday added for {$date}. The clinic is closed this day.");
+    }
+
+    public function removeHoliday(string $date)
+    {
+        $holidays = $this->holidayDates();
+        $date = Carbon::parse($date)->toDateString();
+        $holidays = array_values(array_filter($holidays, fn ($d) => $d !== $date));
+
+        if (empty($holidays)) {
+            BusinessSetting::where('key', 'holiday_dates')->delete();
+        } else {
+            BusinessSetting::updateOrCreate(
+                ['key' => 'holiday_dates'],
+                ['value' => json_encode($holidays), 'group' => 'booking']
+            );
+        }
+
+        return redirect()->route('schedule.index')->with('success', "Holiday removed for {$date}.");
+    }
+
+    private function holidayDates(): array
+    {
+        $value = BusinessSetting::where('key', 'holiday_dates')->value('value');
+        if (empty($value)) {
+            return [];
+        }
+        $dates = json_decode($value, true);
+        return is_array($dates) ? array_values($dates) : [];
     }
 
     public function create(Request $request)
@@ -103,8 +163,10 @@ class ScheduleController extends Controller
         $staffId = $request->query('staff_id');
         $staff = Staff::all();
         $selectedStaff = $staffId ? Staff::find($staffId) : $staff->first();
+        $editing = null;
+        $schedule = null;
 
-        return view('schedule.create', compact('staff', 'selectedStaff'));
+        return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule'));
     }
 
     public function store(StoreScheduleRequest $request)
@@ -113,8 +175,35 @@ class ScheduleController extends Controller
         $staffId = $validated['staff_id'];
         $staff = Staff::findOrFail($staffId);
         $recurrenceType = $validated['recurrence_type'];
-        $startTime = $validated['start_time'];
-        $endTime = $validated['end_time'];
+        $startTime = $validated['start_time'] ?? null;
+        $endTime = $validated['end_time'] ?? null;
+
+        $isEdit = !empty($validated['schedule_id']);
+        $groupId = (string) Str::uuid();
+        $excludeIds = [];
+        $oldGroupIds = [];
+
+        $isDayOff = !isset($validated['is_working']) ? false : !(bool) $validated['is_working'];
+        if ($isDayOff && $recurrenceType !== 'one_time') {
+            return back()
+                ->withInput()
+                ->with('error', 'Day off entries are date-specific. Please use "One Time" recurrence for a day off.');
+        }
+
+        if ($isEdit) {
+            $original = StaffSchedule::findOrFail($validated['schedule_id']);
+            $existingGroup = $this->resolveScheduleGroup($original);
+            $oldGroupIds = $existingGroup->pluck('id')->all();
+            // Only skip the original rows in the overlap check when the schedule
+            // stays on the same staff; the rows are replaced either way.
+            if ((int) $original->staff_id === (int) $staffId) {
+                $excludeIds = $oldGroupIds;
+            }
+            $existingGroupId = $existingGroup->whereNotNull('recurrence_group_id')->first()?->recurrence_group_id;
+            if ($existingGroupId) {
+                $groupId = $existingGroupId;
+            }
+        }
 
         $targetDates = $this->calculateTargetDates(
             $recurrenceType,
@@ -140,35 +229,73 @@ class ScheduleController extends Controller
         }
 
         // Validate overlapping schedules across all target dates (date-specific
-        // entries and recurring day-of-week templates are both checked)
-        foreach ($targetDates as $date) {
-            $dateStr = $date->toDateString();
-            $templateDay = (string) (($date->dayOfWeek + 6) % 7); // 0=Mon ... 6=Sun
-            $templateName = strtolower($date->format('l'));
+        // entries and recurring day-of-week templates are both checked; day-off
+        // entries never overlap since they have no working window)
+        if (!$isDayOff) {
+            foreach ($targetDates as $date) {
+                $dateStr = $date->toDateString();
+                $templateDay = (string) (($date->dayOfWeek + 6) % 7); // 0=Mon ... 6=Sun
+                $templateName = strtolower($date->format('l'));
 
-            $overlap = StaffSchedule::where('staff_id', $staffId)
-                ->where('is_working', true)
-                ->whereNotNull('start_time')
-                ->whereNotNull('end_time')
-                ->where('start_time', '<', $endTime)
-                ->where('end_time', '>', $startTime)
-                ->where(function ($q) use ($dateStr, $templateDay, $templateName) {
-                    $q->where('working_date', $dateStr)
-                        ->orWhere(function ($w) use ($templateDay, $templateName) {
-                            $w->whereNull('working_date')
-                                ->whereIn('day_of_week', [$templateDay, $templateName]);
-                        });
-                })
-                ->first();
+                $overlapQuery = StaffSchedule::where('staff_id', $staffId)
+                    ->where('is_working', true)
+                    ->whereNotNull('start_time')
+                    ->whereNotNull('end_time')
+                    ->where('start_time', '<', $endTime)
+                    ->where('end_time', '>', $startTime)
+                    ->where(function ($q) use ($dateStr, $templateDay, $templateName) {
+                        $q->where('working_date', $dateStr)
+                            ->orWhere(function ($w) use ($templateDay, $templateName) {
+                                $w->whereNull('working_date')
+                                    ->whereIn('day_of_week', [$templateDay, $templateName]);
+                            });
+                    });
 
-            if ($overlap) {
-                return back()
-                    ->withInput()
-                    ->with('error', "Overlapping schedule detected for {$staff->name} on {$date->format('d-m-Y')} ({$overlap->start_time} - {$overlap->end_time}). Please adjust the time range.");
+                if (!empty($excludeIds)) {
+                    $overlapQuery->whereNotIn('id', $excludeIds);
+                }
+
+                $overlap = $overlapQuery->first();
+
+                if ($overlap) {
+                    return back()
+                        ->withInput()
+                        ->with('error', "Overlapping schedule detected for {$staff->name} on {$date->format('d-m-Y')} ({$overlap->start_time} - {$overlap->end_time}). Please adjust the time range.");
+                }
             }
         }
 
-        $groupId = (string) Str::uuid();
+        // Optional single break, stored as the existing JSON breaks column.
+        $breaks = [];
+        if (!$isDayOff && !empty($validated['break_start']) && !empty($validated['break_end'])) {
+            if ($validated['break_start'] < $startTime || $validated['break_end'] > $endTime) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Break must be within the schedule working hours.');
+            }
+            $breaks[] = ['start' => $validated['break_start'], 'end' => $validated['break_end']];
+        }
+
+        if ($isEdit && !empty($oldGroupIds)) {
+            StaffSchedule::whereIn('id', $oldGroupIds)->delete();
+        }
+
+        // A date-specific entry is the final state for that date: a day off
+        // removes any working rows (e.g. a materialized recurring occurrence),
+        // and a working entry clears stale day-off rows.
+        $targetDateStrings = collect($targetDates)->map(fn ($d) => $d->toDateString())->all();
+        StaffSchedule::where('staff_id', $staffId)
+            ->whereIn('working_date', $targetDateStrings)
+            ->where('is_working', $isDayOff)
+            ->delete();
+
+        $recurrenceDays = [
+            'weekly_days' => $validated['weekly_days'] ?? null,
+            'monthly_day' => $validated['monthly_day'] ?? null,
+            'yearly_month' => $validated['yearly_month'] ?? null,
+            'yearly_day' => $validated['yearly_day'] ?? null,
+        ];
+
         $createdCount = 0;
 
         foreach ($targetDates as $date) {
@@ -178,11 +305,12 @@ class ScheduleController extends Controller
                 'staff_id' => $staffId,
                 'working_date' => $date->toDateString(),
                 'day_of_week' => (string) $dayIndex,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'is_working' => true,
+                'start_time' => $isDayOff ? null : $startTime,
+                'end_time' => $isDayOff ? null : $endTime,
+                'is_working' => !$isDayOff,
+                'breaks' => $breaks ?: null,
                 'recurrence_type' => $recurrenceType,
-                'recurrence_days' => $validated['weekly_days'] ?? null,
+                'recurrence_days' => $recurrenceDays,
                 'start_date' => $validated['start_date'] ?? $date->toDateString(),
                 'end_date' => $validated['end_date'] ?? $date->toDateString(),
                 'recurrence_group_id' => $groupId,
@@ -190,8 +318,14 @@ class ScheduleController extends Controller
             $createdCount++;
         }
 
+        $message = $isDayOff
+            ? "Day off saved for {$staff->name} on {$targetDates[0]->format('d-m-Y')}."
+            : ($isEdit
+                ? "Successfully updated {$createdCount} schedule slot(s) for {$staff->name}."
+                : "Successfully created {$createdCount} schedule slot(s) for {$staff->name}.");
+
         return redirect()->route('schedule.index', ['staff_id' => $staffId, 'range' => 'this_month'])
-            ->with('success', "Successfully created {$createdCount} schedule slot(s) for {$staff->name}.");
+            ->with('success', $message);
     }
 
     public function show(string $id)
@@ -201,6 +335,19 @@ class ScheduleController extends Controller
 
     public function edit(string $id)
     {
+        $schedule = StaffSchedule::find($id);
+
+        if ($schedule) {
+            // Group edit: reuse the create form, prefilled from the schedule's
+            // recurrence group (representative row).
+            $editing = $this->resolveScheduleGroup($schedule)->sortBy('working_date')->first() ?? $schedule;
+            $staff = Staff::all();
+            $selectedStaff = Staff::find($schedule->staff_id);
+
+            return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule'));
+        }
+
+        // Legacy fallback: weekly day-template editor keyed by staff id.
         $staff = Staff::findOrFail($id);
         $schedules = StaffSchedule::where('staff_id', $staff->id)->get();
         return view('schedule.edit', compact('staff', 'schedules'));
@@ -231,10 +378,15 @@ class ScheduleController extends Controller
     public function destroy(string $id)
     {
         $schedule = StaffSchedule::findOrFail($id);
-        $staffId = $schedule->staff_id;
-        $schedule->delete();
 
-        return redirect()->back()->with('success', 'Schedule entry deleted successfully.');
+        if (!empty($schedule->recurrence_group_id)) {
+            // Deleting one entry of a recurring schedule removes the whole group.
+            StaffSchedule::where('recurrence_group_id', $schedule->recurrence_group_id)->delete();
+        } else {
+            $schedule->delete();
+        }
+
+        return redirect()->back()->with('success', 'Schedule deleted successfully.');
     }
 
     public function storeApi(Request $request)
@@ -344,6 +496,114 @@ class ScheduleController extends Controller
             'message' => 'Schedule updated successfully',
             'schedule' => $schedule
         ]);
+    }
+
+    private function resolveScheduleGroup(StaffSchedule $schedule)
+    {
+        if (!empty($schedule->recurrence_group_id)) {
+            $rows = StaffSchedule::where('recurrence_group_id', $schedule->recurrence_group_id)
+                ->orderBy('working_date')
+                ->get();
+
+            if ($rows->isNotEmpty()) {
+                return $rows;
+            }
+        }
+
+        return collect([$schedule]);
+    }
+
+    /**
+     * Human-readable recurrence description used by the schedule listing.
+     * Recurrence metadata lives in recurrence_days (assoc array for new rows,
+     * legacy plain arrays of weekday ints are still understood).
+     */
+    private function describeSchedule(StaffSchedule $s): array
+    {
+        $typeLabels = [
+            'one_time' => 'One Time',
+            'daily' => 'Daily',
+            'weekly' => 'Weekly',
+            'monthly' => 'Monthly',
+            'yearly' => 'Yearly',
+        ];
+        $weekdayNames = [
+            '0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday',
+            '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday',
+            'sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday',
+            'saturday' => 'Saturday',
+        ];
+        $monthNames = [
+            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+        ];
+
+        $type = $s->recurrence_type ?: 'one_time';
+
+        $weeklyDays = null;
+        $monthlyDay = null;
+        $yearlyMonth = null;
+        $yearlyDay = null;
+
+        if (is_array($s->recurrence_days)) {
+            if (array_key_exists('weekly_days', $s->recurrence_days)) {
+                $weeklyDays = $s->recurrence_days['weekly_days'];
+                $monthlyDay = $s->recurrence_days['monthly_day'] ?? null;
+                $yearlyMonth = $s->recurrence_days['yearly_month'] ?? null;
+                $yearlyDay = $s->recurrence_days['yearly_day'] ?? null;
+            } elseif (!empty($s->recurrence_days)) {
+                $weeklyDays = array_values($s->recurrence_days);
+            }
+        }
+
+        switch ($type) {
+            case 'one_time':
+                $recurrence = 'Specific date';
+                break;
+            case 'daily':
+                $recurrence = 'Every day';
+                break;
+            case 'weekly':
+                if (is_array($weeklyDays) && count($weeklyDays)) {
+                    $names = collect($weeklyDays)
+                        ->map(fn ($d) => $weekdayNames[(string) (((int) $d) % 7)] ?? 'Day ' . $d)
+                        ->join(' + ');
+                    $recurrence = 'Every ' . $names;
+                } else {
+                    $recurrence = 'Every ' . ($weekdayNames[(string) $s->day_of_week] ?? $s->day_of_week);
+                }
+                break;
+            case 'monthly':
+                $day = $monthlyDay ?: ($s->working_date ? $s->working_date->day : null);
+                $recurrence = 'Monthly on the ' . $day . $this->ordinalSuffix((int) $day);
+                break;
+            case 'yearly':
+                $month = $yearlyMonth ?: ($s->working_date ? $s->working_date->month : null);
+                $day = $yearlyDay ?: ($s->working_date ? $s->working_date->day : null);
+                $recurrence = 'Yearly on ' . ($monthNames[(int) $month] ?? $month) . ' ' . $day . $this->ordinalSuffix((int) $day);
+                break;
+            default:
+                $recurrence = ucfirst($type);
+        }
+
+        return [
+            'type' => $typeLabels[$type] ?? ucfirst($type),
+            'recurrence' => $recurrence,
+        ];
+    }
+
+    private function ordinalSuffix(int $num): string
+    {
+        if (!in_array(($num % 100), [11, 12, 13])) {
+            switch ($num % 10) {
+                case 1:  return 'st';
+                case 2:  return 'nd';
+                case 3:  return 'rd';
+            }
+        }
+        return 'th';
     }
 
     private function calculateTargetDates(

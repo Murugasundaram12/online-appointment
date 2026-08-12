@@ -246,8 +246,9 @@ class CalendarController extends Controller
 
         $staff = Staff::where('is_active', true)->with(['schedules'])->get();
         $hasWorkingDate = Schema::hasColumn('staff_schedules', 'working_date');
+        $holidays = $this->holidayDates();
 
-        $result = $staff->map(function ($s) use ($startDate, $endDate, $hasWorkingDate) {
+        $result = $staff->map(function ($s) use ($startDate, $endDate, $hasWorkingDate, $holidays) {
             // Weekly templates keyed by day_of_week (0=Mon ... 6=Sun)
             $schedules = [];
             // Date-specific schedules keyed by YYYY-MM-DD (array of segments; a date
@@ -286,7 +287,9 @@ class CalendarController extends Controller
             while ($cursor->lte($rangeEnd)) {
                 $dateKey = $cursor->toDateString();
                 $dayIdx = ($cursor->dayOfWeek + 6) % 7; // Carbon 0=Sun -> 0=Mon
-                if (array_key_exists($dateKey, $schedulesByDate)) {
+                if (in_array($dateKey, $holidays, true)) {
+                    $effectiveSchedulesByDate[$dateKey] = [];
+                } elseif (array_key_exists($dateKey, $schedulesByDate)) {
                     $effectiveSchedulesByDate[$dateKey] = $schedulesByDate[$dateKey];
                 } else {
                     $effectiveSchedulesByDate[$dateKey] = isset($schedules[$dayIdx]) ? [$schedules[$dayIdx]] : [];
@@ -608,6 +611,13 @@ class CalendarController extends Controller
         $dayName = strtolower($startTime->format('l')); // monday ... sunday
         $hasWorkingDate = Schema::hasColumn('staff_schedules', 'working_date');
 
+        if (in_array($appointmentDate, $this->holidayDates(), true)) {
+            return [
+                'available' => false,
+                'message' => 'The clinic is closed on this date (holiday).'
+            ];
+        }
+
         $findCoveringSchedule = function ($schedules) use ($startTime, $endTime, $inputTimezone) {
             foreach ($schedules as $sch) {
                 if (!$sch || !$sch->is_working || empty($sch->start_time) || empty($sch->end_time)) {
@@ -760,6 +770,16 @@ class CalendarController extends Controller
         }
 
         return ['valid' => true, 'message' => 'Location is valid'];
+    }
+
+    private function holidayDates(): array
+    {
+        $value = \App\Models\BusinessSetting::where('key', 'holiday_dates')->value('value');
+        if (empty($value)) {
+            return [];
+        }
+        $dates = json_decode($value, true);
+        return is_array($dates) ? array_values($dates) : [];
     }
 
     private function normalizeDayOfWeek($value)

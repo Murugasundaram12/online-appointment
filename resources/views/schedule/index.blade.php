@@ -2,6 +2,21 @@
 
 @section('title', 'Schedule')
 
+@php
+if (!function_exists('ordinalSuffix')) {
+    function ordinalSuffix($num) {
+        if (!in_array(($num % 100), [11, 12, 13])) {
+            switch ($num % 10) {
+                case 1:  return 'st';
+                case 2:  return 'nd';
+                case 3:  return 'rd';
+            }
+        }
+        return 'th';
+    }
+}
+@endphp
+
 @push('styles')
     <style>
         .secondary-sidebar {
@@ -168,10 +183,60 @@
         .day-col {
             position: relative;
         }
+
+        .required-mark {
+            color: #f64e60;
+        }
+
+        .weekday-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .weekday-checkbox-btn {
+            position: relative;
+        }
+
+        .weekday-checkbox-btn input[type="checkbox"] {
+            display: none;
+        }
+
+        .weekday-checkbox-btn label {
+            display: inline-block;
+            padding: 6px 14px;
+            border: 1px solid #e4e6ef;
+            border-radius: 8px;
+            background-color: #f9fbfd;
+            color: #4b5563;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .weekday-checkbox-btn input[type="checkbox"]:checked + label {
+            background-color: #3699ff;
+            color: #ffffff;
+            border-color: #3699ff;
+            box-shadow: 0 4px 12px rgba(54, 153, 255, 0.25);
+        }
     </style>
 @endpush
 
 @section('content')
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mx-4 mt-4 mb-0" role="alert">
+            <i class="bx bx-error-circle me-1 fs-5 align-middle"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mx-4 mt-4 mb-0" role="alert">
+            <i class="bx bx-check-circle me-1 fs-5 align-middle"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <div class="d-flex h-100">
         <!-- Secondary Sidebar: Provider Selection -->
         <div class="secondary-sidebar">
@@ -307,51 +372,251 @@
         </div>
     </div>
 
+    <!-- Schedule Entries List -->
+    <div class="px-4 py-4 bg-light">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">Schedule Entries</h5>
+                <p class="text-muted small mb-0">All schedules for the selected staff and date range.</p>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th class="px-4">Staff</th>
+                            <th>Type</th>
+                            <th>Recurrence</th>
+                            <th>Working Date</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Status</th>
+                            <th class="text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($schedules as $entry)
+                            <tr>
+                                <td class="px-4">
+                                    <div class="fw-semibold">{{ $entry['staff']['name'] ?? '—' }}</div>
+                                    @if(!empty($entry['staff']['category']))
+                                        <div class="small text-muted">{{ $entry['staff']['category'] }}</div>
+                                    @endif
+                                </td>
+                                <td><span class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span></td>
+                                <td>{{ $entry['summary']['recurrence'] ?? '—' }}</td>
+                                <td>{{ !empty($entry['working_date']) ? \Carbon\Carbon::parse($entry['working_date'])->format('d M Y') : '—' }}</td>
+                                <td>{{ substr((string) $entry['start_time'], 0, 5) }}</td>
+                                <td>{{ substr((string) $entry['end_time'], 0, 5) }}</td>
+                                <td>{{ !empty($entry['start_date']) ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') : '—' }}</td>
+                                <td>{{ !empty($entry['end_date']) ? \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '—' }}</td>
+                                <td>
+                                    @if($entry['is_working'])
+                                        <span class="badge bg-success text-white">Working</span>
+                                    @else
+                                        <span class="badge bg-secondary text-white">Off</span>
+                                    @endif
+                                </td>
+                                <td class="text-end px-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ route('schedule.edit', $entry['id']) }}" class="btn btn-sm btn-light border">Edit</a>
+                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                            onsubmit="return confirm('Delete this schedule? This removes every occurrence of this recurring schedule.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">No schedules found for the selected filters.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Holidays -->
+    <div class="px-4 py-4 bg-light">
+        <div class="card border-0 shadow-sm rounded">
+            <div class="card-body">
+                <h6 class="fw-bold mb-1"><i class="bx bx-calendar-x me-1 text-danger"></i>Business Holidays (Closed Dates)</h6>
+                <p class="text-muted small mb-3">On these dates the clinic is closed: no staff is available and no appointments can be booked.</p>
+                <form action="{{ route('schedule.holidays.store') }}" method="POST" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    @csrf
+                    <input type="date" name="date" class="form-control form-control-sm w-auto" min="{{ date('Y-m-d') }}" required>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Holiday</button>
+                </form>
+                @forelse($holidays as $holiday)
+                    <span class="badge bg-light border text-dark fs-6 fw-normal me-2 mb-2 px-3 py-2">
+                        {{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}
+                        <form action="{{ route('schedule.holidays.destroy', $holiday) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this holiday?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1"><i class="bx bx-x"></i></button>
+                        </form>
+                    </span>
+                @empty
+                    <div class="small text-muted">No holidays configured.</div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
     <!-- Create Schedule Modal -->
     <div class="modal fade app-modal" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form class="modal-content" id="create-schedule-form" data-app-managed="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" id="create-schedule-form" action="{{ route('schedule.store') }}" method="POST">
+                @csrf
                 <div class="modal-header">
                     <div class="modal-heading">
                         <div class="modal-icon" aria-hidden="true"><i class="bx bx-time-five"></i></div>
                         <div>
                             <h5 class="modal-title" id="createScheduleModalLabel">Create Schedule</h5>
-                            <p class="modal-subtitle">Set staff working hours for this date.</p>
+                            <p class="modal-subtitle">Set staff working hours, recurrence, and optional breaks.</p>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-danger d-none" id="create-schedule-error"></div>
-
                     <input type="hidden" id="cs-staff-id" name="staff_id" value="">
-                    <input type="hidden" id="cs-working-date" name="working_date" value="">
-                    <input type="hidden" id="cs-day-of-week" name="day_of_week" value="">
 
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-6 col-md-3">
                             <label class="form-label small text-muted">Staff Name</label>
                             <input type="text" class="form-control" id="cs-staff-name" value="" readonly>
                         </div>
-                        <div class="col-12">
+                        <div class="col-6 col-md-2">
                             <label class="form-label small text-muted">Category</label>
                             <input type="text" class="form-control" id="cs-staff-category" value="" readonly>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted">Recurrence Type <span class="required-mark">*</span></label>
+                            <select class="form-select" id="cs-recurrence-type" name="recurrence_type" required>
+                                <option value="one_time">One Time</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
                             <label class="form-label small text-muted">Start Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-start-time" name="start_time" required>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 col-md-2">
                             <label class="form-label small text-muted">End Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-end-time" name="end_time" required>
                         </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted">Break Start</label>
+                            <input type="time" class="form-control" id="cs-break-start" name="break_start">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted">Break End</label>
+                            <input type="time" class="form-control" id="cs-break-end" name="break_end">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="cs-day-off" name="is_working" value="0">
+                                <label class="form-check-label small" for="cs-day-off">Day Off — staff is <strong>not available</strong> on this date</label>
+                            </div>
+                        </div>
                     </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <!-- One Time Working Date -->
+                        <div class="col-12 col-md-6 recurrence-panel" id="panel-one_time">
+                            <label class="form-label small text-muted">Working Date <span class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="working_date" id="cs-working-date">
+                            <div class="form-text">Schedule applies only to this single date.</div>
+                        </div>
+
+                        <!-- Date Range for Recurring -->
+                        <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range">
+                            <label class="form-label small text-muted">Start Date <span class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="start_date" id="cs-start-date">
+                        </div>
+                        <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range-end">
+                            <label class="form-label small text-muted">End Date <span class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="end_date" id="cs-end-date">
+                        </div>
+
+                        <!-- Weekly Days Selection -->
+                        <div class="col-12 recurrence-panel d-none" id="panel-weekly">
+                            <label class="form-label small text-muted d-block mb-2">Select Weekdays <span class="required-mark">*</span></label>
+                            <div class="weekday-checkbox-group">
+                                @php
+                                    $weekdays = [
+                                        0 => 'Sunday',
+                                        1 => 'Monday',
+                                        2 => 'Tuesday',
+                                        3 => 'Wednesday',
+                                        4 => 'Thursday',
+                                        5 => 'Friday',
+                                        6 => 'Saturday',
+                                    ];
+                                @endphp
+                                @foreach($weekdays as $val => $label)
+                                    <div class="weekday-checkbox-btn">
+                                        <input type="checkbox" class="cs-weekly-day" name="weekly_days[]" id="day-{{ $val }}" value="{{ $val }}">
+                                        <label for="day-{{ $val }}">{{ $label }}</label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Monthly Day Selection -->
+                        <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-monthly">
+                            <label class="form-label small text-muted">Day of Month <span class="required-mark">*</span></label>
+                            <select name="monthly_day" class="form-select" id="cs-monthly-day">
+                                @for($d = 1; $d <= 31; $d++)
+                                    <option value="{{ $d }}">Every month on the {{ $d }}{{ ordinalSuffix($d) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <!-- Yearly Selection -->
+                        <div class="col-6 col-md-4 recurrence-panel d-none" id="panel-yearly">
+                            <label class="form-label small text-muted">Month <span class="required-mark">*</span></label>
+                            <select name="yearly_month" class="form-select" id="cs-yearly-month">
+                                @php
+                                    $months = [
+                                        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                                        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                                        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+                                    ];
+                                @endphp
+                                @foreach($months as $mVal => $mName)
+                                    <option value="{{ $mVal }}">{{ $mName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 recurrence-panel d-none" id="panel-yearly-day">
+                            <label class="form-label small text-muted">Day of Month <span class="required-mark">*</span></label>
+                            <select name="yearly_day" class="form-select" id="cs-yearly-day">
+                                @for($d = 1; $d <= 31; $d++)
+                                    <option value="{{ $d }}">{{ $d }}{{ ordinalSuffix($d) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="mt-2 small text-muted" id="cs-date-label"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="submit" class="btn btn-primary">Create Schedule</button>
                 </div>
             </form>
         </div>
@@ -367,20 +632,25 @@
             const currentStaffCategory = @json($currentStaff->category ?? '');
             const schedules = @json($schedules ?? []);
             const baseWeekStart = @json(isset($weekStart) ? $weekStart->toDateString() : null);
+            const scheduleEditBaseUrl = @json(route('schedule.edit', '__ID__'));
 
             const createModalEl = document.getElementById('createScheduleModal');
             const createModal = createModalEl ? new bootstrap.Modal(createModalEl) : null;
             const createForm = document.getElementById('create-schedule-form');
-            const createError = document.getElementById('create-schedule-error');
             const csStaffId = document.getElementById('cs-staff-id');
             const csWorkingDate = document.getElementById('cs-working-date');
-            const csDayOfWeek = document.getElementById('cs-day-of-week');
+            const csStartDate = document.getElementById('cs-start-date');
+            const csEndDate = document.getElementById('cs-end-date');
             const csStaffName = document.getElementById('cs-staff-name');
             const csStaffCategory = document.getElementById('cs-staff-category');
             const csStartTime = document.getElementById('cs-start-time');
             const csEndTime = document.getElementById('cs-end-time');
+            const csBreakStart = document.getElementById('cs-break-start');
+            const csBreakEnd = document.getElementById('cs-break-end');
+            const csRecurrenceType = document.getElementById('cs-recurrence-type');
             const csDateLabel = document.getElementById('cs-date-label');
-            const scheduleCreateApiUrl = new URL('schedule-api/create', window.location.href).toString();
+            const csDayOff = document.getElementById('cs-day-off');
+            let hiddenRecurrenceInput = null;
 
             function renderScheduleGrid() {
                 const gridBody = document.getElementById('schedule-grid-body');
@@ -510,6 +780,63 @@
                 return dayOfWeek >= 5; // Saturday and Sunday
             }
 
+            function updateRecurrencePanels() {
+                const type = csRecurrenceType ? csRecurrenceType.value : 'one_time';
+                const panels = {
+                    one_time: document.getElementById('panel-one_time'),
+                    date_range: document.getElementById('panel-date-range'),
+                    date_range_end: document.getElementById('panel-date-range-end'),
+                    weekly: document.getElementById('panel-weekly'),
+                    monthly: document.getElementById('panel-monthly'),
+                    yearly: document.getElementById('panel-yearly'),
+                    yearly_day: document.getElementById('panel-yearly-day'),
+                };
+
+                Object.values(panels).forEach(p => p && p.classList.add('d-none'));
+
+                if (type === 'one_time') {
+                    panels.one_time && panels.one_time.classList.remove('d-none');
+                } else {
+                    panels.date_range && panels.date_range.classList.remove('d-none');
+                    panels.date_range_end && panels.date_range_end.classList.remove('d-none');
+                    if (type === 'weekly') {
+                        panels.weekly && panels.weekly.classList.remove('d-none');
+                    } else if (type === 'monthly') {
+                        panels.monthly && panels.monthly.classList.remove('d-none');
+                    } else if (type === 'yearly') {
+                        panels.yearly && panels.yearly.classList.remove('d-none');
+                        panels.yearly_day && panels.yearly_day.classList.remove('d-none');
+                    }
+                }
+            }
+
+            function updateDayOffModal() {
+                if (!csDayOff) return;
+                const isDayOff = csDayOff.checked;
+                [csStartTime, csEndTime, csBreakStart, csBreakEnd].forEach(el => {
+                    if (!el) return;
+                    el.disabled = isDayOff;
+                    if (isDayOff) el.value = '';
+                });
+                if (csRecurrenceType) {
+                    if (isDayOff) {
+                        csRecurrenceType.value = 'one_time';
+                        if (!hiddenRecurrenceInput) {
+                            hiddenRecurrenceInput = document.createElement('input');
+                            hiddenRecurrenceInput.type = 'hidden';
+                            hiddenRecurrenceInput.name = 'recurrence_type';
+                            csRecurrenceType.form.appendChild(hiddenRecurrenceInput);
+                        }
+                        hiddenRecurrenceInput.value = 'one_time';
+                    } else if (hiddenRecurrenceInput) {
+                        hiddenRecurrenceInput.remove();
+                        hiddenRecurrenceInput = null;
+                    }
+                    csRecurrenceType.disabled = isDayOff;
+                }
+                updateRecurrencePanels();
+            }
+
             function openScheduleForm(dayIndex, hour) {
                 if (!currentStaffId) {
                     window.AppToast?.show({
@@ -536,96 +863,104 @@
                         confirmText: 'Create',
                         confirmClass: 'btn-primary',
                         type: 'info',
-                        onConfirm: () => createSchedule(currentStaffId, dayIndex, workingDate, startTime, endTime)
+                        onConfirm: () => {
+                            if (csStaffId) csStaffId.value = String(currentStaffId);
+                            if (csWorkingDate) csWorkingDate.value = workingDate;
+                            if (csStartTime) csStartTime.value = startTime;
+                            if (csEndTime) csEndTime.value = endTime;
+                            createSchedule();
+                        }
                     });
                     return;
                 }
 
-                if (createError) {
-                    createError.classList.add('d-none');
-                    createError.textContent = '';
-                }
                 if (csStaffId) csStaffId.value = String(currentStaffId);
                 if (csWorkingDate) csWorkingDate.value = workingDate;
-                if (csDayOfWeek) csDayOfWeek.value = String(dayIndex);
+                if (csStartDate) csStartDate.value = workingDate;
+                if (csEndDate) csEndDate.value = '';
                 if (csStaffName) csStaffName.value = currentStaffName || '';
                 if (csStaffCategory) csStaffCategory.value = currentStaffCategory || '';
                 if (csStartTime) csStartTime.value = startTime;
                 if (csEndTime) csEndTime.value = endTime;
+                if (csBreakStart) csBreakStart.value = '';
+                if (csBreakEnd) csBreakEnd.value = '';
+                if (csRecurrenceType) csRecurrenceType.value = 'one_time';
                 if (csDateLabel) csDateLabel.textContent = `Date: ${workingDate}`;
+                if (csDayOff) {
+                    csDayOff.checked = false;
+                    updateDayOffModal();
+                }
 
+                document.querySelectorAll('.cs-weekly-day').forEach(cb => { cb.checked = false; });
+
+                updateRecurrencePanels();
                 createModal.show();
             }
 
-            async function parseApiResponse(res) {
-                const contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return await res.json();
-                }
+            function collectScheduleFormData() {
+                const formData = new FormData();
 
-                const rawText = await res.text();
-                throw new Error(rawText.includes('<!doctype') || rawText.includes('<html')
-                    ? `Server returned HTML (status ${res.status}). Check CSRF/session or backend error logs.`
-                    : (rawText || `Unexpected response from server (status ${res.status}).`));
+                formData.append('staff_id', csStaffId?.value || '');
+                formData.append('recurrence_type', csRecurrenceType?.value || 'one_time');
+                formData.append('start_time', csStartTime?.value || '');
+                formData.append('end_time', csEndTime?.value || '');
+                formData.append('working_date', csWorkingDate?.value || '');
+                formData.append('start_date', csStartDate?.value || '');
+                formData.append('end_date', csEndDate?.value || '');
+                formData.append('break_start', csBreakStart?.value || '');
+                formData.append('break_end', csBreakEnd?.value || '');
+                if (csDayOff && csDayOff.checked) formData.append('is_working', '0');
+
+                document.querySelectorAll('.cs-weekly-day').forEach(cb => {
+                    if (cb.checked) formData.append('weekly_days[]', cb.value);
+                });
+                const monthlyDay = document.getElementById('cs-monthly-day')?.value;
+                if (monthlyDay) formData.append('monthly_day', monthlyDay);
+                const yearlyMonth = document.getElementById('cs-yearly-month')?.value;
+                if (yearlyMonth) formData.append('yearly_month', yearlyMonth);
+                const yearlyDay = document.getElementById('cs-yearly-day')?.value;
+                if (yearlyDay) formData.append('yearly_day', yearlyDay);
+
+                return formData;
             }
 
-            function createSchedule(staffId, dayIndex, workingDate, startTime, endTime) {
-                fetch(scheduleCreateApiUrl, {
+            function createSchedule() {
+                const btn = createForm.querySelector('button[type="submit"]');
+                const originalText = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+
+                fetch('{{ route("schedule.store") }}', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     },
-                    body: JSON.stringify({
-                        staff_id: staffId,
-                        day_of_week: dayIndex,
-                        working_date: workingDate,
-                        start_time: startTime,
-                        end_time: endTime,
-                        is_working: true
-                    })
+                    body: collectScheduleFormData(),
+                    redirect: 'manual'
                 })
-                    .then(parseApiResponse)
-                    .then(data => {
-                        if (data.success) {
+                    .then(res => {
+                        if (res.type === 'opaqueredirect' || res.status === 302 || res.status === 301) {
                             location.reload();
-                        } else {
-                            window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: data.message || 'Could not create schedule' });
+                            return;
                         }
+                        return res.json().catch(() => ({}));
                     })
-                    .catch(err => window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: err.message }));
+                    .then(data => {
+                        if (!data) return;
+                        if (btn) { btn.disabled = false; btn.textContent = originalText; }
+                        const message = data.message
+                            || (data.errors ? Object.values(data.errors).flat().join(' ') : '')
+                            || 'Could not create schedule';
+                        window.AppToast?.show({ type: 'danger', title: 'Schedule error', message });
+                    })
+                    .catch(err => {
+                        if (btn) { btn.disabled = false; btn.textContent = originalText; }
+                        window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: err.message });
+                    });
             }
 
             function editSchedule(scheduleId) {
-                const newStart = prompt('Enter new start time (HH:MM):');
-                if (!newStart) return;
-
-                const newEnd = prompt('Enter new end time (HH:MM):');
-                if (!newEnd) return;
-
-                const updateUrl = new URL(`schedule-api/${scheduleId}`, window.location.href).toString();
-                fetch(updateUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                    },
-                    body: JSON.stringify({
-                        start_time: newStart,
-                        end_time: newEnd
-                    })
-                })
-                    .then(parseApiResponse)
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: data.message || 'Could not update schedule' });
-                        }
-                    })
-                    .catch(err => window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: err.message }));
+                window.location.href = scheduleEditBaseUrl.replace('__ID__', scheduleId);
             }
 
             // Initial render
@@ -635,22 +970,41 @@
                 createForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const staffId = csStaffId?.value;
-                    const workingDate = csWorkingDate?.value;
-                    const dayIndex = csDayOfWeek?.value;
                     const startTime = csStartTime?.value;
                     const endTime = csEndTime?.value;
+                    const isDayOff = csDayOff ? csDayOff.checked : false;
 
-                    if (!staffId || !startTime || !endTime) return;
+                    if (!staffId || (!isDayOff && !startTime) || (!isDayOff && !endTime)) return;
 
-                    if (endTime <= startTime) {
-                        if (createError) {
-                            createError.textContent = 'End time must be after start time.';
-                            createError.classList.remove('d-none');
-                        }
+                    if (!isDayOff && endTime <= startTime) {
+                        window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: 'End time must be after start time.' });
                         return;
                     }
 
-                    createSchedule(parseInt(staffId, 10), parseInt(dayIndex, 10), workingDate, startTime, endTime);
+                    createSchedule();
+                });
+            }
+
+            if (csDayOff) {
+                csDayOff.addEventListener('change', updateDayOffModal);
+            }
+
+            if (csRecurrenceType) {
+                csRecurrenceType.addEventListener('change', function () {
+                    const isOneTime = csRecurrenceType.value === 'one_time';
+                    // Working date only applies to one-time; clear it for recurring so
+                    // the backend validation (required_if) doesn't reject the submission.
+                    if (csWorkingDate && !isOneTime) csWorkingDate.value = '';
+                    if (isOneTime && csWorkingDate && !csWorkingDate.value && csStartDate) {
+                        // Restore the clicked date when switching back to one-time.
+                        csWorkingDate.value = csStartDate.value;
+                    }
+                    if (!isOneTime && csEndDate && !csEndDate.value) {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() + 3);
+                        csEndDate.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    }
+                    updateRecurrencePanels();
                 });
             }
 

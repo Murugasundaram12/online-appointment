@@ -16,8 +16,9 @@ class StoreScheduleRequest extends FormRequest
         return [
             'staff_id' => 'required|exists:staff,id',
             'recurrence_type' => 'required|in:one_time,daily,weekly,monthly,yearly',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'is_working' => 'nullable|boolean',
+            'start_time' => 'required_unless:is_working,0|nullable|date_format:H:i',
+            'end_time' => 'required_unless:is_working,0|nullable|date_format:H:i|after:start_time',
             'working_date' => 'required_if:recurrence_type,one_time|nullable|date',
             'start_date' => 'required_unless:recurrence_type,one_time|nullable|date',
             'end_date' => 'required_unless:recurrence_type,one_time|nullable|date|after_or_equal:start_date',
@@ -26,6 +27,9 @@ class StoreScheduleRequest extends FormRequest
             'monthly_day' => 'required_if:recurrence_type,monthly|nullable|integer|between:1,31',
             'yearly_month' => 'required_if:recurrence_type,yearly|nullable|integer|between:1,12',
             'yearly_day' => 'required_if:recurrence_type,yearly|nullable|integer|between:1,31',
+            'schedule_id' => 'nullable|exists:staff_schedules,id',
+            'break_start' => 'nullable|date_format:H:i',
+            'break_end' => 'nullable|required_with:break_start|date_format:H:i|after:break_start',
         ];
     }
 
@@ -38,6 +42,8 @@ class StoreScheduleRequest extends FormRequest
             'monthly_day.required_if' => 'Please select a day of the month.',
             'yearly_month.required_if' => 'Please select a month.',
             'yearly_day.required_if' => 'Please select a day of the month for yearly recurrence.',
+            'break_end.after' => 'Break end time must be after break start time.',
+            'break_end.required_with' => 'Break end time is required when a break start time is provided.',
         ];
     }
 }

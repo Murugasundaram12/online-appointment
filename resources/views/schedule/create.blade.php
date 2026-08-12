@@ -1,6 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Add Staff Schedule')
+@section('title', $editing ?? null ? 'Edit Staff Schedule' : 'Add Staff Schedule')
+
+@php
+if (!function_exists('ordinalSuffix')) {
+    function ordinalSuffix($num) {
+        if (!in_array(($num % 100), [11, 12, 13])) {
+            switch ($num % 10) {
+                case 1:  return 'st';
+                case 2:  return 'nd';
+                case 3:  return 'rd';
+            }
+        }
+        return 'th';
+    }
+}
+@endphp
 
 @push('styles')
     <style>
@@ -57,11 +72,33 @@
 @endpush
 
 @section('content')
+    @php
+        $editing = $editing ?? null;
+        $editStartTime = $editing ? substr((string) $editing->start_time, 0, 5) : '10:00';
+        $editEndTime = $editing ? substr((string) $editing->end_time, 0, 5) : '17:00';
+        $editRecurrenceDays = $editing ? $editing->recurrence_days : null;
+        $editHasAssocDays = is_array($editRecurrenceDays) && array_key_exists('weekly_days', $editRecurrenceDays);
+        $editWeeklyDays = [];
+        if ($editing) {
+            if ($editHasAssocDays) {
+                $editWeeklyDays = (array) ($editRecurrenceDays['weekly_days'] ?? []);
+            } elseif (is_array($editRecurrenceDays)) {
+                $editWeeklyDays = array_values($editRecurrenceDays);
+            }
+        }
+        $editMonthlyDay = $editing ? ($editHasAssocDays ? ($editRecurrenceDays['monthly_day'] ?? null) : ($editing->working_date ? $editing->working_date->day : null)) : null;
+        $editYearlyMonth = $editing ? ($editHasAssocDays ? ($editRecurrenceDays['yearly_month'] ?? null) : ($editing->working_date ? $editing->working_date->month : null)) : null;
+        $editYearlyDay = $editing ? ($editHasAssocDays ? ($editRecurrenceDays['yearly_day'] ?? null) : ($editing->working_date ? $editing->working_date->day : null)) : null;
+        $editBreaks = $editing && is_array($editing->breaks) ? array_values($editing->breaks) : [];
+        $editBreakStart = $editBreaks[0]['start'] ?? '';
+        $editBreakEnd = $editBreaks[0]['end'] ?? '';
+    @endphp
+
     <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 px-4 border-bottom shadow-sm">
         <div class="d-flex align-items-center w-100 justify-content-between">
             <div>
-                <h2 class="fs-4 m-0 fw-bold text-dark">Add Staff Schedule</h2>
-                <p class="text-muted small mb-0">Create one-time or recurring working schedules for staff.</p>
+                <h2 class="fs-4 m-0 fw-bold text-dark">{{ $editing ? 'Edit Staff Schedule' : 'Add Staff Schedule' }}</h2>
+                <p class="text-muted small mb-0">{{ $editing ? 'Update the working hours and recurrence for this schedule.' : 'Create one-time or recurring working schedules for staff.' }}</p>
             </div>
             <a href="{{ route('schedule.index', ['staff_id' => $selectedStaff->id ?? '']) }}"
                 class="btn btn-outline-secondary btn-sm rounded-pill px-3">
@@ -93,6 +130,7 @@
 
                 <form action="{{ route('schedule.store') }}" method="POST" id="scheduleForm">
                     @csrf
+                    <input type="hidden" name="schedule_id" value="{{ old('schedule_id', $schedule?->id) }}">
 
                     <h5 class="mb-3 schedule-section-title"><i class="bx bx-user me-2 text-primary"></i>Staff & Time Details</h5>
 
@@ -101,7 +139,7 @@
                             <label class="form-label small fw-semibold text-muted">Staff Member <span class="required-mark">*</span></label>
                             <select name="staff_id" id="staff_id" class="form-select" required>
                                 @foreach($staff as $st)
-                                    <option value="{{ $st->id }}" {{ old('staff_id', $selectedStaff->id ?? '') == $st->id ? 'selected' : '' }}>
+                                    <option value="{{ $st->id }}" {{ old('staff_id', $editing?->staff_id ?? $selectedStaff->id ?? '') == $st->id ? 'selected' : '' }}>
                                         {{ $st->name }} ({{ $st->category ?? 'General' }})
                                     </option>
                                 @endforeach
@@ -111,22 +149,43 @@
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Recurrence Type <span class="required-mark">*</span></label>
                             <select name="recurrence_type" id="recurrence_type" class="form-select" required>
-                                <option value="one_time" {{ old('recurrence_type') == 'one_time' ? 'selected' : '' }}>One Time</option>
-                                <option value="daily" {{ old('recurrence_type') == 'daily' ? 'selected' : '' }}>Daily</option>
-                                <option value="weekly" {{ old('recurrence_type', 'weekly') == 'weekly' ? 'selected' : '' }}>Weekly (e.g. Every Sunday)</option>
-                                <option value="monthly" {{ old('recurrence_type') == 'monthly' ? 'selected' : '' }}>Monthly (e.g. Every 15th)</option>
-                                <option value="yearly" {{ old('recurrence_type') == 'yearly' ? 'selected' : '' }}>Yearly (e.g. Every Jan 10)</option>
+                                <option value="one_time" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'one_time' ? 'selected' : '' }}>One Time</option>
+                                <option value="daily" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'daily' ? 'selected' : '' }}>Daily</option>
+                                <option value="weekly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'weekly' ? 'selected' : '' }}>Weekly (e.g. Every Sunday)</option>
+                                <option value="monthly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'monthly' ? 'selected' : '' }}>Monthly (e.g. Every 15th)</option>
+                                <option value="yearly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'yearly' ? 'selected' : '' }}>Yearly (e.g. Every Jan 10)</option>
                             </select>
                         </div>
 
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">Start Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="start_time" value="{{ old('start_time', '10:00') }}" required>
+                            <input type="time" class="form-control" name="start_time" value="{{ old('start_time', $editStartTime) }}" required>
                         </div>
 
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">End Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="end_time" value="{{ old('end_time', '17:00') }}" required>
+                            <input type="time" class="form-control" name="end_time" value="{{ old('end_time', $editEndTime) }}" required>
+                        </div>
+                        <div class="col-12 col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="day_off" name="is_working" value="0"
+                                    {{ old('is_working', $editing ? (!$editing->is_working ? '0' : null) : null) === '0' ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="day_off">Day Off — staff is <strong>not available</strong> on this date</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small fw-semibold text-muted">Break Start</label>
+                            <input type="time" class="form-control" name="break_start" value="{{ old('break_start', $editBreakStart) }}">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small fw-semibold text-muted">Break End</label>
+                            <input type="time" class="form-control" name="break_end" value="{{ old('break_end', $editBreakEnd) }}">
+                        </div>
+                        <div class="col-12 col-md-8 d-flex align-items-end">
+                            <span class="form-text mb-2">Optional: staff is unavailable during this break (e.g. 12:00 – 13:00).</span>
                         </div>
                     </div>
 
@@ -138,7 +197,7 @@
                     <div class="row g-3 mb-4 recurrence-panel" id="panel-one_time">
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">Working Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="working_date" value="{{ old('working_date', date('Y-m-d')) }}">
+                            <input type="date" class="form-control" name="working_date" id="working_date" value="{{ old('working_date', $editing && $editing->working_date ? $editing->working_date->format('Y-m-d') : date('Y-m-d')) }}">
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
                     </div>
@@ -147,11 +206,11 @@
                     <div class="row g-3 mb-3 recurrence-panel d-none" id="panel-date-range">
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">Start Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="start_date" id="start_date" value="{{ old('start_date', date('Y-m-d')) }}">
+                            <input type="date" class="form-control" name="start_date" id="start_date" value="{{ old('start_date', $editing && $editing->start_date ? $editing->start_date->format('Y-m-d') : date('Y-m-d')) }}">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">End Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="end_date" id="end_date" value="{{ old('end_date', date('Y-m-d', strtotime('+3 months'))) }}">
+                            <input type="date" class="form-control" name="end_date" id="end_date" value="{{ old('end_date', $editing && $editing->end_date ? $editing->end_date->format('Y-m-d') : date('Y-m-d', strtotime('+3 months'))) }}">
                         </div>
                     </div>
 
@@ -170,7 +229,7 @@
                                         5 => 'Friday',
                                         6 => 'Saturday',
                                     ];
-                                    $oldWeeklyDays = old('weekly_days', [0]); // Default Sunday
+                                    $oldWeeklyDays = old('weekly_days', $editWeeklyDays ?: [0]); // Default Sunday
                                 @endphp
                                 @foreach($weekdays as $val => $label)
                                     <div class="weekday-checkbox-btn">
@@ -190,7 +249,7 @@
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
                             <select name="monthly_day" class="form-select">
                                 @for($d = 1; $d <= 31; $d++)
-                                    <option value="{{ $d }}" {{ old('monthly_day', 15) == $d ? 'selected' : '' }}>
+                                    <option value="{{ $d }}" {{ old('monthly_day', $editMonthlyDay ?? 15) == $d ? 'selected' : '' }}>
                                         Every month on the {{ $d }}{{ ordinalSuffix($d) }}
                                     </option>
                                 @endfor
@@ -211,7 +270,7 @@
                                     ];
                                 @endphp
                                 @foreach($months as $mVal => $mName)
-                                    <option value="{{ $mVal }}" {{ old('yearly_month', 1) == $mVal ? 'selected' : '' }}>{{ $mName }}</option>
+                                    <option value="{{ $mVal }}" {{ old('yearly_month', $editYearlyMonth ?? 1) == $mVal ? 'selected' : '' }}>{{ $mName }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -219,7 +278,7 @@
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
                             <select name="yearly_day" class="form-select">
                                 @for($d = 1; $d <= 31; $d++)
-                                    <option value="{{ $d }}" {{ old('yearly_day', 10) == $d ? 'selected' : '' }}>
+                                    <option value="{{ $d }}" {{ old('yearly_day', $editYearlyDay ?? 10) == $d ? 'selected' : '' }}>
                                         {{ $d }}{{ ordinalSuffix($d) }}
                                     </option>
                                 @endfor
@@ -229,7 +288,7 @@
 
                     <div class="pt-3">
                         <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold">
-                            <i class="bx bx-check-circle me-1"></i> Generate & Save Schedule
+                            <i class="bx bx-check-circle me-1"></i> {{ $editing ? 'Update Schedule' : 'Generate & Save Schedule' }}
                         </button>
                         <a href="{{ route('schedule.index') }}" class="btn btn-light border px-4 py-2 rounded-pill ms-2 text-muted">Cancel</a>
                     </div>
@@ -248,6 +307,8 @@
             const panelWeekly = document.getElementById('panel-weekly');
             const panelMonthly = document.getElementById('panel-monthly');
             const panelYearly = document.getElementById('panel-yearly');
+            const dayOffToggle = document.getElementById('day_off');
+            let hiddenRecurrenceInput = null;
 
             function updatePanels() {
                 const type = recurrenceSelect.value;
@@ -271,21 +332,37 @@
                 }
             }
 
+            function updateDayOff() {
+                const isDayOff = dayOffToggle.checked;
+                ['start_time', 'end_time', 'break_start', 'break_end'].forEach(name => {
+                    const el = document.querySelector(`#scheduleForm [name="${name}"]`);
+                    if (!el) return;
+                    el.disabled = isDayOff;
+                    if (isDayOff) el.value = '';
+                });
+                if (isDayOff) {
+                    recurrenceSelect.value = 'one_time';
+                    if (!hiddenRecurrenceInput) {
+                        hiddenRecurrenceInput = document.createElement('input');
+                        hiddenRecurrenceInput.type = 'hidden';
+                        hiddenRecurrenceInput.name = 'recurrence_type';
+                        recurrenceSelect.form.appendChild(hiddenRecurrenceInput);
+                    }
+                    hiddenRecurrenceInput.value = 'one_time';
+                } else if (hiddenRecurrenceInput) {
+                    hiddenRecurrenceInput.remove();
+                    hiddenRecurrenceInput = null;
+                }
+                recurrenceSelect.disabled = isDayOff;
+                updatePanels();
+            }
+
             recurrenceSelect.addEventListener('change', updatePanels);
+            if (dayOffToggle) {
+                dayOffToggle.addEventListener('change', updateDayOff);
+                updateDayOff();
+            }
             updatePanels();
         });
     </script>
 @endpush
-
-@php
-function ordinalSuffix($num) {
-    if (!in_array(($num % 100), [11, 12, 13])) {
-        switch ($num % 10) {
-            case 1:  return 'st';
-            case 2:  return 'nd';
-            case 3:  return 'rd';
-        }
-    }
-    return 'th';
-}
-@endphp

@@ -169,10 +169,16 @@ class OnlineBookingController extends Controller
 
     private function staffWorkingWindows(int $staffId, Carbon $date)
     {
+        if ($this->isHoliday($date)) {
+            return collect();
+        }
+
         $dayIndex = $date->dayOfWeekIso - 1;
-        $dateSpecific = StaffSchedule::where('staff_id', $staffId)->whereDate('working_date', $date)->where('is_working', true)->get();
+
+        // Date-specific rows (working or day-off) override weekly templates.
+        $dateSpecific = StaffSchedule::where('staff_id', $staffId)->whereDate('working_date', $date)->get();
         if ($dateSpecific->isNotEmpty()) {
-            return $dateSpecific;
+            return $dateSpecific->where('is_working', true)->values();
         }
 
         return StaffSchedule::where('staff_id', $staffId)
@@ -182,6 +188,16 @@ class OnlineBookingController extends Controller
             })
             ->where('is_working', true)
             ->get();
+    }
+
+    private function isHoliday(Carbon $date): bool
+    {
+        $holidays = \App\Models\BusinessSetting::where('key', 'holiday_dates')->value('value');
+        if (empty($holidays)) {
+            return false;
+        }
+        $dates = json_decode($holidays, true);
+        return is_array($dates) && in_array($date->toDateString(), $dates, true);
     }
 
     private function isAvailable(int $staffId, Carbon $start, Carbon $end, StaffSchedule $schedule, int $newBufferMinutes = 0): bool

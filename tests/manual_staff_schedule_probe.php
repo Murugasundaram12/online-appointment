@@ -400,4 +400,185 @@ probeResult('recurring vs day-of-week template overlap rejected', responseStatus
 $r = $scheduleController->storeApi(schedReq('POST', '/schedule-api/create', ['staff_id' => $staffC->id, 'working_date' => '2026-12-19', 'start_time' => '12:00', 'end_time' => '16:00']));
 probeResult('storeApi overlap rejected', responseStatus($r) === 422 && responseJson($r)['message'] === 'Schedule overlaps with an existing schedule for this date.', 'status ' . responseStatus($r));
 
+// ---------------------------------------------------------------------------
+// Test 15: Different staff at the same time allowed (schedule + booking)
+// ---------------------------------------------------------------------------
+$r = $scheduleController->store(makeStoreRequest([
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2026-12-06', // Sunday
+    'start_time' => '09:00',
+    'end_time' => '13:00',
+]));
+probeResult('different staff same-day schedule allowed', responseStatus($r) === 302 && schedCount($staffC->id, '2026-12-06', '2026-12-06') === 1, 'status ' . responseStatus($r));
+
+$dec06 = Carbon::parse('2026-12-06');
+$r = book($controller, $staffA, $client, $service, $dec06->copy()->setTime(10, 0), $dec06->copy()->setTime(11, 0), 'staffA same slot');
+$r2 = book($controller, $staffC, $client, $service, $dec06->copy()->setTime(10, 0), $dec06->copy()->setTime(11, 0), 'staffC same slot');
+probeResult('two staff booked at same time both allowed', responseStatus($r) === 201 && responseStatus($r2) === 201, 'A=' . responseStatus($r) . ' C=' . responseStatus($r2));
+deleteBookedAppointment($r);
+deleteBookedAppointment($r2);
+
+// ---------------------------------------------------------------------------
+// Test 16: Edit (preserve recurrence + group id, no duplicates)
+// ---------------------------------------------------------------------------
+$weeklyRows = StaffSchedule::where('staff_id', $staffA->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])
+    ->orderBy('working_date')->get();
+$editTarget = $weeklyRows->first();
+$countBefore = $weeklyRows->count();
+$groupIdBefore = $editTarget->recurrence_group_id;
+
+$r = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $editTarget->id,
+    'staff_id' => $staffA->id,
+    'recurrence_type' => 'weekly',
+    'start_time' => '10:00',
+    'end_time' => '16:00',
+    'start_date' => '2026-12-07',
+    'end_date' => '2026-12-28',
+    'weekly_days' => [0],
+]));
+
+$afterEdit = StaffSchedule::where('staff_id', $staffA->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])
+    ->get();
+probeResult('edit keeps same row count (no duplicates)', responseStatus($r) === 302 && $afterEdit->count() === $countBefore, 'before ' . $countBefore . ' after ' . $afterEdit->count());
+probeResult('edit preserves recurrence group id', $afterEdit->pluck('recurrence_group_id')->unique()->count() === 1 && $afterEdit->first()->recurrence_group_id === $groupIdBefore, 'group ' . ($afterEdit->first()->recurrence_group_id ?? 'null'));
+probeResult('edit applies new times to all rows', $afterEdit->every(fn ($x) => $x->start_time === '10:00:00' && $x->end_time === '16:00:00'), implode(',', $afterEdit->pluck('start_time')->all()));
+
+// ---------------------------------------------------------------------------
+// Test 17: Edit must not self-overlap, but must reject real overlaps
+// ---------------------------------------------------------------------------
+$r = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $afterEdit->first()->id,
+    'staff_id' => $staffA->id,
+    'recurrence_type' => 'weekly',
+    'start_time' => '10:30',
+    'end_time' => '15:00',
+    'start_date' => '2026-12-07',
+    'end_date' => '2026-12-28',
+    'weekly_days' => [0],
+]));
+$afterResize = StaffSchedule::where('staff_id', $staffA->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])
+    ->count();
+probeResult('edit resizing own group allowed (no false self-overlap)', responseStatus($r) === 302 && $afterResize === $countBefore, 'count ' . $afterResize);
+
+// The resize edit recreated the group, so the previous $afterEdit ids are stale.
+$currentRows = StaffSchedule::where('staff_id', $staffA->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])
+    ->get();
+
+// staffA already has a one-time Monday (10:00-11:00) on 2026-12-14 (test 9).
+// Editing the recurring group to also cover Mondays in that window must be rejected.
+$countBeforeOverlapEdit = StaffSchedule::where('staff_id', $staffA->id)
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])->count();
+$r = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $currentRows->first()->id,
+    'staff_id' => $staffA->id,
+    'recurrence_type' => 'weekly',
+    'start_time' => '09:00',
+    'end_time' => '17:00',
+    'start_date' => '2026-12-07',
+    'end_date' => '2026-12-28',
+    'weekly_days' => [0, 1], // adds Mondays -> collides with 12-14 one-time
+]));
+$countAfterOverlapEdit = StaffSchedule::where('staff_id', $staffA->id)
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])->count();
+probeResult('edit overlapping another schedule rejected', responseStatus($r) === 302 && $countAfterOverlapEdit === $countBeforeOverlapEdit, 'before ' . $countBeforeOverlapEdit . ' after ' . $countAfterOverlapEdit);
+
+// ---------------------------------------------------------------------------
+// Test 18: Staff change during edit (no orphans, move group)
+// ---------------------------------------------------------------------------
+$moveRow = StaffSchedule::where('staff_id', $staffA->id)
+    ->where('recurrence_type', 'weekly')
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])->first();
+$oldGroup = $moveRow->recurrence_group_id;
+$r = $scheduleController->store(makeStoreRequest([
+    'schedule_id' => $moveRow->id,
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'weekly',
+    'start_time' => '10:30',
+    'end_time' => '15:00',
+    'start_date' => '2026-12-07',
+    'end_date' => '2026-12-28',
+    'weekly_days' => [0],
+]));
+$orphansA = StaffSchedule::where('staff_id', $staffA->id)->where('recurrence_group_id', $oldGroup)->count();
+$newRowsC = StaffSchedule::where('staff_id', $staffC->id)
+    ->where('recurrence_group_id', $oldGroup)
+    ->whereBetween('working_date', ['2026-12-07', '2026-12-28'])->get();
+probeResult('staff change removes old group rows (no orphans)', $orphansA === 0, 'orphans ' . $orphansA);
+probeResult('staff change creates rows for new staff', responseStatus($r) === 302 && $newRowsC->count() === $countBefore, 'new staff rows ' . $newRowsC->count());
+
+// ---------------------------------------------------------------------------
+// Test 21: Calendar payload reflects a group edit (availability controls booking)
+// ---------------------------------------------------------------------------
+$r = $controller->getStaffSchedules(schedReq('GET', '/calendar/staff-schedules', ['start' => '2026-12-13', 'end' => '2026-12-13']));
+$weekJson = responseJson($r);
+$staffC13 = collect($weekJson['staff'] ?? [])->firstWhere('id', $staffC->id);
+$seg13 = isset($staffC13['schedules_by_date']['2026-12-13']) ? $staffC13['schedules_by_date']['2026-12-13'] : [];
+probeResult('calendar shows moved schedule window (10:30-15:00)', is_array($seg13) && count($seg13) === 1 && $seg13[0]['start_time'] === '10:30:00' && $seg13[0]['end_time'] === '15:00:00', 'segments ' . json_encode($seg13));
+
+$r = book($controller, $staffC, $client, $service, Carbon::parse('2026-12-13')->setTime(9, 30), Carbon::parse('2026-12-13')->setTime(10, 30), 'outside 10:30-15 window');
+probeResult('booking outside moved window rejected', responseStatus($r) === 422 && (responseJson($r)['message'] ?? '') === SCHED_MSG_UNAVAILABLE, 'status ' . responseStatus($r));
+
+// ---------------------------------------------------------------------------
+// Test 19: Delete removes the whole group, not another staff's schedule
+// ---------------------------------------------------------------------------
+$staffBOwnScheduleCount = StaffSchedule::where('staff_id', $staffB->id)->count();
+$deleteTarget = $newRowsC->first();
+$r = $scheduleController->destroy((string) $deleteTarget->id);
+$groupAfterDelete = StaffSchedule::where('recurrence_group_id', $oldGroup)->count();
+$staffBAfterDelete = StaffSchedule::where('staff_id', $staffB->id)->count();
+probeResult('delete removes whole recurring group', $groupAfterDelete === 0, 'left ' . $groupAfterDelete);
+probeResult('delete never touches another staff schedule', $staffBAfterDelete === $staffBOwnScheduleCount, 'staffB ' . $staffBAfterDelete . '/' . $staffBOwnScheduleCount);
+
+// ---------------------------------------------------------------------------
+// Test 20: Break validation + availability during break
+// ---------------------------------------------------------------------------
+$r = $scheduleController->store(makeStoreRequest([
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2026-12-22', // Tuesday (avoid Monday day_of_week template)
+    'start_time' => '09:00',
+    'end_time' => '17:00',
+    'break_start' => '12:00',
+    'break_end' => '13:00',
+]));
+$breakRow = StaffSchedule::where('staff_id', $staffC->id)
+    ->where('working_date', '2026-12-22')->where('recurrence_type', 'one_time')->first();
+$breakStored = $breakRow && is_array($breakRow->breaks) && count($breakRow->breaks) === 1
+    && $breakRow->breaks[0]['start'] === '12:00' && $breakRow->breaks[0]['end'] === '13:00';
+probeResult('break start/end stored as breaks json', responseStatus($r) === 302 && $breakStored, 'breaks ' . json_encode($breakRow->breaks ?? null));
+
+$dec22 = Carbon::parse('2026-12-22');
+$r = book($controller, $staffC, $client, $service, $dec22->copy()->setTime(11, 0), $dec22->copy()->setTime(12, 0), 'before break');
+probeResult('booking before break allowed', responseStatus($r) === 201, 'status ' . responseStatus($r));
+deleteBookedAppointment($r);
+$r = book($controller, $staffC, $client, $service, $dec22->copy()->setTime(12, 30), $dec22->copy()->setTime(13, 30), 'during break');
+probeResult('booking during break rejected', responseStatus($r) === 422, 'status ' . responseStatus($r));
+assertCleanMessage($r, SCHED_MSG_UNAVAILABLE, 'during break clean message');
+
+$r = $scheduleController->store(makeStoreRequest([
+    'staff_id' => $staffC->id,
+    'recurrence_type' => 'one_time',
+    'working_date' => '2026-12-23', // Wednesday
+    'start_time' => '09:00',
+    'end_time' => '17:00',
+    'break_start' => '08:00', // outside working hours
+    'break_end' => '09:00',
+]));
+$outsideBreakRow = StaffSchedule::where('staff_id', $staffC->id)->where('working_date', '2026-12-23')->first();
+probeResult('break outside working hours rejected', responseStatus($r) === 302 && !$outsideBreakRow, 'row created: ' . ($outsideBreakRow ? 'yes' : 'no'));
+
+$staffC->forceDelete();
+$staffA->forceDelete();
+$staffB->forceDelete();
+
 cleanupScheduleProbe();
