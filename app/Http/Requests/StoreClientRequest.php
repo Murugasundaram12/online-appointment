@@ -16,6 +16,11 @@ class StoreClientRequest extends FormRequest
     {
         $clientId = $this->route('client') ? $this->route('client')->id : $this->input('client_id');
 
+        return self::rulesFor($clientId);
+    }
+
+    public static function rulesFor(mixed $clientId = null): array
+    {
         return [
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -29,7 +34,7 @@ class StoreClientRequest extends FormRequest
             ],
             'alternate_phone' => 'nullable|string|max:30',
             'email' => [
-                'nullable',
+                'required',
                 'email',
                 'max:255',
                 Rule::unique('clients', 'email')->ignore($clientId),
@@ -43,6 +48,7 @@ class StoreClientRequest extends FormRequest
             'emergency_contact' => 'nullable|string|max:255',
             'emergency_phone' => 'nullable|string|max:30',
             'notes' => 'nullable|string|max:5000',
+            'client_since' => 'nullable|date',
             'is_vip' => 'nullable|boolean',
         ];
     }
@@ -51,6 +57,7 @@ class StoreClientRequest extends FormRequest
     {
         return [
             'phone.unique' => 'A client with this phone number already exists.',
+            'email.required' => 'An email address is required.',
             'email.unique' => 'A client with this email address already exists.',
             'dob.before' => 'Date of birth must be a past date.',
         ];

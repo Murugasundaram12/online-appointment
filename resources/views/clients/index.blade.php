@@ -75,11 +75,24 @@
                                         <button type="button" class="btn btn-link text-muted p-0 me-2 js-edit-client"
                                             data-bs-toggle="modal" data-bs-target="#editClientModal"
                                             data-update-url="{{ route('clients.update', $client->id) }}"
-                                            data-name="{{ e($client->name) }}" data-email="{{ e($client->email) }}"
+                                            data-first-name="{{ e($client->first_name) }}"
+                                            data-last-name="{{ e($client->last_name) }}"
+                                            data-email="{{ e($client->email) }}"
                                             data-phone="{{ e($client->phone) }}"
+                                            data-alternate-phone="{{ e($client->alternate_phone) }}"
+                                            data-gender="{{ e($client->gender) }}"
+                                            data-dob="{{ $client->dob ? $client->dob->format('Y-m-d') : '' }}"
                                             data-client-since="{{ $client->client_since ? $client->client_since->format('Y-m-d') : '' }}"
-                                            data-tags="{{ $client->is_vip ? 'VIP' : '' }}"
-                                            data-notes="{{ e($client->notes) }}">
+                                            data-address-line1="{{ e($client->address_line1) }}"
+                                            data-address-line2="{{ e($client->address_line2) }}"
+                                            data-city="{{ e($client->city) }}"
+                                            data-state="{{ e($client->state) }}"
+                                            data-country="{{ e($client->country) }}"
+                                            data-postal-code="{{ e($client->postal_code) }}"
+                                            data-emergency-contact="{{ e($client->emergency_contact) }}"
+                                            data-emergency-phone="{{ e($client->emergency_phone) }}"
+                                            data-notes="{{ e($client->notes) }}"
+                                            data-is-vip="{{ $client->is_vip ? '1' : '0' }}">
                                             <i class='bx bx-pencil'></i>
                                         </button>
                                         <form action="{{ route('clients.destroy', $client->id) }}" method="POST"
@@ -120,76 +133,7 @@
                 <div class="modal-body">
                     <form id="addClientForm" method="POST" action="{{ route('clients.store') }}">
                         @csrf
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-user'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Client name <span class="required-mark">*</span></label>
-                                        <input type="text" class="form-control" name="name" placeholder="Enter full name"
-                                            required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-envelope'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Email address</label>
-                                        <input type="email" class="form-control" name="email"
-                                            placeholder="Enter email address">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-phone'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Phone number</label>
-                                        <input type="tel" class="form-control" name="phone"
-                                            placeholder="Enter phone number">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-calendar'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Client since</label>
-                                        <input type="date" class="form-control" name="client_since">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-hash'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Tags</label>
-                                        <input type="text" class="form-control" name="tags"
-                                            placeholder="Add tags (e.g. VIP, New)">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="field-group mb-0">
-                                    <div class="field-icon"><i class='bx bx-note'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Notes</label>
-                                        <textarea class="form-control" rows="3" name="notes"
-                                            placeholder="Add any private notes about this client"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        @include('clients.partials.form-fields', ['idPrefix' => 'add-client-', 'client' => null])
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -211,77 +155,7 @@
                     <form id="editClientForm" method="POST" action="#">
                         @csrf
                         @method('PUT')
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-user'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Client name <span class="required-mark">*</span></label>
-                                        <input type="text" class="form-control" id="edit-client-name" name="name"
-                                            placeholder="Enter full name" required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-envelope'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Email address</label>
-                                        <input type="email" class="form-control" id="edit-client-email" name="email"
-                                            placeholder="Enter email address">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-phone'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Phone number</label>
-                                        <input type="tel" class="form-control" id="edit-client-phone" name="phone"
-                                            placeholder="Enter phone number">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-calendar'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Client since</label>
-                                        <input type="date" class="form-control" id="edit-client-since"
-                                            name="client_since">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-hash'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Tags</label>
-                                        <input type="text" class="form-control" id="edit-client-tags" name="tags"
-                                            placeholder="Add tags (e.g. VIP, New)">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="field-group mb-0">
-                                    <div class="field-icon"><i class='bx bx-note'></i></div>
-                                    <div class="field-content">
-                                        <label class="form-label">Notes</label>
-                                        <textarea class="form-control" rows="3" id="edit-client-notes" name="notes"
-                                            placeholder="Add any private notes about this client"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        @include('clients.partials.form-fields', ['idPrefix' => 'edit-client-'])
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -313,12 +187,33 @@
             buttons.forEach((btn) => {
                 btn.addEventListener('click', () => {
                     editForm.action = btn.dataset.updateUrl || '#';
-                    document.getElementById('edit-client-name').value = btn.dataset.name || '';
-                    document.getElementById('edit-client-email').value = btn.dataset.email || '';
-                    document.getElementById('edit-client-phone').value = btn.dataset.phone || '';
-                    document.getElementById('edit-client-since').value = btn.dataset.clientSince || '';
-                    document.getElementById('edit-client-tags').value = btn.dataset.tags || '';
-                    document.getElementById('edit-client-notes').value = btn.dataset.notes || '';
+                    const setVal = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.value = val || '';
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    };
+                    setVal('edit-client-first-name', btn.dataset.firstName);
+                    setVal('edit-client-last-name', btn.dataset.lastName);
+                    setVal('edit-client-email', btn.dataset.email);
+                    setVal('edit-client-phone', btn.dataset.phone);
+                    setVal('edit-client-alternate-phone', btn.dataset.alternatePhone);
+                    setVal('edit-client-gender', btn.dataset.gender);
+                    setVal('edit-client-dob', btn.dataset.dob);
+                    setVal('edit-client-client-since', btn.dataset.clientSince);
+                    setVal('edit-client-address-line1', btn.dataset.addressLine1);
+                    setVal('edit-client-address-line2', btn.dataset.addressLine2);
+                    setVal('edit-client-city', btn.dataset.city);
+                    setVal('edit-client-state', btn.dataset.state);
+                    setVal('edit-client-country', btn.dataset.country);
+                    setVal('edit-client-postal-code', btn.dataset.postalCode);
+                    setVal('edit-client-emergency-contact', btn.dataset.emergencyContact);
+                    setVal('edit-client-emergency-phone', btn.dataset.emergencyPhone);
+                    setVal('edit-client-notes', btn.dataset.notes);
+
+                    const vipEl = document.getElementById('edit-client-is-vip');
+                    if (vipEl) vipEl.checked = (btn.dataset.isVip === '1');
                 });
             });
         });

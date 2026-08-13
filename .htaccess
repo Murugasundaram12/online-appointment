@@ -1,27 +1,25 @@
-<ifmodule mod_rewrite.c>
- 
-    <ifmodule mod_negotiation.c>
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
         Options -MultiViews
-    </ifmodule>
-     
+    </IfModule>
+
     RewriteEngine On
+
     RewriteCond %{HTTP:Authorization} ^(.+)$
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-    
 
-     
+    # Apache serves this installation's root as a physical directory, which
+    # bypasses Laravel's root route. Send users to the dashboard route instead.
+    RewriteRule ^$ https://dreamzcoder.online/online-appointment/dashboard [R=302,L]
+
     RewriteCond %{REQUEST_FILENAME} -d [OR]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ ^$1 [N]
- 
+
     RewriteCond %{REQUEST_URI} (\.\w+$) [NC]
-    RewriteRule ^(.*)$ public/$1 
- 
+    RewriteRule ^(.*)$ public/$1
+
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ server.php
- 
-
-
-</ifmodule>
-
+</IfModule>

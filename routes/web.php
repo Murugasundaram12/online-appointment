@@ -48,7 +48,7 @@ Route::post('online-booking', [OnlineBookingController::class, 'store'])->name('
 Route::get('online-booking/confirmation/{appointment}', [OnlineBookingController::class, 'confirmation'])->name('online-booking.confirmation');
 
 Route::middleware(['auth:staff', 'active.staff'])->group(function () {
-Route::get('/',[CalendarController::class,'dashboard'])->name('dashboard');
+Route::get('dashboard', [CalendarController::class, 'dashboard'])->name('dashboard');
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
 Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
 Route::get('/calendar/staff-schedules', [CalendarController::class, 'getStaffSchedules'])->name('calendar.staffSchedules');

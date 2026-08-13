@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreClientRequest;
 use App\Models\Appointment;
 use App\Models\Staff;
 use App\Models\Client;
@@ -445,7 +446,7 @@ class CalendarController extends Controller
         try {
             $appointment = Appointment::create($validated);
             $appointment->load(['client', 'service', 'staff', 'location']);
-            $emailResult = $this->appointmentEmailService->sendBooked($appointment);
+            $emailResult = $this->appointmentEmailService->sendForCreation($appointment);
 
             return response()->json([
                 'success' => true,
@@ -669,47 +670,10 @@ class CalendarController extends Controller
      */
     public function quickCreateClient(Request $request)
     {
-        if (!$request->filled('first_name') && $request->filled('name')) {
-            $parts = explode(' ', trim((string) $request->input('name')), 2);
-            $request->merge([
-                'first_name' => $parts[0] ?? '',
-                'last_name' => $parts[1] ?? '',
-            ]);
-        }
-
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'gender' => 'nullable|string|in:male,female,other',
-            'dob' => 'nullable|date|before:today',
-            'phone' => [
-                'required',
-                'string',
-                'max:30',
-                Rule::unique('clients', 'phone'),
-            ],
-            'alternate_phone' => 'nullable|string|max:30',
-            'email' => [
-                'nullable',
-                'email',
-                'max:255',
-                Rule::unique('clients', 'email'),
-            ],
-            'address_line1' => 'nullable|string|max:255',
-            'address_line2' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'emergency_contact' => 'nullable|string|max:255',
-            'emergency_phone' => 'nullable|string|max:30',
-            'notes' => 'nullable|string|max:5000',
-            'is_vip' => 'nullable|boolean',
-        ], [
-            'phone.unique' => 'A client with this phone number already exists.',
-            'email.unique' => 'A client with this email address already exists.',
-            'dob.before' => 'Date of birth must be a past date.',
-        ]);
+        $validated = $request->validate(
+            StoreClientRequest::rulesFor(),
+            (new StoreClientRequest())->messages()
+        );
 
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
@@ -1078,12 +1042,8 @@ class CalendarController extends Controller
 
     private function appointmentEmailAfterUpdate(Appointment $appointment, Appointment $previousAppointment): array
     {
-        if ($appointment->status === 'cancelled') {
-            return $this->appointmentEmailService->sendCancelledIfTransitioned($appointment, $previousAppointment);
-        }
-
-        if ($appointment->status === 'completed') {
-            return $this->appointmentEmailService->sendCompletedIfTransitioned($appointment, $previousAppointment);
+        if ($appointment->status !== $previousAppointment->status) {
+            return $this->appointmentEmailService->sendForStatusTransition($appointment, $previousAppointment);
         }
 
         return $this->appointmentEmailService->sendUpdatedIfRelevant($appointment, $previousAppointment);

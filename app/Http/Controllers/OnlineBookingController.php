@@ -153,7 +153,7 @@ class OnlineBookingController extends Controller
         }
 
         $appointment->load(['client', 'staff', 'service', 'location']);
-        $emailResult = $this->appointmentEmailService->sendBooked($appointment);
+        $emailResult = $this->appointmentEmailService->sendForCreation($appointment);
         $message = 'Booking confirmed. ' . (($emailResult['attempted'] ?? false)
             ? (($emailResult['sent'] ?? false) ? 'Confirmation email sent.' : 'Confirmation email could not be sent.')
             : '');

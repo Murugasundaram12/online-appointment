@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Mail\AppointmentBookedMail;
 use App\Mail\AppointmentCancelledMail;
 use App\Mail\AppointmentCompletedMail;
+use App\Mail\AppointmentConfirmedMail;
+use App\Mail\AppointmentNoShowMail;
 use App\Mail\AppointmentUpdatedMail;
 use App\Models\Appointment;
 use App\Models\BusinessSetting;
@@ -17,6 +19,29 @@ class AppointmentEmailService
     public function sendBooked(Appointment $appointment): array
     {
         return $this->send($appointment, AppointmentBookedMail::class, 'booked');
+    }
+
+    public function sendForCreation(Appointment $appointment): array
+    {
+        // The existing booking email is the customer-facing notification for
+        // newly created pending and booked appointments.
+        return $this->sendBooked($appointment);
+    }
+
+    public function sendForStatusTransition(Appointment $appointment, Appointment $previous): array
+    {
+        if ($appointment->status === $previous->status) {
+            return ['attempted' => false, 'sent' => false, 'message' => 'No status email needed.'];
+        }
+
+        return match ($appointment->status) {
+            'booked' => $this->sendBooked($appointment),
+            'confirmed' => $this->send($appointment, AppointmentConfirmedMail::class, 'confirmed', $previous),
+            'completed' => $this->sendCompletedIfTransitioned($appointment, $previous),
+            'cancelled' => $this->sendCancelledIfTransitioned($appointment, $previous),
+            'no_show' => $this->sendNoShowIfTransitioned($appointment, $previous),
+            default => ['attempted' => false, 'sent' => false, 'message' => 'No status email needed.'],
+        };
     }
 
     public function sendUpdatedIfRelevant(Appointment $appointment, Appointment $previous): array
@@ -44,6 +69,15 @@ class AppointmentEmailService
         }
 
         return $this->send($appointment, AppointmentCompletedMail::class, 'completed', $previous);
+    }
+
+    public function sendNoShowIfTransitioned(Appointment $appointment, Appointment $previous): array
+    {
+        if ($previous->status === 'no_show' || $appointment->status !== 'no_show') {
+            return ['attempted' => false, 'sent' => false, 'message' => 'No no-show email needed.'];
+        }
+
+        return $this->send($appointment, AppointmentNoShowMail::class, 'no_show', $previous);
     }
 
     public function publicReference(Appointment $appointment): string

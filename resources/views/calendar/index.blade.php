@@ -467,11 +467,6 @@
             box-shadow: 0 0 0 3px rgba(54, 153, 255, 0.12);
         }
 
-        #new-client-form-error {
-            font-size: 0.86rem;
-            padding: 0.62rem 0.75rem;
-        }
-
         #newClientModal .modal-footer {
             padding: 0.95rem 1.35rem;
             gap: 0.6rem;
@@ -500,37 +495,6 @@
         #newClientModal .btn-new-client-save:hover {
             background: #1f86ee;
             border-color: #1f86ee;
-        }
-
-        .calendar-notice {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 1100;
-            min-width: 280px;
-            max-width: 420px;
-            padding: 0.75rem 0.9rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 24px rgba(24, 28, 50, 0.15);
-            font-size: 0.88rem;
-            font-weight: 500;
-        }
-
-        .calendar-notice.notice-danger {
-            background: #fff5f8;
-            color: #a11a39;
-            border: 1px solid #f7ceda;
-        }
-
-        .calendar-notice.notice-success {
-            background: #f0fff6;
-            color: #0f6a34;
-            border: 1px solid #bfeccc;
-        }
-
-        #appointment-form-error {
-            font-size: 0.88rem;
-            padding: 0.65rem 0.75rem;
         }
 
         #appointment-readonly-details,
@@ -821,8 +785,6 @@
         </div>
     </div>
 
-    <div id="calendar-notice" class="calendar-notice d-none" role="alert" aria-live="polite"></div>
-
     <div id="appointment-details-card" class="d-none">
         <div class="card-head">
             <div class="card-heading">
@@ -891,8 +853,6 @@
                     <div class="modal-body">
                         <input type="hidden" id="appointment-id" />
                         <div id="appointment-form-fields" class="appointment-form-grid">
-                            <div id="appointment-form-error" class="alert alert-danger d-none" role="alert"></div>
-
                             <div class="mb-2">
                                 <label class="form-label">Location</label>
                                 <select id="appt-location" class="form-select"></select>
@@ -1055,100 +1015,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                        <div id="new-client-form-error" class="alert alert-danger d-none" role="alert"></div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label">First Name <span class="required-mark">*</span></label>
-                                <input type="text" id="new-client-first-name" class="form-control" required />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Last Name <span class="required-mark">*</span></label>
-                                <input type="text" id="new-client-last-name" class="form-control" required />
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-4">
-                                <label class="form-label">Gender</label>
-                                <select id="new-client-gender" class="form-select">
-                                    <option value="">Select Gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Date of Birth</label>
-                                <input type="date" id="new-client-dob" class="form-control" />
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Calculated Age</label>
-                                <input type="text" id="new-client-age" class="form-control bg-light" readonly placeholder="Auto-calculated" />
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Phone <span class="required-mark">*</span></label>
-                                <input type="text" id="new-client-phone" class="form-control" required />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Alternate Phone</label>
-                                <input type="text" id="new-client-alt-phone" class="form-control" />
-                            </div>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="new-client-email" class="form-control" />
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Address Line 1</label>
-                                <input type="text" id="new-client-address1" class="form-control" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Address Line 2</label>
-                                <input type="text" id="new-client-address2" class="form-control" />
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-3">
-                                <label class="form-label">City</label>
-                                <input type="text" id="new-client-city" class="form-control" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">State</label>
-                                <input type="text" id="new-client-state" class="form-control" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Country</label>
-                                <input type="text" id="new-client-country" class="form-control" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Postal Code</label>
-                                <input type="text" id="new-client-postal-code" class="form-control" />
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Emergency Contact</label>
-                                <input type="text" id="new-client-emergency-contact" class="form-control" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Emergency Phone</label>
-                                <input type="text" id="new-client-emergency-phone" class="form-control" />
-                            </div>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label">Notes</label>
-                            <textarea id="new-client-notes" class="form-control" rows="2"></textarea>
-                        </div>
+                        @include('clients.partials.form-fields', ['idPrefix' => 'new-client-', 'client' => null])
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-new-client-cancel" data-bs-dismiss="modal">Cancel</button>
@@ -1197,41 +1064,21 @@
             const dateDisplay = document.getElementById('current-date-header');
             const gridBody = document.getElementById('calendar-grid-body');
             const timeCol = document.getElementById('calendar-time-col');
-            const pageNotice = document.getElementById('calendar-notice');
-            const formErrorBox = document.getElementById('appointment-form-error');
             const viewSelect = document.getElementById('calendar-view-select');
             const appointmentDetailsCard = document.getElementById('appointment-details-card');
             const closeDetailsCardBtn = document.getElementById('close-appointment-details-card');
             const monthContainer = document.getElementById('calendar-month-container');
             const monthCalendarRoot = document.getElementById('staff-month-calendar');
             let monthCalendar = null;
-            let noticeTimer = null;
             if (viewSelect && viewSelect.value) currentView = viewSelect.value;
 
             function showPageNotice(message, type = 'danger', timeout = 4200) {
                 window.AppToast?.show({
                     type: type === 'success' ? 'success' : 'danger',
                     title: type === 'success' ? 'Success' : 'Calendar notice',
-                    message
+                    message,
+                    delay: timeout
                 });
-                if (!pageNotice) return;
-                if (noticeTimer) clearTimeout(noticeTimer);
-                pageNotice.classList.remove('d-none', 'notice-danger', 'notice-success');
-                pageNotice.classList.add(type === 'success' ? 'notice-success' : 'notice-danger');
-                pageNotice.textContent = message;
-                noticeTimer = setTimeout(() => pageNotice.classList.add('d-none'), timeout);
-            }
-
-            function showFormError(message) {
-                if (!formErrorBox) return;
-                formErrorBox.textContent = message;
-                formErrorBox.classList.remove('d-none');
-            }
-
-            function clearFormError() {
-                if (!formErrorBox) return;
-                formErrorBox.textContent = '';
-                formErrorBox.classList.add('d-none');
             }
 
             function monthKeyFromDate(d) {
@@ -1332,20 +1179,6 @@
             const newClientModalEl = document.getElementById('newClientModal');
             const newClientModal = new bootstrap.Modal(newClientModalEl);
             const newClientForm = document.getElementById('new-client-form');
-            const newClientFormErrorBox = document.getElementById('new-client-form-error');
-
-            function showNewClientFormError(message) {
-                if (!newClientFormErrorBox) return;
-                newClientFormErrorBox.textContent = message;
-                newClientFormErrorBox.classList.remove('d-none');
-            }
-
-            function clearNewClientFormError() {
-                if (!newClientFormErrorBox) return;
-                newClientFormErrorBox.textContent = '';
-                newClientFormErrorBox.classList.add('d-none');
-            }
-
             // Generate 24-hour time column
             function generateTimeColumn() {
                 timeCol.innerHTML = '';
@@ -1424,8 +1257,6 @@
             const readonlyCardStatus = document.getElementById('readonly-card-status');
             const readonlyCardStatusChip = document.getElementById('readonly-card-status-chip');
             const readonlyCardNotes = document.getElementById('readonly-card-notes');
-            const newClientEmailField = document.getElementById('new-client-email');
-            const newClientPhoneField = document.getElementById('new-client-phone');
 
             function setAppointmentReadOnlyMode(isReadOnly) {
                 [locationField, staffField, serviceField, clientField, startField, endField, statusField, notesField].forEach(el => {
@@ -1775,12 +1606,7 @@
             }
 
             function clearNewClientFields() {
-                const newClientFirstNameField = document.getElementById('new-client-first-name');
-                const newClientLastNameField = document.getElementById('new-client-last-name');
-                if (newClientFirstNameField) newClientFirstNameField.value = '';
-                if (newClientLastNameField) newClientLastNameField.value = '';
-                if (newClientEmailField) newClientEmailField.value = '';
-                if (newClientPhoneField) newClientPhoneField.value = '';
+                newClientForm?.reset();
             }
 
             function fillSelect(selectEl, items, placeholder, valueKey = 'id', labelKey = 'name') {
@@ -2049,16 +1875,12 @@
                     }
                     if (info && info.hasScheduleData && info.count === 0) {
                         const msg = 'No staff scheduled for the selected time.';
-                        showFormError(msg);
                         showPageNotice(msg);
-                    } else {
-                        clearFormError();
                     }
                 }
             }
 
             function openAppointmentModalForCreate(startDate, endDate, staffId = '') {
-                clearFormError();
                 hideAppointmentDetailsCard();
                 modalTitle.textContent = 'New Appointment';
                 setAppointmentReadOnlyMode(false);
@@ -2068,7 +1890,6 @@
                 if (staffInfo && staffInfo.hasScheduleData && staffInfo.count === 0) {
                     const msg = 'No staff scheduled for the selected time. Please create staff schedule first.';
                     showPageNotice(msg);
-                    showFormError(msg);
                     return;
                 }
                 if (staffId) {
@@ -2092,7 +1913,6 @@
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
                 try {
-                    clearFormError();
                     hideAppointmentDetailsCard();
                     setAppointmentReadOnlyMode(false);
                     if (apptSaveBtn) {
@@ -2132,7 +1952,6 @@
                     startField.value = toInputDateTime(parseCalendarDate(appt.start));
                     endField.value = toInputDateTime(parseCalendarDate(appt.end));
                     clearNewClientFields();
-                    clearFormError();
                     appointmentModal.show();
                 } catch (err) {
                     showPageNotice(err.message || 'Failed to load appointment');
@@ -2490,7 +2309,7 @@
                 let end = fromInputDateTime(endField.value);
 
                 if (!staffId || !serviceId || !startField.value || !endField.value) {
-                    showFormError('Staff, service, start and end are required.');
+                    showPageNotice('Staff, service, start and end are required.');
                     return;
                 }
 
@@ -2504,26 +2323,23 @@
                 }
 
                 if (end <= start) {
-                    showFormError('End time must be after start time.');
+                    showPageNotice('End time must be after start time.');
                     return;
                 }
 
                 if (!appointmentId && isPastDate(start)) {
                     const pastDateMessage = 'Only current date and future dates can be scheduled.';
-                    showFormError(pastDateMessage);
                     showPageNotice(pastDateMessage);
                     return;
                 }
 
                 const hoursError = validateAppointmentWithinStaffHours(staffId, start, end);
                 if (hoursError) {
-                    showFormError(hoursError);
                     showPageNotice(hoursError);
                     return;
                 }
 
                 try {
-                    clearFormError();
                     if (apptSaveBtn) {
                         apptSaveBtn.disabled = true;
                         apptSaveBtn.dataset.originalText = apptSaveBtn.textContent;
@@ -2532,7 +2348,7 @@
                     const selectedClientId = clientField.value || null;
 
                     if (!selectedClientId) {
-                        showFormError('Client is required. Select an existing client or add a new client.');
+                        showPageNotice('Client is required. Select an existing client or add a new client.');
                         return;
                     }
 
@@ -2565,7 +2381,7 @@
                     await loadDataAndRender();
                     showPageNotice('Appointment saved successfully.', 'success');
                 } catch (err) {
-                    showFormError(err.message || 'Error saving appointment.');
+                    showPageNotice(err.message || 'Error saving appointment.');
                 } finally {
                     if (apptSaveBtn) {
                         apptSaveBtn.disabled = false;
@@ -2603,7 +2419,7 @@
                         staffField.value = currentStaff;
                     } else if (currentStaff) {
                         staffField.value = '';
-                        showFormError('Selected staff is not assigned to this location.');
+                        showPageNotice('Selected staff is not assigned to this location.');
                     }
                     hydrateServiceOptionsForSelectedStaff();
                 });
@@ -2631,10 +2447,7 @@
                 hydrateServiceOptionsForSelectedStaff();
                 if (info && info.hasScheduleData && info.count === 0) {
                     const msg = 'No staff scheduled for the selected time.';
-                    showFormError(msg);
                     showPageNotice(msg);
-                } else {
-                    clearFormError();
                 }
             });
 
@@ -2651,10 +2464,7 @@
                 hydrateServiceOptionsForSelectedStaff();
                 if (info && info.hasScheduleData && info.count === 0) {
                     const msg = 'No staff scheduled for the selected time.';
-                    showFormError(msg);
                     showPageNotice(msg);
-                } else {
-                    clearFormError();
                 }
             });
 
@@ -2663,30 +2473,10 @@
                     e.preventDefault();
                     e.stopPropagation();
                     clearNewClientFields();
-                    clearNewClientFormError();
                     newClientModal.show();
                 });
             }
 
-
-            const dobInputEl = document.getElementById('new-client-dob');
-            const ageInputEl = document.getElementById('new-client-age');
-            if (dobInputEl && ageInputEl) {
-                dobInputEl.addEventListener('change', function () {
-                    if (!this.value) {
-                        ageInputEl.value = '';
-                        return;
-                    }
-                    const dob = new Date(this.value);
-                    const today = new Date();
-                    let age = today.getFullYear() - dob.getFullYear();
-                    const m = today.getMonth() - dob.getMonth();
-                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                        age--;
-                    }
-                    ageInputEl.value = age >= 0 ? `${age} years old` : '';
-                });
-            }
 
             const clientSearchModalEl = document.getElementById('clientSearchModal');
             const clientSearchModal = clientSearchModalEl ? new bootstrap.Modal(clientSearchModalEl) : null;
@@ -2700,7 +2490,6 @@
                 step1OpenNewClientBtn.addEventListener('click', function () {
                     if (clientSearchModal) clientSearchModal.hide();
                     clearNewClientFields();
-                    clearNewClientFormError();
                     newClientModal.show();
                 });
             }
@@ -2755,29 +2544,8 @@
 
             newClientForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                clearNewClientFormError();
-
-                const firstName = document.getElementById('new-client-first-name')?.value.trim() || '';
-                const lastName = document.getElementById('new-client-last-name')?.value.trim() || '';
-                const phone = document.getElementById('new-client-phone')?.value.trim() || '';
-                const email = document.getElementById('new-client-email')?.value.trim() || null;
-                const gender = document.getElementById('new-client-gender')?.value || null;
-                const dob = document.getElementById('new-client-dob')?.value || null;
-                const altPhone = document.getElementById('new-client-alt-phone')?.value.trim() || null;
-                const address1 = document.getElementById('new-client-address1')?.value.trim() || null;
-                const address2 = document.getElementById('new-client-address2')?.value.trim() || null;
-                const city = document.getElementById('new-client-city')?.value.trim() || null;
-                const state = document.getElementById('new-client-state')?.value.trim() || null;
-                const country = document.getElementById('new-client-country')?.value.trim() || null;
-                const postalCode = document.getElementById('new-client-postal-code')?.value.trim() || null;
-                const emergencyContact = document.getElementById('new-client-emergency-contact')?.value.trim() || null;
-                const emergencyPhone = document.getElementById('new-client-emergency-phone')?.value.trim() || null;
-                const notes = document.getElementById('new-client-notes')?.value.trim() || null;
-
-                if (!firstName || !lastName || !phone) {
-                    showNewClientFormError('First name, last name, and phone number are required.');
-                    return;
-                }
+                if (!newClientForm.reportValidity()) return;
+                const payload = Object.fromEntries(new FormData(newClientForm).entries());
 
                 try {
                     const quickClientButton = newClientForm.querySelector('button[type="submit"]');
@@ -2790,25 +2558,7 @@
                             'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRF-TOKEN': getCsrfToken()
                         },
-                        body: JSON.stringify({
-                            first_name: firstName,
-                            last_name: lastName,
-                            name: `${firstName} ${lastName}`.trim(),
-                            phone: phone,
-                            email: email,
-                            gender: gender,
-                            dob: dob,
-                            alternate_phone: altPhone,
-                            address_line1: address1,
-                            address_line2: address2,
-                            city: city,
-                            state: state,
-                            country: country,
-                            postal_code: postalCode,
-                            emergency_contact: emergencyContact,
-                            emergency_phone: emergencyPhone,
-                            notes: notes
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     if (!createClientRes.ok) {
@@ -2833,7 +2583,7 @@
                     newClientModal.hide();
                     showPageNotice('Client added successfully.', 'success');
                 } catch (err) {
-                    showNewClientFormError(err.message || 'Unable to create client.');
+                    showPageNotice(err.message || 'Unable to create client.');
                 } finally {
                     const quickClientButton = newClientForm.querySelector('button[type="submit"]');
                     window.AppButtonLoading?.reset(quickClientButton);
@@ -3144,8 +2894,7 @@
                 if (e.target.closest('.calendar-appointment')) return;
                 hideAppointmentDetailsCard();
             });
-            modalEl.addEventListener('hidden.bs.modal', clearFormError);
-            newClientModalEl.addEventListener('hidden.bs.modal', function () { clearNewClientFields(); clearNewClientFormError(); });
+            newClientModalEl.addEventListener('hidden.bs.modal', clearNewClientFields);
 
             // initial build + load
             updateTimezoneLabel();
