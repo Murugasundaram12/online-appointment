@@ -14,7 +14,8 @@ class StoreClientRequest extends FormRequest
 
     public function rules(): array
     {
-        $clientId = $this->route('client') ? $this->route('client')->id : $this->input('client_id');
+        $routeClient = $this->route('client');
+        $clientId = is_object($routeClient) ? $routeClient->id : ($routeClient ?: $this->input('client_id'));
 
         return self::rulesFor($clientId);
     }

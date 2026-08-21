@@ -210,6 +210,8 @@ class OnlineBookingController extends Controller
             }
         }
 
+        $queryStart = $start->copy()->subMinutes($newBufferMinutes);
+        $queryEnd = $end->copy();
         $qs = $queryStart->copy();
         $qe = $queryEnd->copy();
 

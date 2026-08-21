@@ -13,6 +13,9 @@ class Payroll extends Model
     {
         static::saving(function (Payroll $payroll) {
             $payroll->total_payout = $payroll->calculateTotalPayout();
+            if ($payroll->total_hours === null) {
+                $payroll->total_hours = 0;
+            }
         });
     }
 
