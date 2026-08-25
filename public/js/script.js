@@ -258,19 +258,61 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener('shown.bs.modal', initPasswordToggles);
 
     function formatCanadianPhone(value) {
-        const digits = String(value || '').replace(/\D/g, '');
-        if (digits.length === 10) {
-            return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-        }
+        if (!value) return '';
+        let digits = String(value).replace(/\D/g, '');
         if (digits.length === 11 && digits.startsWith('1')) {
-            return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+            digits = digits.slice(1);
         }
-        return value;
+        if (digits.length > 10) {
+            digits = digits.slice(0, 10);
+        }
+        if (digits.length === 0) return '';
+        if (digits.length <= 3) {
+            return `(${digits}`;
+        }
+        if (digits.length <= 6) {
+            return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+        }
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
     }
 
-    document.addEventListener('blur', (e) => {
-        if (e.target && (e.target.classList.contains('js-phone-input') || e.target.name === 'phone' || e.target.name === 'emergency_phone' || e.target.name === 'alternate_phone')) {
-            e.target.value = formatCanadianPhone(e.target.value);
+    function applyPhoneFormatting(input) {
+        if (!input) return;
+        const oldVal = input.value;
+        const formatted = formatCanadianPhone(oldVal);
+        if (oldVal !== formatted) {
+            input.value = formatted;
+        }
+    }
+
+    const isPhoneInput = (target) => target && (
+        target.classList.contains('js-phone-input') ||
+        ['phone', 'alternate_phone', 'emergency_phone'].includes(target.name)
+    );
+
+    document.addEventListener('input', (e) => {
+        if (isPhoneInput(e.target)) {
+            applyPhoneFormatting(e.target);
         }
     }, true);
+
+    document.addEventListener('paste', (e) => {
+        if (isPhoneInput(e.target)) {
+            setTimeout(() => applyPhoneFormatting(e.target), 0);
+        }
+    }, true);
+
+    document.addEventListener('blur', (e) => {
+        if (isPhoneInput(e.target)) {
+            applyPhoneFormatting(e.target);
+        }
+    }, true);
+
+    document.querySelectorAll('.js-phone-input, input[name="phone"], input[name="alternate_phone"], input[name="emergency_phone"]').forEach(applyPhoneFormatting);
+
+    document.addEventListener('shown.bs.modal', (e) => {
+        if (e.target) {
+            e.target.querySelectorAll('.js-phone-input, input[name="phone"], input[name="alternate_phone"], input[name="emergency_phone"]').forEach(applyPhoneFormatting);
+        }
+    });
 });

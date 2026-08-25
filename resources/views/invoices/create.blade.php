@@ -164,7 +164,7 @@
 
                 if (selected.dataset.clientId) client.value = selected.dataset.clientId;
                 if (selected.dataset.staffId) staff.value = selected.dataset.staffId;
-                if (selected.dataset.servicePrice && !total.value) total.value = Number(selected.dataset.servicePrice).toFixed(2);
+                if (selected.dataset.servicePrice) total.value = Number(selected.dataset.servicePrice).toFixed(2);
                 if (serviceName) serviceName.textContent = selected.dataset.serviceName || 'Service';
             }
 

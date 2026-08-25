@@ -1846,19 +1846,85 @@
                 return { count: dateStaffs.length, hasScheduleData: true };
             }
 
-            function hydrateClientOptions() {
-                clientField.innerHTML = '';
-                const selectClient = document.createElement('option');
-                selectClient.value = '';
-                selectClient.textContent = 'Select client';
-                clientField.appendChild(selectClient);
+            let apptClientTomSelect = null;
 
-                (window.CALENDAR_DATA.clients || []).forEach(client => {
-                    const option = document.createElement('option');
-                    option.value = client.id;
-                    option.textContent = `${client.name}${client.phone ? ` (${client.phone})` : ''}`;
-                    clientField.appendChild(option);
-                });
+            function initApptClientTomSelect() {
+                if (window.TomSelect && clientField && !apptClientTomSelect) {
+                    try {
+                        apptClientTomSelect = new TomSelect(clientField, {
+                            create: false,
+                            placeholder: 'Select client',
+                            allowEmptyOption: true,
+                            maxItems: 1,
+                            valueField: 'id',
+                            labelField: 'text',
+                            searchField: ['text', 'name', 'first_name', 'last_name', 'email', 'phone', 'alternate_phone'],
+                            load: function (query, callback) {
+                                if (!query.length || query.length < 2) return callback();
+                                fetch(calendarUrl(`clients/search?q=${encodeURIComponent(query)}`), {
+                                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                    .then(res => res.json())
+                                    .then(json => {
+                                        const items = (json || []).map(c => ({
+                                            id: String(c.id),
+                                            text: `${c.name}${c.phone ? ` (${c.phone})` : ''}${c.email ? ` - ${c.email}` : ''}`,
+                                            name: c.name || '',
+                                            first_name: c.first_name || '',
+                                            last_name: c.last_name || '',
+                                            email: c.email || '',
+                                            phone: c.phone || ''
+                                        }));
+                                        callback(items);
+                                    })
+                                    .catch(() => callback());
+                            },
+                            onChange: function () {
+                                clientField.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        });
+                    } catch (e) {
+                        console.warn('TomSelect init fallback', e);
+                    }
+                }
+            }
+
+            function hydrateClientOptions() {
+                initApptClientTomSelect();
+                const clients = window.CALENDAR_DATA.clients || [];
+
+                if (apptClientTomSelect) {
+                    const currentVal = apptClientTomSelect.getValue();
+                    apptClientTomSelect.clearOptions();
+                    apptClientTomSelect.addOption({ id: '', text: 'Select client' });
+                    clients.forEach(client => {
+                        apptClientTomSelect.addOption({
+                            id: String(client.id),
+                            text: `${client.name}${client.phone ? ` (${client.phone})` : ''}`,
+                            name: client.name || '',
+                            first_name: client.first_name || '',
+                            last_name: client.last_name || '',
+                            email: client.email || '',
+                            phone: client.phone || ''
+                        });
+                    });
+                    if (currentVal) {
+                        apptClientTomSelect.setValue(currentVal, true);
+                    }
+                } else {
+                    clientField.innerHTML = '';
+                    const selectClient = document.createElement('option');
+                    selectClient.value = '';
+                    selectClient.textContent = 'Select client';
+                    clientField.appendChild(selectClient);
+
+                    clients.forEach(client => {
+                        const option = document.createElement('option');
+                        option.value = client.id;
+                        option.textContent = `${client.name}${client.phone ? ` (${client.phone})` : ''}`;
+                        clientField.appendChild(option);
+                    });
+                }
             }
 
             let clientSearchTimer = null;
@@ -1878,6 +1944,9 @@
                             if (!res.ok) throw new Error(await getErrorMessage(res, 'Client search failed'));
                             window.CALENDAR_DATA.clients = await res.json();
                             hydrateClientOptions();
+                            if (apptClientTomSelect) {
+                                apptClientTomSelect.open();
+                            }
                         } catch (err) {
                             showPageNotice(err.message || 'Unable to search clients.');
                         }
@@ -2610,8 +2679,20 @@
                     window.CALENDAR_DATA.clients.push(created.client);
                     hydrateClientOptions();
 
-                    // Ensure the appointment form dropdown reflects the newly created client immediately
-                    clientField.value = String(created.client.id);
+                    if (apptClientTomSelect) {
+                        apptClientTomSelect.addOption({
+                            id: String(created.client.id),
+                            text: `${created.client.name}${created.client.phone ? ` (${created.client.phone})` : ''}`,
+                            name: created.client.name || '',
+                            first_name: created.client.first_name || '',
+                            last_name: created.client.last_name || '',
+                            email: created.client.email || '',
+                            phone: created.client.phone || ''
+                        });
+                        apptClientTomSelect.setValue(String(created.client.id));
+                    } else {
+                        clientField.value = String(created.client.id);
+                    }
                     clientField.dispatchEvent(new Event('change', { bubbles: true }));
 
                     newClientModal.hide();

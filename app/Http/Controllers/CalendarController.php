@@ -704,12 +704,16 @@ class CalendarController extends Controller
         $clients = Client::query()
             ->where(function ($query) use ($term) {
                 $query->where('name', 'like', '%' . $term . '%')
+                    ->orWhere('first_name', 'like', '%' . $term . '%')
+                    ->orWhere('last_name', 'like', '%' . $term . '%')
                     ->orWhere('email', 'like', '%' . $term . '%')
-                    ->orWhere('phone', 'like', '%' . $term . '%');
+                    ->orWhere('phone', 'like', '%' . $term . '%')
+                    ->orWhere('alternate_phone', 'like', '%' . $term . '%')
+                    ->orWhere('emergency_phone', 'like', '%' . $term . '%');
             })
             ->orderBy('name')
-            ->limit(20)
-            ->get(['id', 'name', 'email', 'phone']);
+            ->limit(30)
+            ->get(['id', 'name', 'first_name', 'last_name', 'email', 'phone', 'alternate_phone']);
 
         return response()->json($clients);
     }
