@@ -1737,12 +1737,22 @@
 
             function hydrateStaffOptionsForSelectedLocation(respectService = false) {
                 const locationId = locationField ? locationField.value : '';
+                const currentStaffId = staffField ? staffField.value : '';
+                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaffId));
+
                 let staffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
                 if (respectService) {
                     const serviceId = serviceField ? serviceField.value : '';
                     staffs = staffs.filter(staff => staffMatchesServiceCategory(staff, serviceId));
                 }
                 fillSelect(staffField, staffs, staffs.length ? 'Select staff' : 'No staff assigned to this location');
+
+                if (currentStaffId) {
+                    if (currentStaffObj) {
+                        ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                    }
+                    staffField.value = String(currentStaffId);
+                }
                 return staffs;
             }
 
@@ -1751,14 +1761,17 @@
             }
 
             function servicesForStaff(staffId) {
+                if (!staffId) return [];
                 const staff = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(staffId));
                 const services = window.CALENDAR_DATA.services || [];
-                const staffCategory = normalizeCategory(staff ? staff.category : '');
+                if (!staff) return [];
+
+                const staffCategory = normalizeCategory(staff.category || '');
                 if (!staffCategory) return services;
 
                 return services.filter(s => {
                     const category = normalizeCategory(s.category ? s.category.name : '');
-                    if (!category) return true;
+                    if (!category) return false;
                     return category === staffCategory || category.includes(staffCategory) || staffCategory.includes(category);
                 });
             }
@@ -1773,11 +1786,19 @@
 
                 if (preserveValue && hasSelectOptionValue(serviceField, preserveValue)) {
                     serviceField.value = String(preserveValue);
+                } else if (preserveValue) {
+                    const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(preserveValue));
+                    if (svc) {
+                        ensureSelectOption(serviceField, svc.id, svc.name);
+                        serviceField.value = String(svc.id);
+                    } else {
+                        serviceField.value = '';
+                    }
                 } else {
                     serviceField.value = '';
                 }
 
-                serviceField.disabled = !!(staffId && matching.length === 0);
+                serviceField.disabled = !staffId || matching.length === 0;
                 return matching;
             }
 
@@ -1811,6 +1832,9 @@
             function hydrateStaffOptionsForSlot(startDate, endDate) {
                 const locationId = locationField ? locationField.value : '';
                 const serviceId = serviceField ? serviceField.value : '';
+                const currentStaffId = staffField ? staffField.value : '';
+                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaffId));
+
                 let allStaffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
                 if (serviceId) {
                     allStaffs = allStaffs.filter(staff => staffMatchesServiceCategory(staff, serviceId));
@@ -1819,11 +1843,19 @@
 
                 if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
                     fillSelect(staffField, allStaffs, 'Select staff');
+                    if (currentStaffId) {
+                        if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                        staffField.value = String(currentStaffId);
+                    }
                     return { count: allStaffs.length, hasScheduleData: false };
                 }
 
                 if (!Array.isArray(schedules) || schedules.length === 0) {
                     fillSelect(staffField, [], 'No staff schedule data');
+                    if (currentStaffId) {
+                        if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                        staffField.value = String(currentStaffId);
+                    }
                     return { count: 0, hasScheduleData: false };
                 }
 
@@ -1843,6 +1875,12 @@
 
                 const dateStaffs = allStaffs.filter(s => workingStaffIds.has(String(s.id)));
                 fillSelect(staffField, dateStaffs, dateStaffs.length ? 'Select staff' : 'No staff scheduled for selected time');
+
+                if (currentStaffId) {
+                    if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                    staffField.value = String(currentStaffId);
+                }
+
                 return { count: dateStaffs.length, hasScheduleData: true };
             }
 
@@ -2495,12 +2533,16 @@
 
             serviceField.addEventListener('change', function () {
                 const currentStaff = staffField.value;
+                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaff));
                 if (apptIdField.value) {
                     hydrateStaffOptionsForSelectedLocation(true);
                 } else {
                     applyServiceDurationToEndTime();
                 }
-                if (currentStaff && hasSelectOptionValue(staffField, currentStaff)) {
+                if (currentStaff) {
+                    if (currentStaffObj) {
+                        ensureSelectOption(staffField, currentStaff, currentStaffObj.name);
+                    }
                     staffField.value = String(currentStaff);
                 }
             });
