@@ -25,7 +25,7 @@
                 ['Total received', $summary['total'], 'bx-dollar'],
                 ['Cash total', $summary['cash'], 'bx-money'],
                 ['Card total', $summary['card'], 'bx-credit-card'],
-                ['Transfer total', $summary['transfer'], 'bx-transfer'],
+                ['E-Transfer total', $summary['e_transfer'], 'bx-transfer'],
             ] as [$label, $amount, $icon])
                 <div class="col-sm-6 col-xl-3">
                     <div class="card border-0 shadow-sm kpi-card h-100">
@@ -49,23 +49,23 @@
                     @csrf
                     <div class="col-md-4">
                         <label class="form-label">Invoice <span class="required-mark">*</span></label>
-                        <select name="invoice_id" class="form-select" required>
+                        <select name="invoice_id" id="payment-invoice" class="form-select" required>
                             <option value="">Select invoice</option>
                             @foreach($invoices as $invoice)
-                                <option value="{{ $invoice->id }}">{{ $invoice->invoice_number }} - {{ optional($invoice->client)->name }} - Balance ${{ number_format(max($invoice->total_amount - $invoice->paid_amount, 0), 2) }}</option>
+                                <option value="{{ $invoice->id }}" data-balance="{{ number_format(max($invoice->total_amount - $invoice->paid_amount, 0), 2, '.', '') }}" @selected(($selectedInvoice?->id ?? null) === $invoice->id)>{{ $invoice->invoice_number }} - {{ optional($invoice->client)->name }} - Balance ${{ number_format(max($invoice->total_amount - $invoice->paid_amount, 0), 2) }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Amount <span class="required-mark">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max($selectedInvoice->total_amount - $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
                         <select name="payment_method" class="form-select" required>
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
-                            <option value="transfer">Transfer</option>
+                            <option value="e_transfer">E-Transfer</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -83,6 +83,17 @@
             </div>
         </div>
 
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const invoice = document.getElementById('payment-invoice');
+                const amount = document.getElementById('payment-amount');
+                invoice?.addEventListener('change', () => {
+                    const balance = invoice.selectedOptions[0]?.dataset.balance;
+                    if (balance && amount) amount.value = balance;
+                });
+            });
+        </script>
+
         <!-- Toolbar -->
         <x-list-toolbar :paginator="$paymentRecords" searchAction="{{ route('payment-records.index') }}" searchPlaceholder="Search payments">
             <x-slot name="filters">
@@ -91,13 +102,13 @@
                     :clearUrl="route('payment-records.index', ['per_page' => request('per_page', $paymentRecords->perPage())])" />
                 <div class="dropdown">
                     <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ request()->filled('payment_method') ? ucfirst(request('payment_method')) : 'Payment method' }}
+                        {{ request()->filled('payment_method') ? (request('payment_method') === 'e_transfer' ? 'E-Transfer' : ucfirst(request('payment_method'))) : 'Payment method' }}
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', request()->except(['payment_method', 'page'])) }}">All</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash'])) }}">Cash</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card'])) }}">Card</a></li>
-                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'transfer'])) }}">Transfer</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'e_transfer'])) }}">E-Transfer</a></li>
                     </ul>
                 </div>
             </x-slot>

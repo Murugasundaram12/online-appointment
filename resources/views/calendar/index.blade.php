@@ -867,11 +867,17 @@
                             <div class="mb-2">
                                 <label class="form-label">Service <span class="required-mark">*</span></label>
                                 <select id="appt-service" class="form-select" required></select>
+                                <div id="service-cost-duration-info" class="mt-1 small text-muted d-none">
+                                    Cost: <strong id="selected-service-cost" class="text-dark">$0.00</strong> &bull; Duration: <strong id="selected-service-duration" class="text-dark">0 min</strong>
+                                </div>
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label">Client <span class="required-mark">*</span></label>
-                                <input type="search" id="appt-client-search" class="form-control mb-2" placeholder="Search clients by name, phone, or email" autocomplete="off" />
+                                <label class="form-label" for="appt-client-search">Client <span class="required-mark">*</span></label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                    <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                </div>
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -1619,9 +1625,43 @@
                 items.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item[valueKey];
-                    option.textContent = item[labelKey];
+                    let label = item[labelKey];
+                    if (selectEl === serviceField) {
+                        const costStr = (item.price !== undefined && item.price !== null) ? `$${parseFloat(item.price).toFixed(2)}` : '';
+                        const durStr = item.duration_minutes ? `${item.duration_minutes} min` : '';
+                        const extra = [costStr, durStr].filter(Boolean).join(' - ');
+                        if (extra) label += ` (${extra})`;
+                    }
+                    option.textContent = label;
                     selectEl.appendChild(option);
                 });
+            }
+
+            function updateSelectedServiceInfo() {
+                const serviceId = serviceField ? serviceField.value : '';
+                const infoContainer = document.getElementById('service-cost-duration-info');
+                const costEl = document.getElementById('selected-service-cost');
+                const durEl = document.getElementById('selected-service-duration');
+                if (!infoContainer || !costEl || !durEl) return;
+
+                if (!serviceId) {
+                    infoContainer.classList.add('d-none');
+                    return;
+                }
+                const services = window.CALENDAR_DATA.services || [];
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (svc) {
+                    const priceVal = (svc.price !== undefined && svc.price !== null) ? `$${parseFloat(svc.price).toFixed(2)}` : '$0.00';
+                    const durVal = (svc.duration_minutes ?? svc.duration ?? 0) + ' minutes';
+                    costEl.textContent = priceVal;
+                    durEl.textContent = durVal;
+                    infoContainer.classList.remove('d-none');
+                } else {
+                    infoContainer.classList.add('d-none');
+                }
+            }
+            if (serviceField) {
+                serviceField.addEventListener('change', updateSelectedServiceInfo);
             }
 
             function hasSelectOptionValue(selectEl, value) {
@@ -2327,12 +2367,6 @@
                     return;
                 }
 
-                if (!appointmentId && isPastDate(start)) {
-                    const pastDateMessage = 'Only current date and future dates can be scheduled.';
-                    showPageNotice(pastDateMessage);
-                    return;
-                }
-
                 const hoursError = validateAppointmentWithinStaffHours(staffId, start, end);
                 if (hoursError) {
                     showPageNotice(hoursError);
@@ -2665,11 +2699,6 @@
                 selectedDate.setDate(currentWeekStart.getDate() + parseInt(col.dataset.dayIndex, 10));
                 selectedDate.setHours(0, 0, 0, 0);
                 selectedDate.setMinutes(rounded);
-
-                if (isPastDate(selectedDate)) {
-                    showPageNotice('Only current date and future dates can be scheduled.');
-                    return;
-                }
 
                 const durationMinutes = 30;
                 const endDate = new Date(selectedDate.getTime() + durationMinutes * 60000);

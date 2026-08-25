@@ -36,7 +36,7 @@ class OnlineBookingController extends Controller
     {
         $validated = $request->validate([
             'service_id' => 'required|exists:services,id',
-            'date' => 'required|date|after_or_equal:today',
+            'date' => 'required|date',
             'staff_id' => 'nullable|exists:staff,id',
             'location_id' => 'nullable|exists:locations,id',
         ]);
@@ -60,7 +60,7 @@ class OnlineBookingController extends Controller
                 $end = Carbon::parse($date->toDateString() . ' ' . $window->end_time);
                 while ($cursor->copy()->addMinutes($service->duration_minutes)->lte($end)) {
                     $slotEnd = $cursor->copy()->addMinutes($service->duration_minutes);
-                    if ($cursor->gt(now()) && $this->isAvailable($member->id, $cursor, $slotEnd, $window, (int) ($service->buffer_minutes ?? 0))) {
+                    if ($this->isAvailable($member->id, $cursor, $slotEnd, $window, (int) ($service->buffer_minutes ?? 0))) {
                         $slots[] = [
                             'staff_id' => $member->id,
                             'staff_name' => $member->name,
@@ -89,7 +89,7 @@ class OnlineBookingController extends Controller
             'location_id' => 'nullable|exists:locations,id',
             'service_id' => ['required', \Illuminate\Validation\Rule::exists('services', 'id')->where('is_active', true)],
             'staff_id' => ['required', \Illuminate\Validation\Rule::exists('staff', 'id')->where('is_active', true)],
-            'start_time' => 'required|date|after:now',
+            'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
             'client_name' => 'required|string|max:255',
             'client_email' => 'nullable|email|max:255',

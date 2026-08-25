@@ -26,12 +26,12 @@
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('phone') }}" class="form-label">Phone <span class="required-mark">*</span></label>
-        <input type="text" class="form-control @error('phone') is-invalid @enderror" id="{{ $fieldId('phone') }}" name="phone" value="{{ $value('phone') }}" placeholder="Enter phone number" required>
+        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" pattern="(?:\+1\s?)?\(?[2-9][0-9]{2}\)?[\s.-]?[0-9]{3}[\s.-]?[0-9]{4}" class="form-control js-phone-input @error('phone') is-invalid @enderror" id="{{ $fieldId('phone') }}" name="phone" value="{{ $value('phone') }}" placeholder="(416) 555-1234" required>
         @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('alternate_phone') }}" class="form-label">Alternate Phone</label>
-        <input type="text" class="form-control" id="{{ $fieldId('alternate_phone') }}" name="alternate_phone" value="{{ $value('alternate_phone') }}" placeholder="Enter alternate phone number">
+        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input" id="{{ $fieldId('alternate_phone') }}" name="alternate_phone" value="{{ $value('alternate_phone') }}" placeholder="(416) 555-1234">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('gender') }}" class="form-label">Gender</label>
@@ -84,7 +84,7 @@
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('emergency_phone') }}" class="form-label">Emergency Phone</label>
-        <input type="text" class="form-control" id="{{ $fieldId('emergency_phone') }}" name="emergency_phone" value="{{ $value('emergency_phone') }}" placeholder="Enter emergency phone number">
+        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input" id="{{ $fieldId('emergency_phone') }}" name="emergency_phone" value="{{ $value('emergency_phone') }}" placeholder="(416) 555-1234">
     </div>
     <div class="col-12">
         <label for="{{ $fieldId('notes') }}" class="form-label">Notes</label>

@@ -64,7 +64,7 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="staff_id" class="form-label">Doctor / Staff <span class="required-mark">*</span></label>
+                                    <label for="staff_id" class="form-label">Practitioner Name <span class="required-mark">*</span></label>
                                     <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
                                         <option value="">Select staff</option>
                                         @foreach($staff as $member)

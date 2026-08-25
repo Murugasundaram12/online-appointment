@@ -37,6 +37,10 @@
         <td style="padding:14px 18px;">{{ $duration !== null ? $duration . ' minutes' : '-' }}</td>
     </tr>
     <tr>
+        <td style="padding:14px 18px;background:#f9fafb;color:#6b7280;font-size:13px;">Cost</td>
+        <td style="padding:14px 18px;font-weight:600;">${{ number_format((float) ($appointment->service->price ?? 0), 2) }}</td>
+    </tr>
+    <tr>
         <td style="padding:14px 18px;background:#f9fafb;color:#6b7280;font-size:13px;">Status</td>
         <td style="padding:14px 18px;">{{ ucfirst($appointment->status ?? 'booked') }}</td>
     </tr>

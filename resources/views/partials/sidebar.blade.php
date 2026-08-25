@@ -11,6 +11,7 @@
             ['Staff', 'staff.index', 'staff.*', 'bx-group'],
             ['Schedule', 'schedule.index', 'schedule.*', 'bx-time-five'],
             ['Services', 'services.index', 'services.*', 'bx-layer-plus'],
+            ['Categories', 'categories.index', 'categories.*', 'bx-category'],
             ['Packages', 'packages.index', 'packages.*', 'bx-package'],
             ['Locations', 'locations.index', 'locations.*', 'bx-map'],
         ],

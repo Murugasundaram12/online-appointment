@@ -19,7 +19,7 @@
                     <i class="bx bx-printer" aria-hidden="true"></i> Print invoice
                 </button>
                 @if($balance > 0 && !in_array($invoice->status, ['paid', 'void']))
-                    <a href="{{ route('payment-records.index') }}" class="btn btn-white border btn-sm">
+                    <a href="{{ route('payment-records.index', ['invoice_id' => $invoice->id]) }}" class="btn btn-white border btn-sm">
                         <i class="bx bx-credit-card" aria-hidden="true"></i> Add payment
                     </a>
                 @endif

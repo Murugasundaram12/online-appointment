@@ -33,7 +33,7 @@ class CalendarController extends Controller
         $clients = Client::orderByDesc('updated_at')->limit(100)->get(['id', 'name', 'email', 'phone']);
         $services = Service::where('is_active', true)
             ->with('category:id,name')
-            ->get(['id', 'name', 'duration_minutes', 'service_category_id']);
+            ->get(['id', 'name', 'price', 'duration_minutes', 'service_category_id']);
         $locations = Location::where('is_active', true)->get(['id', 'name']);
 
         $view = $request->query('view', 'week');
@@ -446,6 +446,7 @@ class CalendarController extends Controller
         try {
             $appointment = Appointment::create($validated);
             $appointment->load(['client', 'service', 'staff', 'location']);
+            $this->autoCreateInvoiceIfCompleted($appointment);
             $emailResult = $this->appointmentEmailService->sendForCreation($appointment);
 
             return response()->json([
@@ -604,6 +605,7 @@ class CalendarController extends Controller
         try {
             $appointment->update($validated);
             $appointment->load(['client', 'service', 'staff', 'location']);
+            $this->autoCreateInvoiceIfCompleted($appointment);
             $emailResult = $this->appointmentEmailAfterUpdate($appointment, $previousAppointment);
 
             return response()->json([
@@ -1089,5 +1091,29 @@ class CalendarController extends Controller
             'cancelled' => [],
             'no_show'   => [],
         ];
+    }
+
+    private function autoCreateInvoiceIfCompleted(Appointment $appointment): void
+    {
+        if ($appointment->status === 'completed' && $appointment->client_id && $appointment->staff_id) {
+            if (!\App\Models\Invoice::where('appointment_id', $appointment->id)->exists()) {
+                $cost = (float) ($appointment->service?->price ?? 0);
+                $prefix = \App\Models\BusinessSetting::where('key', 'invoice_prefix')->value('value') ?: 'INV';
+                $maxId = (\App\Models\Invoice::max('id') ?? 0) + 1;
+                $invNum = $prefix . '-' . now()->format('Ymd') . '-' . str_pad((string) $maxId, 4, '0', STR_PAD_LEFT);
+
+                \App\Models\Invoice::create([
+                    'appointment_id' => $appointment->id,
+                    'client_id'      => $appointment->client_id,
+                    'staff_id'       => $appointment->staff_id,
+                    'invoice_number' => $invNum,
+                    'total_amount'   => $cost,
+                    'paid_amount'    => 0,
+                    'status'         => 'outstanding',
+                    'issued_date'    => now()->toDateString(),
+                    'due_date'       => now()->addDays(14)->toDateString(),
+                ]);
+            }
+        }
     }
 }

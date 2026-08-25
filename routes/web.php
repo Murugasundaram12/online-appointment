@@ -19,6 +19,7 @@ use App\Http\Controllers\OnlineBookingController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ServiceCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,6 +94,14 @@ Route::get('services/{service}', [ServiceController::class, 'show'])->name('serv
 Route::get('services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
 Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
 Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+
+Route::get('categories', [ServiceCategoryController::class, 'index'])->name('categories.index');
+Route::get('categories/create', [ServiceCategoryController::class, 'create'])->name('categories.create');
+Route::post('categories', [ServiceCategoryController::class, 'store'])->name('categories.store');
+Route::get('categories/{category}', [ServiceCategoryController::class, 'show'])->name('categories.show');
+Route::get('categories/{category}/edit', [ServiceCategoryController::class, 'edit'])->name('categories.edit');
+Route::put('categories/{category}', [ServiceCategoryController::class, 'update'])->name('categories.update');
+Route::delete('categories/{category}', [ServiceCategoryController::class, 'destroy'])->name('categories.destroy');
 
 Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
 Route::get('packages/create', [PackageController::class, 'create'])->name('packages.create');

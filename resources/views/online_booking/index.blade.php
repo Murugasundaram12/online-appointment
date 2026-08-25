@@ -82,7 +82,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Date <span class="required-mark">*</span></label>
-                                    <input type="date" class="form-control" id="booking_date" min="{{ now()->toDateString() }}" required>
+                                    <input type="date" class="form-control" id="booking_date" required>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Available time <span class="required-mark">*</span></label>

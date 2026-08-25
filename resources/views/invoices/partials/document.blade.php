@@ -1,5 +1,6 @@
 @php
-    $businessName = $settings['business_name'] ?? config('app.name');
+    $rawBusinessName = $settings['business_name'] ?? config('app.name');
+    $businessName = ($rawBusinessName && $rawBusinessName !== 'Laravel') ? $rawBusinessName : ($settings['business_address'] ?? 'Online Appointment Clinic');
     $businessEmail = $settings['business_email'] ?? null;
     $businessPhone = $settings['business_phone'] ?? null;
     $businessAddress = $settings['business_address'] ?? null;
@@ -31,7 +32,7 @@
                     <div class="clinic-mark" aria-hidden="true">{{ strtoupper(substr($businessName, 0, 2)) }}</div>
                 @endif
                 <div>
-                    <h1 class="clinic-name">{{ $businessName }}</h1>
+                    <h1 class="clinic-name">{{ ($businessName && $businessName !== 'Laravel') ? $businessName : ($businessAddress ?: 'Clinic Invoice') }}</h1>
                     @if($businessAddress)<div class="muted">{{ $businessAddress }}</div>@endif
                     @if($businessPhone)<div class="muted">Phone: {{ $businessPhone }}</div>@endif
                     @if($businessEmail)<div class="muted">Email: {{ $businessEmail }}</div>@endif
@@ -66,7 +67,7 @@
         <div class="invoice-panel">
             <h2>Appointment Details</h2>
             <div class="detail-grid">
-                <div><span>Doctor / Staff</span><strong>{{ $staff->name ?? 'Not available' }}</strong></div>
+                <div><span>Practitioner Name</span><strong>{{ $staff->name ?? 'Not available' }}</strong></div>
                 <div><span>Service</span><strong>{{ $service->name ?? 'Service' }}</strong></div>
                 <div><span>Clinic Location</span><strong>{{ $location->name ?? 'Not available' }}</strong></div>
                 <div><span>Appointment Date</span><strong>{{ $start ? $start->format($dateFormat) : 'Not available' }}</strong></div>
@@ -83,7 +84,7 @@
             <thead>
                 <tr>
                     <th>Description</th>
-                    <th>Doctor</th>
+                    <th>Practitioner Name</th>
                     <th class="text-center">Qty</th>
                     <th class="text-right">Rate</th>
                     <th class="text-right">Amount</th>

@@ -38,16 +38,21 @@ class PaymentRecordController extends Controller
             ->latest()
             ->paginate($this->perPage($request));
 
-        $invoices = Invoice::with('client')->where('status', '!=', 'void')->orderByDesc('issued_date')->get();
+        $invoices = Invoice::with('client')
+            ->whereNotIn('status', ['void', 'paid'])
+            ->orderByDesc('issued_date')
+            ->get();
+        $selectedInvoiceId = $request->integer('invoice_id');
+        $selectedInvoice = $invoices->firstWhere('id', $selectedInvoiceId);
 
         $summary = [
             'total' => PaymentRecord::sum('amount'),
             'cash' => PaymentRecord::where('payment_method', 'cash')->sum('amount'),
             'card' => PaymentRecord::where('payment_method', 'card')->sum('amount'),
-            'transfer' => PaymentRecord::where('payment_method', 'transfer')->sum('amount'),
+            'e_transfer' => PaymentRecord::whereIn('payment_method', ['e_transfer', 'transfer'])->sum('amount'),
         ];
 
-        return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary'));
+        return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary', 'selectedInvoice'));
     }
 
     public function create()
@@ -60,7 +65,7 @@ class PaymentRecordController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,card,transfer',
+            'payment_method' => 'required|in:cash,card,e_transfer',
             'payment_date' => 'required|date',
             'transaction_id' => 'nullable|string|max:255',
         ]);

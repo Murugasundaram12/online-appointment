@@ -208,9 +208,12 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Password <span class="required-mark">*</span></label>
-                                        <input type="password" class="form-control" name="password"
-                                            placeholder="Enter password" required>
+                                         <label class="form-label">Password <span class="required-mark">*</span></label>
+                                         <div class="input-group">
+                                             <input type="password" class="form-control" name="password"
+                                                 placeholder="Enter password" required>
+                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button" aria-label="Toggle password visibility"><i class="bx bx-show"></i></button>
+                                         </div>
                                     </div>
                                 </div>
                             </div>
@@ -334,9 +337,12 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="edit-staff-password"
-                                            name="password" placeholder="Leave blank to keep current">
+                                         <label class="form-label">Password</label>
+                                         <div class="input-group">
+                                             <input type="password" class="form-control" id="edit-staff-password"
+                                                 name="password" placeholder="Leave blank to keep current">
+                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button" aria-label="Toggle password visibility"><i class="bx bx-show"></i></button>
+                                         </div>
                                     </div>
                                 </div>
                             </div>

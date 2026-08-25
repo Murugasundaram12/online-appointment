@@ -221,4 +221,56 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+    function initPasswordToggles() {
+        document.querySelectorAll('input[type="password"]').forEach((input) => {
+            if (input.dataset.passwordToggleInit === "1") return;
+            input.dataset.passwordToggleInit = "1";
+
+            const parent = input.parentElement;
+            let button = parent ? parent.querySelector('.js-toggle-password-btn, #togglePassword') : null;
+
+            if (!button) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'input-group';
+                input.parentNode.insertBefore(wrapper, input);
+                wrapper.appendChild(input);
+
+                button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn btn-outline-secondary js-toggle-password-btn';
+                button.setAttribute('aria-label', 'Toggle password visibility');
+                button.innerHTML = '<i class="bx bx-show"></i>';
+                wrapper.appendChild(button);
+            }
+
+            button.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.className = isPassword ? 'bx bx-hide' : 'bx bx-show';
+                }
+            });
+        });
+    }
+    initPasswordToggles();
+    document.addEventListener('shown.bs.modal', initPasswordToggles);
+
+    function formatCanadianPhone(value) {
+        const digits = String(value || '').replace(/\D/g, '');
+        if (digits.length === 10) {
+            return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        if (digits.length === 11 && digits.startsWith('1')) {
+            return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+        }
+        return value;
+    }
+
+    document.addEventListener('blur', (e) => {
+        if (e.target && (e.target.classList.contains('js-phone-input') || e.target.name === 'phone' || e.target.name === 'emergency_phone' || e.target.name === 'alternate_phone')) {
+            e.target.value = formatCanadianPhone(e.target.value);
+        }
+    }, true);
 });
