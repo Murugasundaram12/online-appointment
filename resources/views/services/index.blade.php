@@ -10,7 +10,7 @@
                 <p class="text-muted mb-0">Manage your service catalog, pricing and availability.</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-light border" onclick="alert('Category manager is not available in this demo.')"><i class="bx bx-category me-1"></i>Category Manager</button>
+                <a href="{{ route('categories.index') }}" class="btn btn-light border"><i class="bx bx-category me-1"></i>Category Manager</a>
             </div>
         </div>
 
