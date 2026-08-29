@@ -611,12 +611,41 @@
             border: 1px solid #ffdeaa;
         }
 
-        #appointment-details-card .card-status-chip.status-pending { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
-        #appointment-details-card .card-status-chip.status-booked { color: #1e40af; background: #dbeafe; border: 1px solid #bfdbfe; }
-        #appointment-details-card .card-status-chip.status-confirmed { color: #3730a3; background: #e0e7ff; border: 1px solid #c7d2fe; }
-        #appointment-details-card .card-status-chip.status-completed { color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; }
-        #appointment-details-card .card-status-chip.status-cancelled { color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; }
-        #appointment-details-card .card-status-chip.status-no_show { color: #5b21b6; background: #ede9fe; border: 1px solid #ddd6fe; }
+        #appointment-details-card .card-status-chip.status-pending {
+            color: #92400e;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        #appointment-details-card .card-status-chip.status-booked {
+            color: #1e40af;
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+        }
+
+        #appointment-details-card .card-status-chip.status-confirmed {
+            color: #3730a3;
+            background: #e0e7ff;
+            border: 1px solid #c7d2fe;
+        }
+
+        #appointment-details-card .card-status-chip.status-completed {
+            color: #065f46;
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+        }
+
+        #appointment-details-card .card-status-chip.status-cancelled {
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+        }
+
+        #appointment-details-card .card-status-chip.status-no_show {
+            color: #5b21b6;
+            background: #ede9fe;
+            border: 1px solid #ddd6fe;
+        }
 
         #appointment-details-card .card-close {
             border: 0;
@@ -732,29 +761,34 @@
                     <select id="calendar-filter-location" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All locations</option>
                         @foreach($locations ?? [] as $location)
-                            <option value="{{ $location->id }}" {{ (string)($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                            <option value="{{ $location->id }}" {{ (string) ($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-staff" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All staff</option>
                         @foreach($staffs ?? [] as $staff)
-                            <option value="{{ $staff->id }}" {{ (string)($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
+                            <option value="{{ $staff->id }}" {{ (string) ($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-service" class="form-select form-select-sm" style="max-width: 210px;">
                         <option value="">All services</option>
                         @foreach($services ?? [] as $service)
-                            <option value="{{ $service->id }}" {{ (string)($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
+                            <option value="{{ $service->id }}" {{ (string) ($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
                         @endforeach
                     </select>
                     <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
                         <option value="">All statuses</option>
-                        <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending
+                        </option>
                         <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
-                        <option value="confirmed" {{ ($filters['status'] ?? '') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                        <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show</option>
+                        <option value="confirmed" {{ ($filters['status'] ?? '') === 'confirmed' ? 'selected' : '' }}>Confirmed
+                        </option>
+                        <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed
+                        </option>
+                        <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled
+                        </option>
+                        <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show
+                        </option>
                     </select>
                     <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
                 </div>
@@ -823,20 +857,158 @@
                 <div class="detail-value" id="readonly-card-notes"></div>
             </div>
         </div>
-        <div id="card-quick-links" class="px-3 py-2 border-top bg-light d-flex gap-2 flex-wrap align-items-center" style="font-size: 0.8rem;">
-            <a id="card-link-client" href="#" target="_blank" class="text-primary text-decoration-none fw-semibold"><i class="bx bx-user me-1"></i>View Client</a>
-            <a id="card-link-invoice" href="#" target="_blank" class="text-success text-decoration-none fw-semibold d-none"><i class="bx bx-receipt me-1"></i>View Invoice (<span id="card-link-invoice-num"></span>)</a>
-            <a id="card-link-forms" href="#" target="_blank" class="text-info text-decoration-none fw-semibold d-none"><i class="bx bx-file me-1"></i>View Forms</a>
+        <div id="card-quick-links" class="px-3 py-2 border-top bg-light d-flex gap-2 flex-wrap align-items-center"
+            style="font-size: 0.8rem;">
+            <a id="card-link-client" href="#" target="_blank" class="text-primary text-decoration-none fw-semibold"><i
+                    class="bx bx-user me-1"></i>View Client</a>
+            <a id="card-link-invoice" href="#" target="_blank"
+                class="text-success text-decoration-none fw-semibold d-none"><i class="bx bx-receipt me-1"></i>View Invoice
+                (<span id="card-link-invoice-num"></span>)</a>
+            <a id="card-link-forms" href="#" target="_blank" class="text-info text-decoration-none fw-semibold d-none"><i
+                    class="bx bx-file me-1"></i>View Forms</a>
         </div>
         <div id="card-quick-actions" class="p-2 border-top d-flex gap-1 flex-wrap align-items-center">
-            <button type="button" class="btn btn-sm btn-outline-primary btn-quick-status d-none" data-status="confirmed"><i class='bx bx-check-double me-1'></i>Confirm</button>
-            <button type="button" class="btn btn-sm btn-outline-success btn-quick-status d-none" data-status="completed"><i class='bx bx-check-circle me-1'></i>Complete</button>
-            <button type="button" class="btn btn-sm btn-outline-danger btn-quick-status d-none" data-status="cancelled"><i class='bx bx-x-circle me-1'></i>Cancel</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-quick-status d-none" data-status="no_show"><i class='bx bx-user-x me-1'></i>No-Show</button>
+            <button type="button" class="btn btn-sm btn-outline-primary btn-quick-status d-none" data-status="confirmed"><i
+                    class='bx bx-check-double me-1'></i>Confirm</button>
+            <button type="button" class="btn btn-sm btn-outline-success btn-quick-status d-none" data-status="completed"><i
+                    class='bx bx-check-circle me-1'></i>Complete</button>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-quick-status d-none" data-status="cancelled"><i
+                    class='bx bx-x-circle me-1'></i>Cancel</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-quick-status d-none" data-status="no_show"><i
+                    class='bx bx-user-x me-1'></i>No-Show</button>
         </div>
     </div>
 
-    <div class="modal fade app-modal" id="appointmentModal" tabindex="-1" aria-labelledby="appointment-modal-title" aria-hidden="true">
+    {{-- ============================================================
+    COMPLETED APPOINTMENT READ-ONLY MODAL (Workflow 2)
+    Opens when a user clicks a COMPLETED appointment in the calendar.
+    ============================================================ --}}
+    <div class="modal fade" id="completedAppointmentModal" tabindex="-1" aria-labelledby="completed-modal-title"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                            style="width:36px;height:36px;flex-shrink:0;">
+                            <i class="bx bx-check" style="font-size:1.2rem;"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title mb-0" id="completed-modal-title">Completed Appointment</h5>
+                            <p class="text-muted mb-0" style="font-size:0.8rem;">Read-only — this appointment is complete.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div id="completed-modal-loading" class="text-center py-5">
+                        <div class="spinner-border text-success" role="status"><span
+                                class="visually-hidden">Loading...</span></div>
+                    </div>
+                    <div id="completed-modal-content" class="d-none">
+                        {{-- Client --}}
+                        <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                            <div class="text-uppercase fw-semibold text-muted"
+                                style="font-size:0.72rem;letter-spacing:.06em;">Client</div>
+                            <div class="fw-bold" id="cmod-client-name"></div>
+                            <div class="small text-muted" id="cmod-client-phone"></div>
+                            <div class="small text-muted" id="cmod-client-email"></div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            {{-- Appointment --}}
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light rounded-3 p-3 h-100">
+                                    <div class="text-uppercase fw-semibold text-muted mb-2"
+                                        style="font-size:0.72rem;letter-spacing:.06em;">Appointment</div>
+                                    <div class="small mb-1"><span class="text-muted">Date:</span> <strong
+                                            id="cmod-appt-date"></strong></div>
+                                    <div class="small mb-1"><span class="text-muted">Start:</span> <strong
+                                            id="cmod-appt-start"></strong></div>
+                                    <div class="small mb-1"><span class="text-muted">End:</span> <strong
+                                            id="cmod-appt-end"></strong></div>
+                                    <div class="small mb-1"><span class="text-muted">Duration:</span> <strong
+                                            id="cmod-appt-duration"></strong></div>
+                                    <div class="small mb-1"><span class="text-muted">Status:</span>
+                                        <span class="badge bg-success" id="cmod-appt-status">Completed</span>
+                                    </div>
+                                    <div class="small mt-2" id="cmod-notes-row">
+                                        <span class="text-muted">Notes:</span> <span id="cmod-appt-notes"
+                                            class="fst-italic"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            {{-- Practitioner & Service --}}
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light rounded-3 p-3 mb-2">
+                                    <div class="text-uppercase fw-semibold text-muted"
+                                        style="font-size:0.72rem;letter-spacing:.06em;">Practitioner</div>
+                                    <div class="fw-bold" id="cmod-staff-name"></div>
+                                </div>
+                                <div class="card border-0 bg-light rounded-3 p-3">
+                                    <div class="text-uppercase fw-semibold text-muted"
+                                        style="font-size:0.72rem;letter-spacing:.06em;">Service</div>
+                                    <div class="fw-bold" id="cmod-service-name"></div>
+                                    <div class="small text-muted">Price: <strong id="cmod-service-price"></strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- Invoice --}}
+                        <div id="cmod-invoice-section" class="card border-0 bg-light rounded-3 p-3 mb-3 d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-uppercase fw-semibold text-muted"
+                                    style="font-size:0.72rem;letter-spacing:.06em;">Invoice</div>
+                                <a id="cmod-invoice-link" href="#" target="_blank"
+                                    class="btn btn-sm btn-outline-success py-0">
+                                    <i class="bx bx-receipt me-1"></i>View Invoice
+                                </a>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 small"><span class="text-muted">Invoice #:</span> <strong
+                                        id="cmod-inv-number"></strong></div>
+                                <div class="col-6 small"><span class="text-muted">Status:</span> <strong
+                                        id="cmod-inv-status"></strong></div>
+                                <div class="col-4 small"><span class="text-muted">Total:</span> <strong
+                                        id="cmod-inv-total"></strong></div>
+                                <div class="col-4 small"><span class="text-muted">Paid:</span> <strong
+                                        id="cmod-inv-paid"></strong></div>
+                                <div class="col-4 small"><span class="text-muted">Balance:</span> <strong
+                                        id="cmod-inv-balance"></strong></div>
+                            </div>
+                        </div>
+                        {{-- Payments --}}
+                        <div id="cmod-payments-section" class="card border-0 bg-light rounded-3 p-3 d-none">
+                            <div class="text-uppercase fw-semibold text-muted mb-2"
+                                style="font-size:0.72rem;letter-spacing:.06em;">Payment History</div>
+                            <table class="table table-sm table-borderless mb-0">
+                                <thead class="text-muted" style="font-size:0.78rem;">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Method</th>
+                                        <th>Transaction ID</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cmod-payments-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div id="cmod-no-invoice" class="text-muted small fst-italic d-none">No invoice linked to this
+                            appointment.</div>
+                    </div>
+                    <div id="completed-modal-error" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <a id="cmod-go-to-invoice" href="#" class="btn btn-success d-none">
+                        <i class="bx bx-receipt me-1"></i>Open Invoice
+                    </a>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade app-modal" id="appointmentModal" tabindex="-1" aria-labelledby="appointment-modal-title"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
                 <form id="appointment-form" data-app-managed="true">
@@ -868,38 +1040,51 @@
                                 <label class="form-label">Service <span class="required-mark">*</span></label>
                                 <select id="appt-service" class="form-select" required></select>
                                 <div id="service-cost-duration-info" class="mt-1 small text-muted d-none">
-                                    Cost: <strong id="selected-service-cost" class="text-dark">$0.00</strong> &bull; Duration: <strong id="selected-service-duration" class="text-dark">0 min</strong>
+                                    Cost: <strong id="selected-service-cost" class="text-dark">$0.00</strong> &bull;
+                                    Duration: <strong id="selected-service-duration" class="text-dark">0 min</strong>
                                 </div>
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label" for="appt-client-search">Client <span class="required-mark">*</span></label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                    <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                </div>
+                                <label class="form-label" for="appt-client-search">Client <span
+                                        class="required-mark">*</span></label>
+                                <!-- <div class="input-group mb-2">
+                                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                        <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                    </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
                                         New</button>
                                 </div>
-                                <div id="appt-client-snapshot" class="alert alert-light border p-3 mt-2 d-none" style="font-size: 0.82rem; border-radius: 8px;">
+                                <div id="appt-client-snapshot" class="alert alert-light border p-3 mt-2 d-none"
+                                    style="font-size: 0.82rem; border-radius: 8px;">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div>
                                             <strong id="snapshot-client-name" class="fs-6 text-dark"></strong>
-                                            <span id="snapshot-vip-badge" class="badge bg-warning text-dark ms-1 d-none"><i class="bx bx-star"></i> VIP</span>
+                                            <span id="snapshot-vip-badge" class="badge bg-warning text-dark ms-1 d-none"><i
+                                                    class="bx bx-star"></i> VIP</span>
                                         </div>
-                                        <a id="snapshot-full-profile-link" href="#" target="_blank" class="btn btn-xs btn-outline-primary fw-semibold"><i class="bx bx-external-link me-1"></i>View Full Client</a>
+                                        <a id="snapshot-full-profile-link" href="#" target="_blank"
+                                            class="btn btn-xs btn-outline-primary fw-semibold"><i
+                                                class="bx bx-external-link me-1"></i>View Full Client</a>
                                     </div>
                                     <div class="row g-2 text-muted mb-2">
-                                        <div class="col-6 col-sm-3">Last Visit: <strong id="snapshot-last-visit" class="text-dark">-</strong></div>
-                                        <div class="col-6 col-sm-3">Next Appt: <strong id="snapshot-next-appt" class="text-dark">-</strong></div>
-                                        <div class="col-6 col-sm-3">Total Visits: <strong id="snapshot-total-appts" class="text-dark">0</strong></div>
-                                        <div class="col-6 col-sm-3">No Shows: <strong id="snapshot-no-show" class="text-danger">0</strong></div>
+                                        <div class="col-6 col-sm-3">Last Visit: <strong id="snapshot-last-visit"
+                                                class="text-dark">-</strong></div>
+                                        <div class="col-6 col-sm-3">Next Appt: <strong id="snapshot-next-appt"
+                                                class="text-dark">-</strong></div>
+                                        <div class="col-6 col-sm-3">Total Visits: <strong id="snapshot-total-appts"
+                                                class="text-dark">0</strong></div>
+                                        <div class="col-6 col-sm-3">No Shows: <strong id="snapshot-no-show"
+                                                class="text-danger">0</strong></div>
                                     </div>
-                                    <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top">
-                                        <div>Outstanding: <strong id="snapshot-outstanding" class="text-dark">$0.00</strong></div>
-                                        <div id="snapshot-notes-container" class="text-muted text-truncate d-none" style="max-width: 250px;">Note: <span id="snapshot-notes"></span></div>
+                                    <div
+                                        class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top">
+                                        <div>Outstanding: <strong id="snapshot-outstanding" class="text-dark">$0.00</strong>
+                                        </div>
+                                        <div id="snapshot-notes-container" class="text-muted text-truncate d-none"
+                                            style="max-width: 250px;">Note: <span id="snapshot-notes"></span></div>
                                     </div>
                                 </div>
                             </div>
@@ -974,7 +1159,8 @@
     </div>
 
     <!-- Step 1 Client Search Modal -->
-    <div class="modal fade app-modal" id="clientSearchModal" tabindex="-1" aria-labelledby="clientSearchModalTitle" aria-hidden="true">
+    <div class="modal fade app-modal" id="clientSearchModal" tabindex="-1" aria-labelledby="clientSearchModalTitle"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -990,15 +1176,18 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Search Client</label>
-                        <input type="search" id="client-search-step1-input" class="form-control" placeholder="Search by phone, name, or email..." autocomplete="off" />
+                        <input type="search" id="client-search-step1-input" class="form-control"
+                            placeholder="Search by phone, name, or email..." autocomplete="off" />
                     </div>
-                    <div id="client-search-step1-results" class="list-group mb-3 d-none" style="max-height: 220px; overflow-y: auto;"></div>
+                    <div id="client-search-step1-results" class="list-group mb-3 d-none"
+                        style="max-height: 220px; overflow-y: auto;"></div>
                     <div id="client-search-step1-empty" class="alert alert-light text-muted small d-none">
                         No matching client found.
                     </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-new-client" id="step1-open-new-client-modal">+ Create New Client</button>
+                    <button type="button" class="btn btn-new-client" id="step1-open-new-client-modal">+ Create New
+                        Client</button>
                     <button type="button" class="btn btn-new-client-cancel" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -1006,7 +1195,8 @@
     </div>
 
     <!-- Step 1b Add New Client Modal -->
-    <div class="modal fade app-modal" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalTitle" aria-hidden="true">
+    <div class="modal fade app-modal" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalTitle"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <form id="new-client-form" data-app-managed="true">
@@ -1146,7 +1336,12 @@
                     },
                     eventClick: function (info) {
                         info.jsEvent.preventDefault();
-                        if (typeof openAppointmentModalForEdit === 'function') {
+                        const status = (info.event.extendedProps && info.event.extendedProps.status)
+                            ? info.event.extendedProps.status
+                            : (info.event._def && info.event._def.extendedProps ? info.event._def.extendedProps.status : '');
+                        if (String(status).toLowerCase() === 'completed') {
+                            openCompletedAppointmentModal(info.event.id, info.jsEvent);
+                        } else if (typeof openAppointmentModalForEdit === 'function') {
                             openAppointmentModalForEdit(info.event.id, info.jsEvent);
                         }
                     }
@@ -1298,7 +1493,7 @@
                 if (readonlyCardClient) readonlyCardClient.textContent = appt.title || 'Unassigned';
                 if (readonlyCardStart) readonlyCardStart.textContent = formatDateTimeLong(appt.start);
                 if (readonlyCardEnd) readonlyCardEnd.textContent = formatDateTimeLong(appt.end);
-                
+
                 const status = String(appt.status || '').toLowerCase();
                 const labelMap = {
                     pending: 'Pending',
@@ -2110,6 +2305,124 @@
                 }
             }
 
+            /**
+             * Workflow 2 — Open the read-only completed appointment modal.
+             * Fetches full appointment+invoice+payment details from the server
+             * and populates the #completedAppointmentModal.
+             */
+            async function openCompletedAppointmentModal(appointmentId) {
+                const modalEl = document.getElementById('completedAppointmentModal');
+                if (!modalEl) return;
+
+                const loadingEl = document.getElementById('completed-modal-loading');
+                const contentEl = document.getElementById('completed-modal-content');
+                const errorEl = document.getElementById('completed-modal-error');
+
+                // Reset state
+                if (loadingEl) { loadingEl.classList.remove('d-none'); }
+                if (contentEl) { contentEl.classList.add('d-none'); }
+                if (errorEl) { errorEl.classList.add('d-none'); errorEl.textContent = ''; }
+
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+
+                try {
+                    const res = await fetch(calendarUrl(`appointments/${appointmentId}/completed-details`));
+                    const data = await res.json();
+
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.message || 'Failed to load appointment details.');
+                    }
+
+                    const appt = data.appointment || {};
+                    const client = data.client || {};
+                    const staff = data.staff || {};
+                    const service = data.service || {};
+                    const invoice = data.invoice || null;
+                    const payments = data.payments || [];
+
+                    // Helper — safely set text
+                    const setText = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = val || '-';
+                    };
+                    const hide = id => { const el = document.getElementById(id); if (el) el.classList.add('d-none'); };
+                    const show = id => { const el = document.getElementById(id); if (el) el.classList.remove('d-none'); };
+                    const fmt = n => '$' + parseFloat(n || 0).toFixed(2);
+
+                    // Client
+                    setText('cmod-client-name', client.name);
+                    setText('cmod-client-phone', client.phone);
+                    setText('cmod-client-email', client.email);
+
+                    // Appointment
+                    const start = appt.start ? new Date(appt.start) : null;
+                    const end = appt.end ? new Date(appt.end) : null;
+                    setText('cmod-appt-date', start ? start.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-');
+                    setText('cmod-appt-start', start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
+                    setText('cmod-appt-end', end ? end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
+                    setText('cmod-appt-duration', appt.duration ? appt.duration + ' minutes' : '-');
+                    setText('cmod-appt-notes', appt.notes || 'No notes');
+
+                    // Practitioner & Service
+                    setText('cmod-staff-name', staff.name);
+                    setText('cmod-service-name', service.name);
+                    setText('cmod-service-price', service.price !== undefined ? fmt(service.price) : '-');
+
+                    // Invoice
+                    if (invoice) {
+                        const statusLabel = (invoice.status || 'outstanding')
+                            .replace('_', ' ')
+                            .replace(/\b\w/g, c => c.toUpperCase());
+                        setText('cmod-inv-number', invoice.invoice_number);
+                        setText('cmod-inv-status', statusLabel);
+                        setText('cmod-inv-total', fmt(invoice.total_amount));
+                        setText('cmod-inv-paid', fmt(invoice.paid_amount));
+                        setText('cmod-inv-balance', fmt(invoice.balance));
+
+                        const invLink = document.getElementById('cmod-invoice-link');
+                        if (invLink) invLink.href = invoice.url || '#';
+                        const goLink = document.getElementById('cmod-go-to-invoice');
+                        if (goLink) { goLink.href = invoice.url || '#'; show('cmod-go-to-invoice'); }
+
+                        show('cmod-invoice-section');
+                        hide('cmod-no-invoice');
+
+                        // Payments
+                        const tbody = document.getElementById('cmod-payments-tbody');
+                        if (tbody) {
+                            tbody.innerHTML = '';
+                            if (payments.length > 0) {
+                                payments.forEach(p => {
+                                    const tr = document.createElement('tr');
+                                    const method = (p.payment_method || '').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                    tr.innerHTML = `<td>${p.payment_date || '-'}</td><td>${method}</td><td>${p.transaction_id || '-'}</td><td class="text-end">${fmt(p.amount)}</td>`;
+                                    tbody.appendChild(tr);
+                                });
+                                show('cmod-payments-section');
+                            } else {
+                                hide('cmod-payments-section');
+                            }
+                        }
+                    } else {
+                        hide('cmod-invoice-section');
+                        hide('cmod-payments-section');
+                        hide('cmod-go-to-invoice');
+                        show('cmod-no-invoice');
+                    }
+
+                    if (loadingEl) loadingEl.classList.add('d-none');
+                    if (contentEl) contentEl.classList.remove('d-none');
+
+                } catch (err) {
+                    if (loadingEl) loadingEl.classList.add('d-none');
+                    if (errorEl) {
+                        errorEl.textContent = err.message || 'Could not load appointment details.';
+                        errorEl.classList.remove('d-none');
+                    }
+                }
+            }
+
             // Build header and day columns
             function getScheduledStaffForDate(date) {
                 const schedules = window._calendarSchedules || [];
@@ -2421,7 +2734,11 @@
                         el.addEventListener('dragstart', handleDragStart);
                         el.addEventListener('click', function (e) {
                             e.stopPropagation();
-                            openAppointmentModalForEdit(ev.id, e);
+                            if (String(ev.status || '').toLowerCase() === 'completed') {
+                                openCompletedAppointmentModal(ev.id, e);
+                            } else {
+                                openAppointmentModalForEdit(ev.id, e);
+                            }
                         });
 
                         col.appendChild(el);
@@ -2613,7 +2930,7 @@
                 }
             });
 
-                if (openNewClientModalBtn) {
+            if (openNewClientModalBtn) {
                 openNewClientModalBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2866,6 +3183,12 @@
                         const data = await res.json();
                         if (res.ok && data.success) {
                             hideAppointmentDetailsCard();
+                            // Workflow 1: when an appointment is marked COMPLETED and an invoice
+                            // was auto-created, redirect the user to the invoice page.
+                            if (newStatus === 'completed' && data.invoiceUrl) {
+                                window.location.href = data.invoiceUrl;
+                                return;
+                            }
                             showPageNotice(`Appointment status updated to ${newStatus.replace('_', ' ')}.`, 'success');
                             await loadDataAndRender();
                         } else {

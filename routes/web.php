@@ -31,6 +31,10 @@ use App\Http\Controllers\ServiceCategoryController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+Route::get('/', function () {
+    return view('welcome');
+});
+
 Route::get('/clear', function () {
     Artisan::call('route:clear');
     Artisan::call('cache:clear');
@@ -57,6 +61,7 @@ Route::get('/calendar/clients/search', [CalendarController::class, 'searchClient
 Route::get('/calendar/clients/{id}/snapshot', [CalendarController::class, 'clientSnapshot'])->name('calendar.clients.snapshot');
 Route::post('/calendar/appointments', [CalendarController::class, 'storeAppointment'])->name('calendar.store');
 Route::get('/calendar/appointments/{id}', [CalendarController::class, 'getAppointment'])->name('calendar.show');
+Route::get('/calendar/appointments/{id}/completed-details', [CalendarController::class, 'getCompletedAppointmentDetails'])->name('calendar.completedDetails');
 Route::put('/calendar/appointments/{id}', [CalendarController::class, 'updateAppointment'])->name('calendar.update');
 Route::post('/calendar/appointments/{id}/assign-client', [CalendarController::class, 'assignClient'])->name('calendar.assignClient');
 Route::post('/calendar/quick-client', [CalendarController::class, 'quickCreateClient'])->name('calendar.quickClient');

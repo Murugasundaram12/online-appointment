@@ -608,11 +608,19 @@ class CalendarController extends Controller
             $this->autoCreateInvoiceIfCompleted($appointment);
             $emailResult = $this->appointmentEmailAfterUpdate($appointment, $previousAppointment);
 
+            // After marking completed, load the auto-created invoice so the front-end
+            // can redirect the user straight to the invoice page.
+            $appointment->loadMissing('invoice');
+            $invoice = $appointment->invoice;
+            $invoiceUrl = $invoice ? route('invoices.show', $invoice->id) : null;
+
             return response()->json([
-                'success' => true,
-                'message' => $this->appointmentEmailMessage('Appointment updated successfully', $emailResult),
-                'email' => $emailResult,
-                'appointment' => $this->formatAppointment($appointment)
+                'success'    => true,
+                'message'    => $this->appointmentEmailMessage('Appointment updated successfully', $emailResult),
+                'email'      => $emailResult,
+                'appointment'=> $this->formatAppointment($appointment),
+                'invoiceId'  => $invoice?->id,
+                'invoiceUrl' => $invoiceUrl,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -662,9 +670,82 @@ class CalendarController extends Controller
      */
     public function getAppointment($id)
     {
-        $appointment = Appointment::with(['client', 'service', 'staff', 'location'])->findOrFail($id);
+        $appointment = Appointment::with(['client', 'service', 'staff', 'location', 'invoice'])->findOrFail($id);
 
         return response()->json($this->formatAppointment($appointment));
+    }
+
+    /**
+     * Return full read-only details for a COMPLETED appointment
+     * (appointment + invoice + payments) for the calendar details modal.
+     */
+    public function getCompletedAppointmentDetails($id)
+    {
+        $appointment = Appointment::with([
+            'client',
+            'service',
+            'staff',
+            'location',
+            'invoice.payments',
+        ])->find($id);
+
+        if (!$appointment) {
+            return response()->json(['success' => false, 'message' => 'Appointment not found.'], 404);
+        }
+
+        if (!$this->authorizeAppointmentStaffAccess((int) $appointment->staff_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        if ($appointment->status !== 'completed') {
+            return response()->json(['success' => false, 'message' => 'This appointment is not completed.'], 422);
+        }
+
+        $invoice  = $appointment->invoice;
+        $payments = $invoice ? $invoice->payments : collect();
+        $balance  = $invoice ? max(0, (float) $invoice->total_amount - (float) $invoice->paid_amount) : 0;
+
+        return response()->json([
+            'success'     => true,
+            'appointment' => [
+                'id'          => $appointment->id,
+                'status'      => $appointment->status,
+                'start'       => $appointment->start_time->toIso8601String(),
+                'end'         => $appointment->end_time->toIso8601String(),
+                'notes'       => $appointment->notes,
+                'duration'    => $appointment->start_time->diffInMinutes($appointment->end_time),
+            ],
+            'client'      => $appointment->client ? [
+                'id'    => $appointment->client->id,
+                'name'  => $appointment->client->name,
+                'phone' => $appointment->client->phone,
+                'email' => $appointment->client->email,
+            ] : null,
+            'staff'       => $appointment->staff ? [
+                'id'   => $appointment->staff->id,
+                'name' => $appointment->staff->name,
+            ] : null,
+            'service'     => $appointment->service ? [
+                'id'    => $appointment->service->id,
+                'name'  => $appointment->service->name,
+                'price' => $appointment->service->price,
+            ] : null,
+            'invoice'     => $invoice ? [
+                'id'             => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'total_amount'   => $invoice->total_amount,
+                'paid_amount'    => $invoice->paid_amount,
+                'balance'        => $balance,
+                'status'         => $invoice->status,
+                'url'            => route('invoices.show', $invoice->id),
+            ] : null,
+            'payments'    => $payments->map(fn ($p) => [
+                'payment_method' => $p->payment_method,
+                'amount'         => $p->amount,
+                'payment_date'   => $p->payment_date?->toDateString(),
+                'transaction_id' => $p->transaction_id,
+            ])->values(),
+        ]);
     }
 
     /**

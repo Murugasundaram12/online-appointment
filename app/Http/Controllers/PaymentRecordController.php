@@ -99,7 +99,9 @@ class PaymentRecordController extends Controller
             return back()->withInput()->with('error', 'Payment could not be saved: ' . $e->getMessage());
         }
 
-        return redirect()->route('payment-records.index')->with('success', 'Payment Record created successfully.');
+        return redirect()
+            ->route('invoices.show', $validated['invoice_id'])
+            ->with('success', 'Payment recorded successfully. Invoice updated.');
     }
 
     public function show(string $id)
