@@ -1,5 +1,26 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
 
+    RewriteEngine On
+
+    # Preserve bearer/API Authorization headers for Laravel and Sanctum.
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Never expose Laravel application/runtime files from this subfolder.
+    RewriteRule ^(?:\.env|\.env\..*|artisan|composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|server\.php|vite\.config\.js)$ - [F,L,NC]
+    RewriteRule ^(?:app|bootstrap|config|database|resources|routes|storage|tests|vendor)(?:/|$) - [F,L,NC]
+
+    # Requests already under public/ are handled there without another rewrite.
+    RewriteRule ^public/ - [L]
+
+    # Serve real public assets through the Laravel public directory.
+    RewriteCond %{DOCUMENT_ROOT}/online-appointment/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/online-appointment/public/$1 -d
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Route every other request through Laravel's production front controller.
+    RewriteRule ^(.*)$ public/index.php/$1 [L]
+</IfModule>

@@ -31,19 +31,7 @@ use App\Http\Controllers\ServiceCategoryController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('/', function () {
-    return view('welcome');
-});
 
-Route::get('/clear', function () {
-    Artisan::call('route:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('config:clear');
-    Artisan::call('config:cache');
-    Artisan::call('view:clear');
-    Artisan::call('optimize:clear');
-    return "Cleared!";
-});
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.store');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');

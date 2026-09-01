@@ -1046,12 +1046,11 @@
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label" for="appt-client-search">Client <span
-                                        class="required-mark">*</span></label>
+                                <label class="form-label" for="appt-client-search">Client <span class="required-mark">*</span></label>
                                 <!-- <div class="input-group mb-2">
-                                        <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                        <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                    </div> -->
+                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                    <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -1119,33 +1118,60 @@
                         </div>
 
                         <div id="appointment-readonly-details" class="d-none">
-                            <div class="detail-row">
-                                <div class="detail-label">Staff</div>
-                                <div class="detail-value" id="readonly-staff"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Service</div>
-                                <div class="detail-value" id="readonly-service"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Client</div>
-                                <div class="detail-value" id="readonly-client"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Start</div>
-                                <div class="detail-value" id="readonly-start"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">End</div>
-                                <div class="detail-value" id="readonly-end"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Status</div>
-                                <div class="detail-value" id="readonly-status"></div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Notes</div>
-                                <div class="detail-value" id="readonly-notes"></div>
+                            <div class="card border-0 bg-light p-3 mb-2" style="border-radius: 10px;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge bg-success px-3 py-2 fs-6 fw-bold"><i class="bx bx-check-circle me-1"></i> COMPLETED</span>
+                                        <span id="readonly-payment-badge" class="badge px-3 py-2 fs-6 fw-bold ms-2"></span>
+                                    </div>
+                                    <a id="readonly-invoice-link" href="#" class="btn btn-sm btn-outline-primary fw-semibold d-none" target="_blank">
+                                        <i class="bx bx-receipt me-1"></i> View Invoice <span id="readonly-invoice-num"></span>
+                                    </a>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="text-muted small">Client Name</div>
+                                        <div class="fw-bold text-dark fs-6" id="readonly-client"></div>
+                                        <div class="small text-muted" id="readonly-client-contact"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted small">Practitioner / Staff</div>
+                                        <div class="fw-bold text-dark fs-6" id="readonly-staff"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted small">Service</div>
+                                        <div class="fw-bold text-dark fs-6" id="readonly-service"></div>
+                                        <div class="small text-muted">Duration: <span id="readonly-duration" class="fw-medium text-dark"></span></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted small">Date & Time</div>
+                                        <div class="fw-semibold text-dark" id="readonly-start-end"></div>
+                                    </div>
+                                </div>
+                                <hr class="my-3 text-muted opacity-25" />
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="text-muted small">Invoice Amount</div>
+                                        <div class="fw-bold text-dark fs-6" id="readonly-invoice-total">$0.00</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-muted small">Paid Amount</div>
+                                        <div class="fw-bold text-success fs-6" id="readonly-invoice-paid">$0.00</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-muted small">Remaining Balance</div>
+                                        <div class="fw-bold text-danger fs-6" id="readonly-invoice-balance">$0.00</div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2 text-muted small" id="readonly-payment-method-row">
+                                    Payment Method: <strong id="readonly-payment-method" class="text-dark">N/A</strong>
+                                </div>
+
+                                <div class="mt-3 pt-2 border-top">
+                                    <div class="text-muted small">Notes</div>
+                                    <div class="text-dark small" id="readonly-notes">-</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1475,13 +1501,72 @@
             }
 
             function fillReadonlyAppointmentDetails(appt) {
-                if (readonlyStaff) readonlyStaff.textContent = appt.staff || 'N/A';
-                if (readonlyService) readonlyService.textContent = appt.service || 'N/A';
-                if (readonlyClient) readonlyClient.textContent = appt.title || 'Unassigned';
-                if (readonlyStart) readonlyStart.textContent = formatDateTimeLong(appt.start);
-                if (readonlyEnd) readonlyEnd.textContent = formatDateTimeLong(appt.end);
-                if (readonlyStatus) readonlyStatus.textContent = appt.status || '-';
-                if (readonlyNotes) readonlyNotes.textContent = appt.notes || '-';
+                if (readonlyStaff) readonlyStaff.textContent = appt.staffName || appt.staff || 'N/A';
+                if (readonlyService) readonlyService.textContent = appt.serviceName || appt.service || 'N/A';
+                if (readonlyClient) readonlyClient.textContent = appt.clientName || appt.title || 'Unassigned';
+
+                const contactEl = document.getElementById('readonly-client-contact');
+                if (contactEl) {
+                    const parts = [];
+                    if (appt.clientPhone && appt.clientPhone !== 'N/A') parts.push(appt.clientPhone);
+                    if (appt.clientEmail && appt.clientEmail !== 'N/A') parts.push(appt.clientEmail);
+                    contactEl.textContent = parts.length ? parts.join(' • ') : 'No contact info';
+                }
+
+                const durationEl = document.getElementById('readonly-duration');
+                if (durationEl) durationEl.textContent = appt.duration || 'N/A';
+
+                const startEndEl = document.getElementById('readonly-start-end');
+                if (startEndEl) {
+                    const startFormatted = formatDateTimeLong(appt.start);
+                    const endDate = parseCalendarDate(appt.end);
+                    const endTimeStr = !Number.isNaN(endDate.getTime()) ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+                    startEndEl.textContent = `${startFormatted} - ${endTimeStr}`;
+                }
+
+                if (readonlyNotes) readonlyNotes.textContent = appt.notes || 'No notes provided.';
+
+                const invTotalEl = document.getElementById('readonly-invoice-total');
+                const invPaidEl = document.getElementById('readonly-invoice-paid');
+                const invBalanceEl = document.getElementById('readonly-invoice-balance');
+                const pmtBadgeEl = document.getElementById('readonly-payment-badge');
+                const pmtMethodEl = document.getElementById('readonly-payment-method');
+                const invLinkEl = document.getElementById('readonly-invoice-link');
+                const invNumEl = document.getElementById('readonly-invoice-num');
+
+                const total = appt.invoiceTotal ? `$${Number(appt.invoiceTotal).toFixed(2)}` : '$0.00';
+                const paid = appt.invoicePaid ? `$${Number(appt.invoicePaid).toFixed(2)}` : '$0.00';
+                const balance = appt.invoiceBalance ? `$${Number(appt.invoiceBalance).toFixed(2)}` : '$0.00';
+                const pmtStatus = String(appt.paymentStatus || 'unpaid').toLowerCase();
+
+                if (invTotalEl) invTotalEl.textContent = total;
+                if (invPaidEl) invPaidEl.textContent = paid;
+                if (invBalanceEl) invBalanceEl.textContent = balance;
+                if (pmtMethodEl) pmtMethodEl.textContent = appt.paymentMethod || 'N/A';
+
+                if (pmtBadgeEl) {
+                    pmtBadgeEl.className = 'badge px-3 py-2 fs-6 fw-bold ms-2 ';
+                    if (pmtStatus === 'paid') {
+                        pmtBadgeEl.classList.add('bg-success');
+                        pmtBadgeEl.textContent = 'PAID';
+                    } else if (pmtStatus === 'partially_paid') {
+                        pmtBadgeEl.classList.add('bg-warning', 'text-dark');
+                        pmtBadgeEl.textContent = 'PARTIALLY PAID';
+                    } else {
+                        pmtBadgeEl.classList.add('bg-danger');
+                        pmtBadgeEl.textContent = 'UNPAID';
+                    }
+                }
+
+                if (invLinkEl) {
+                    if (appt.invoiceId) {
+                        invLinkEl.href = `/invoices/${appt.invoiceId}`;
+                        if (invNumEl) invNumEl.textContent = appt.invoiceNumber ? `#${appt.invoiceNumber}` : '';
+                        invLinkEl.classList.remove('d-none');
+                    } else {
+                        invLinkEl.classList.add('d-none');
+                    }
+                }
             }
 
             function fillReadonlyAppointmentCard(appt) {
@@ -2270,6 +2355,15 @@
                     }
                     const appt = await res.json();
 
+                    if (String(appt.status || '').toLowerCase() === 'completed') {
+                        fillReadonlyAppointmentDetails(appt);
+                        fillReadonlyAppointmentCard(appt);
+                        setAppointmentReadOnlyMode(true);
+                        modalTitle.textContent = 'Completed Appointment Details';
+                        appointmentModal.show();
+                        return;
+                    }
+
                     modalTitle.textContent = 'Edit Appointment';
                     apptIdField.value = appt.id;
 
@@ -2835,9 +2929,14 @@
                         throw new Error(msg);
                     }
 
+                    const resData = await res.json().catch(() => ({}));
                     appointmentModal.hide();
                     await loadDataAndRender();
                     showPageNotice('Appointment saved successfully.', 'success');
+
+                    if (resData && resData.redirect_url && payload.status === 'completed') {
+                        window.location.href = resData.redirect_url;
+                    }
                 } catch (err) {
                     showPageNotice(err.message || 'Error saving appointment.');
                 } finally {

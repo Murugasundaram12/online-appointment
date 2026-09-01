@@ -449,10 +449,16 @@ class CalendarController extends Controller
             $this->autoCreateInvoiceIfCompleted($appointment);
             $emailResult = $this->appointmentEmailService->sendForCreation($appointment);
 
+            $invoice = \App\Models\Invoice::where('appointment_id', $appointment->id)->first();
+            $redirectUrl = ($appointment->status === 'completed' && $invoice)
+                ? route('invoices.show', $invoice->id)
+                : null;
+
             return response()->json([
                 'success' => true,
                 'message' => $this->appointmentEmailMessage('Appointment created successfully', $emailResult),
                 'email' => $emailResult,
+                'redirect_url' => $redirectUrl,
                 'appointment' => $this->formatAppointment($appointment)
             ], 201);
         } catch (\Exception $e) {
@@ -604,23 +610,24 @@ class CalendarController extends Controller
 
         try {
             $appointment->update($validated);
+            $appointment->refresh();
             $appointment->load(['client', 'service', 'staff', 'location']);
             $this->autoCreateInvoiceIfCompleted($appointment);
             $emailResult = $this->appointmentEmailAfterUpdate($appointment, $previousAppointment);
 
-            // After marking completed, load the auto-created invoice so the front-end
-            // can redirect the user straight to the invoice page.
             $appointment->loadMissing('invoice');
-            $invoice = $appointment->invoice;
+            $invoice = $appointment->invoice ?? \App\Models\Invoice::where('appointment_id', $appointment->id)->first();
             $invoiceUrl = $invoice ? route('invoices.show', $invoice->id) : null;
+            $redirectUrl = ($appointment->status === 'completed' && $invoice) ? $invoiceUrl : null;
 
             return response()->json([
-                'success'    => true,
-                'message'    => $this->appointmentEmailMessage('Appointment updated successfully', $emailResult),
-                'email'      => $emailResult,
-                'appointment'=> $this->formatAppointment($appointment),
-                'invoiceId'  => $invoice?->id,
-                'invoiceUrl' => $invoiceUrl,
+                'success'      => true,
+                'message'      => $this->appointmentEmailMessage('Appointment updated successfully', $emailResult),
+                'email'        => $emailResult,
+                'appointment'  => $this->formatAppointment($appointment),
+                'invoiceId'    => $invoice?->id,
+                'invoiceUrl'   => $invoiceUrl,
+                'redirect_url' => $redirectUrl,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1097,9 +1104,27 @@ class CalendarController extends Controller
             'no_show'   => '#8b5cf6',
         ];
 
-        $appointment->loadMissing('invoice');
+        $appointment->loadMissing(['invoice.payments', 'client', 'service', 'staff', 'location']);
         $invoice = $appointment->invoice;
         $hasForms = $appointment->client_id ? \App\Models\FormRecord::where('client_id', $appointment->client_id)->exists() : false;
+
+        $paidAmount = (float) ($invoice?->paid_amount ?? 0);
+        $totalAmount = (float) ($invoice?->total_amount ?? ($appointment->service?->price ?? 0));
+        $balance = max(0, $totalAmount - $paidAmount);
+
+        $paymentMethods = [];
+        if ($invoice && $invoice->payments) {
+            foreach ($invoice->payments as $pmt) {
+                if ($pmt->payment_method) {
+                    $paymentMethods[] = ucfirst(str_replace('_', ' ', $pmt->payment_method));
+                }
+            }
+        }
+        $paymentMethodStr = !empty($paymentMethods) ? implode(', ', array_unique($paymentMethods)) : null;
+
+        $durationMinutes = $appointment->service?->duration_minutes
+            ? (int) $appointment->service->duration_minutes
+            : ($appointment->start_time && $appointment->end_time ? $appointment->start_time->diffInMinutes($appointment->end_time) : 0);
 
         return [
             'id' => $appointment->id,
@@ -1107,10 +1132,13 @@ class CalendarController extends Controller
             'staff' => $appointment->staff ? $appointment->staff->name : 'N/A',
             'service' => $appointment->service ? $appointment->service->name : 'N/A',
             'clientName' => $appointment->client ? $appointment->client->name : 'Unassigned',
+            'clientPhone' => $appointment->client?->phone ?? 'N/A',
+            'clientEmail' => $appointment->client?->email ?? 'N/A',
             'staffName' => $appointment->staff ? $appointment->staff->name : 'N/A',
             'serviceName' => $appointment->service ? $appointment->service->name : 'N/A',
             'start' => $appointment->start_time->toIso8601String(),
             'end' => $appointment->end_time->toIso8601String(),
+            'duration' => $durationMinutes ? ($durationMinutes . ' mins') : 'N/A',
             'status' => $appointment->status ?? 'booked',
             'staffId' => $appointment->staff_id,
             'serviceId' => $appointment->service_id,
@@ -1123,6 +1151,11 @@ class CalendarController extends Controller
             'notes' => $appointment->notes,
             'invoiceId' => $invoice?->id,
             'invoiceNumber' => $invoice?->invoice_number,
+            'invoiceTotal' => number_format($totalAmount, 2, '.', ''),
+            'invoicePaid' => number_format($paidAmount, 2, '.', ''),
+            'invoiceBalance' => number_format($balance, 2, '.', ''),
+            'paymentStatus' => $invoice?->status ?? 'unpaid',
+            'paymentMethod' => $paymentMethodStr,
             'hasForms' => $hasForms,
         ];
     }

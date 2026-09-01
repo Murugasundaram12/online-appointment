@@ -48,6 +48,17 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
 
+$scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$publicBasePath = rtrim(str_replace('/public/index.php', '', $scriptName), '/');
+if (
+    $publicBasePath
+    && isset($_SERVER['REQUEST_URI'])
+    && str_starts_with($_SERVER['REQUEST_URI'], $publicBasePath)
+    && ! str_starts_with($_SERVER['REQUEST_URI'], $publicBasePath . '/public/')
+) {
+    $_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], strlen($publicBasePath)) ?: '/';
+}
+
 $response = $kernel->handle(
     $request = Request::capture()
 )->send();

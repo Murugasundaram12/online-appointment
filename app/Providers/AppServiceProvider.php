@@ -29,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
         if (env('APP_ENV') !== 'local') {
             URL::forceScheme('https');
         }
+        if (config('app.url')) {
+            URL::forceRootUrl(config('app.url'));
+        }
 
         try {
             if (Schema::hasTable('business_settings')) {
