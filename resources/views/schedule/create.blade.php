@@ -219,7 +219,7 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-4 recurrence-panel" id="panel-one_time">
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">Working Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="working_date" value="{{ old('working_date', $editing && $editing->working_date ? $editing->working_date->format('Y-m-d') : date('Y-m-d')) }}">
+                            <input type="date" class="form-control" name="working_date" id="working_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('working_date', $editing && $editing->working_date ? $editing->working_date->format('Y-m-d') : date('Y-m-d')) }}">
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
                     </div>
@@ -228,11 +228,11 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-3 recurrence-panel d-none" id="panel-date-range">
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">Start Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="start_date" id="start_date" value="{{ old('start_date', $editing && $editing->start_date ? $editing->start_date->format('Y-m-d') : date('Y-m-d')) }}">
+                            <input type="date" class="form-control" name="start_date" id="start_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('start_date', $editing && $editing->start_date ? $editing->start_date->format('Y-m-d') : date('Y-m-d')) }}">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted">End Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="end_date" id="end_date" value="{{ old('end_date', $editing && $editing->end_date ? $editing->end_date->format('Y-m-d') : date('Y-m-d', strtotime('+3 months'))) }}">
+                            <input type="date" class="form-control" name="end_date" id="end_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('end_date', $editing && $editing->end_date ? $editing->end_date->format('Y-m-d') : date('Y-m-d', strtotime('+3 months'))) }}">
                         </div>
                     </div>
 

@@ -582,18 +582,18 @@ if (!function_exists('ordinalSuffix')) {
                         <!-- One Time Working Date -->
                         <div class="col-12 col-md-6 recurrence-panel" id="panel-one_time">
                             <label class="form-label small text-muted">Working Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="cs-working-date">
+                            <input type="date" class="form-control" name="working_date" id="cs-working-date" min="{{ date('Y-m-d') }}">
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
 
                         <!-- Date Range for Recurring -->
                         <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range">
                             <label class="form-label small text-muted">Start Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="start_date" id="cs-start-date">
+                            <input type="date" class="form-control" name="start_date" id="cs-start-date" min="{{ date('Y-m-d') }}">
                         </div>
                         <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range-end">
                             <label class="form-label small text-muted">End Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="end_date" id="cs-end-date">
+                            <input type="date" class="form-control" name="end_date" id="cs-end-date" min="{{ date('Y-m-d') }}">
                         </div>
 
                         <!-- Weekly Days Selection -->

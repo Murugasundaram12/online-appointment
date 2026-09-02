@@ -20,14 +20,14 @@ class StoreScheduleRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'staff_id' => 'required|exists:staff,id',
             'recurrence_type' => 'required|in:one_time,daily,weekly,monthly,yearly',
             'is_working' => 'nullable|boolean',
             'start_time' => 'required_unless:is_working,0|nullable|date_format:H:i',
             'end_time' => 'required_unless:is_working,0|nullable|date_format:H:i|after:start_time',
-            'working_date' => 'required_if:recurrence_type,one_time|nullable|date',
-            'start_date' => 'required_unless:recurrence_type,one_time|nullable|date',
+            'working_date' => 'required_if:recurrence_type,one_time|nullable|date|after_or_equal:today',
+            'start_date' => 'required_unless:recurrence_type,one_time|nullable|date|after_or_equal:today',
             'end_date' => 'required_unless:recurrence_type,one_time|nullable|date|after_or_equal:start_date',
             'weekly_days' => 'required_if:recurrence_type,weekly|nullable|array',
             'weekly_days.*' => 'integer|between:0,6',
@@ -39,11 +39,21 @@ class StoreScheduleRequest extends FormRequest
             'break_start' => 'nullable|date_format:H:i',
             'break_end' => 'nullable|required_with:break_start|date_format:H:i|after:break_start',
         ];
+
+        // When editing an existing schedule, allow its original date to pass validation if unchanged
+        if ($this->filled('schedule_id')) {
+            $rules['working_date'] = 'required_if:recurrence_type,one_time|nullable|date';
+            $rules['start_date'] = 'required_unless:recurrence_type,one_time|nullable|date';
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
         return [
+            'working_date.after_or_equal' => 'Staff schedules cannot be created for past dates.',
+            'start_date.after_or_equal' => 'Schedule start date cannot be in the past.',
             'end_time.after' => 'End time must be after start time.',
             'end_date.after_or_equal' => 'End date must be on or after start date.',
             'weekly_days.required_if' => 'Please select at least one day for weekly recurrence.',

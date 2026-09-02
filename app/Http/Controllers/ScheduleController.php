@@ -605,10 +605,12 @@ class ScheduleController extends Controller
     {
         $validated = $request->validate([
             'staff_id' => 'required|exists:staff,id',
-            'working_date' => 'required|date',
+            'working_date' => 'required|date|after_or_equal:today',
             'is_working' => 'nullable|boolean',
             'start_time' => 'required_unless:is_working,0|nullable|date_format:H:i',
             'end_time' => 'required_unless:is_working,0|nullable|date_format:H:i|after:start_time',
+        ], [
+            'working_date.after_or_equal' => 'Staff schedules cannot be created for past dates.',
         ]);
 
         $staffId = $validated['staff_id'];
@@ -699,6 +701,13 @@ class ScheduleController extends Controller
         $schedule = StaffSchedule::findOrFail($id);
         if (!$this->authorizeScheduleAccess($schedule->staff_id)) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        if (!empty($schedule->working_date) && Carbon::parse($schedule->working_date)->lt(Carbon::today())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Historical staff schedules cannot be modified.'
+            ], 422);
         }
 
         $validated = $request->validate([
