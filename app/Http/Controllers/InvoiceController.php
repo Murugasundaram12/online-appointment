@@ -266,7 +266,7 @@ class InvoiceController extends Controller
     {
         return Invoice::with([
             'client',
-            'staff',
+            'staff.location',
             'appointment.service',
             'appointment.location',
             'payments' => fn ($query) => $query->orderBy('payment_date')->orderBy('created_at'),

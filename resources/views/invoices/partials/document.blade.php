@@ -13,9 +13,12 @@
     $statusLabel = ucfirst(str_replace('_', ' ', $status));
     $appointment = $invoice->appointment;
     $service = $appointment?->service;
-    $location = $appointment?->location;
-    $client = $invoice->client;
     $staff = $invoice->staff;
+    $location = $appointment?->location ?? $staff?->location;
+    $locationAddress = $location?->address ?: $businessAddress;
+    $locationPhone = $location?->phone ?: $businessPhone;
+    $locationEmail = $location?->email ?: $businessEmail;
+    $client = $invoice->client;
     $start = $appointment?->start_time;
     $end = $appointment?->end_time;
     $duration = $start && $end ? $start->diffInMinutes($end) : null;
@@ -32,10 +35,10 @@
                     <div class="clinic-mark" aria-hidden="true">{{ strtoupper(substr($businessName, 0, 2)) }}</div>
                 @endif
                 <div>
-                    <h1 class="clinic-name">{{ ($businessName && $businessName !== 'Laravel') ? $businessName : ($businessAddress ?: 'Clinic Invoice') }}</h1>
-                    @if($businessAddress)<div class="muted">{{ $businessAddress }}</div>@endif
-                    @if($businessPhone)<div class="muted">Phone: {{ $businessPhone }}</div>@endif
-                    @if($businessEmail)<div class="muted">Email: {{ $businessEmail }}</div>@endif
+                    <h1 class="clinic-name">{{ ($businessName && $businessName !== 'Laravel') ? $businessName : ($location?->name ?: 'Clinic Invoice') }}</h1>
+                    @if($locationAddress)<div class="muted">{{ $locationAddress }}</div>@endif
+                    @if($locationPhone)<div class="muted">Phone: {{ $locationPhone }}</div>@endif
+                    @if($locationEmail)<div class="muted">Email: {{ $locationEmail }}</div>@endif
                     @if($businessWebsite)<div class="muted">Website: {{ $businessWebsite }}</div>@endif
                     @if($taxNumber)<div class="muted">Tax/GST: {{ $taxNumber }}</div>@endif
                 </div>

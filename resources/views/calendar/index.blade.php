@@ -929,6 +929,8 @@
                                             id="cmod-appt-end"></strong></div>
                                     <div class="small mb-1"><span class="text-muted">Duration:</span> <strong
                                             id="cmod-appt-duration"></strong></div>
+                                    <div class="small mb-1"><span class="text-muted">Location:</span> <strong
+                                            id="cmod-appt-location"></strong></div>
                                     <div class="small mb-1"><span class="text-muted">Status:</span>
                                         <span class="badge bg-success" id="cmod-appt-status">Completed</span>
                                     </div>
@@ -2432,6 +2434,7 @@
                     const client = data.client || {};
                     const staff = data.staff || {};
                     const service = data.service || {};
+                    const location = data.location || {};
                     const invoice = data.invoice || null;
                     const payments = data.payments || [];
 
@@ -2456,6 +2459,7 @@
                     setText('cmod-appt-start', start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
                     setText('cmod-appt-end', end ? end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
                     setText('cmod-appt-duration', appt.duration ? appt.duration + ' minutes' : '-');
+                    setText('cmod-appt-location', location.name || '-');
                     setText('cmod-appt-notes', appt.notes || 'No notes');
 
                     // Practitioner & Service

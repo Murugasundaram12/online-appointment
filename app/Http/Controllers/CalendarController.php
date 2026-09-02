@@ -737,6 +737,11 @@ class CalendarController extends Controller
                 'name'  => $appointment->service->name,
                 'price' => $appointment->service->price,
             ] : null,
+            'location'    => $appointment->location ? [
+                'id'      => $appointment->location->id,
+                'name'    => $appointment->location->name,
+                'address' => $appointment->location->address,
+            ] : null,
             'invoice'     => $invoice ? [
                 'id'             => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
@@ -1202,9 +1207,9 @@ class CalendarController extends Controller
     private function allowedTransitions(): array
     {
         return [
-            'pending'   => ['booked', 'confirmed', 'cancelled', 'no_show'],
-            'booked'    => ['confirmed', 'cancelled', 'no_show'],
-            'confirmed' => ['completed', 'cancelled', 'no_show'],
+            'pending'   => ['booked', 'confirmed', 'completed', 'cancelled', 'no_show'],
+            'booked'    => ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'],
+            'confirmed' => ['pending', 'booked', 'completed', 'cancelled', 'no_show'],
             'completed' => [],
             'cancelled' => [],
             'no_show'   => [],
