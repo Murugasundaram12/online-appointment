@@ -45,6 +45,31 @@
 
         <div class="card shadow-sm border-0 rounded mb-4">
             <div class="card-body">
+                <div id="invoice-summary-banner" class="alert alert-light border mb-3 {{ $selectedInvoice ? '' : 'd-none' }}">
+                    <div class="row g-2 align-items-center text-dark">
+                        <div class="col-sm-6 col-md-3">
+                            <span class="text-muted small d-block">Invoice Number:</span>
+                            <strong id="summary-inv-number">{{ $selectedInvoice?->invoice_number ?: '-' }}</strong>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <span class="text-muted small d-block">Client:</span>
+                            <strong id="summary-inv-client">{{ optional($selectedInvoice?->client)->name ?: '-' }}</strong>
+                        </div>
+                        <div class="col-sm-4 col-md-2">
+                            <span class="text-muted small d-block">Invoice Total:</span>
+                            <strong id="summary-inv-total">${{ number_format((float) ($selectedInvoice?->total_amount ?? 0), 2) }}</strong>
+                        </div>
+                        <div class="col-sm-4 col-md-2">
+                            <span class="text-muted small d-block">Already Paid:</span>
+                            <strong id="summary-inv-paid" class="text-success">${{ number_format((float) ($selectedInvoice?->paid_amount ?? 0), 2) }}</strong>
+                        </div>
+                        <div class="col-sm-4 col-md-2">
+                            <span class="text-muted small d-block">Balance Due:</span>
+                            <strong id="summary-inv-balance" class="text-danger">${{ number_format(max((float) ($selectedInvoice?->total_amount ?? 0) - (float) ($selectedInvoice?->paid_amount ?? 0), 0), 2) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
                 <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3 align-items-end">
                     @csrf
                     <div class="col-md-4">
@@ -52,13 +77,25 @@
                         <select name="invoice_id" id="payment-invoice" class="form-select" required>
                             <option value="">Select invoice</option>
                             @foreach($invoices as $invoice)
-                                <option value="{{ $invoice->id }}" data-balance="{{ number_format(max($invoice->total_amount - $invoice->paid_amount, 0), 2, '.', '') }}" @selected(($selectedInvoice?->id ?? null) === $invoice->id)>{{ $invoice->invoice_number }} - {{ optional($invoice->client)->name }} - Balance ${{ number_format(max($invoice->total_amount - $invoice->paid_amount, 0), 2) }}</option>
+                                @php
+                                    $invBal = max((float) $invoice->total_amount - (float) $invoice->paid_amount, 0);
+                                @endphp
+                                <option value="{{ $invoice->id }}"
+                                    data-number="{{ $invoice->invoice_number }}"
+                                    data-client="{{ optional($invoice->client)->name }}"
+                                    data-total="${{ number_format((float) $invoice->total_amount, 2) }}"
+                                    data-paid="${{ number_format((float) $invoice->paid_amount, 2) }}"
+                                    data-balance="{{ number_format($invBal, 2, '.', '') }}"
+                                    data-balance-formatted="${{ number_format($invBal, 2) }}"
+                                    @selected(($selectedInvoice?->id ?? null) === $invoice->id)>
+                                    {{ $invoice->invoice_number }} - {{ optional($invoice->client)->name }} - Balance ${{ number_format($invBal, 2) }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Amount <span class="required-mark">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max($selectedInvoice->total_amount - $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
+                        <input type="number" step="0.01" min="0.01" max="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : '' }}" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
@@ -77,7 +114,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Transaction ID</label>
-                        <input name="transaction_id" class="form-control">
+                        <input name="transaction_id" class="form-control" placeholder="Optional reference / transaction ID">
                     </div>
                 </form>
             </div>
@@ -87,9 +124,33 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const invoice = document.getElementById('payment-invoice');
                 const amount = document.getElementById('payment-amount');
+                const banner = document.getElementById('invoice-summary-banner');
+                const numEl = document.getElementById('summary-inv-number');
+                const clientEl = document.getElementById('summary-inv-client');
+                const totalEl = document.getElementById('summary-inv-total');
+                const paidEl = document.getElementById('summary-inv-paid');
+                const balanceEl = document.getElementById('summary-inv-balance');
+
                 invoice?.addEventListener('change', () => {
-                    const balance = invoice.selectedOptions[0]?.dataset.balance;
-                    if (balance && amount) amount.value = balance;
+                    const opt = invoice.selectedOptions[0];
+                    if (!opt || !opt.value) {
+                        if (banner) banner.classList.add('d-none');
+                        if (amount) { amount.value = ''; amount.removeAttribute('max'); }
+                        return;
+                    }
+
+                    const balance = opt.dataset.balance;
+                    if (balance && amount) {
+                        amount.value = balance;
+                        amount.setAttribute('max', balance);
+                    }
+
+                    if (numEl) numEl.textContent = opt.dataset.number || '-';
+                    if (clientEl) clientEl.textContent = opt.dataset.client || '-';
+                    if (totalEl) totalEl.textContent = opt.dataset.total || '$0.00';
+                    if (paidEl) paidEl.textContent = opt.dataset.paid || '$0.00';
+                    if (balanceEl) balanceEl.textContent = opt.dataset.balanceFormatted || '$0.00';
+                    if (banner) banner.classList.remove('d-none');
                 });
             });
         </script>

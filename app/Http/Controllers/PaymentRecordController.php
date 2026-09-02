@@ -82,9 +82,18 @@ class PaymentRecordController extends Controller
                 }
 
                 $existingPaid = (float) $invoice->payments()->sum('amount');
-                if (($existingPaid + (float) $validated['amount']) > (float) $invoice->total_amount) {
+                $totalAmount = (float) $invoice->total_amount;
+                $remainingBalance = max(0, $totalAmount - $existingPaid);
+
+                if ($invoice->status === 'paid' || $remainingBalance <= 0.0001) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'amount' => 'Payment exceeds the invoice balance.',
+                        'invoice_id' => 'This invoice is already fully paid.',
+                    ]);
+                }
+
+                if ((float) $validated['amount'] > ($remainingBalance + 0.0001)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'amount' => 'Payment amount ($' . number_format((float) $validated['amount'], 2) . ') cannot exceed remaining invoice balance ($' . number_format($remainingBalance, 2) . ').',
                     ]);
                 }
 

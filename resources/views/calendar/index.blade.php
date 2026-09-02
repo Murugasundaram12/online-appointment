@@ -2481,7 +2481,17 @@
                         const invLink = document.getElementById('cmod-invoice-link');
                         if (invLink) invLink.href = invoice.url || '#';
                         const goLink = document.getElementById('cmod-go-to-invoice');
-                        if (goLink) { goLink.href = invoice.url || '#'; show('cmod-go-to-invoice'); }
+                        if (goLink) {
+                            goLink.href = invoice.url || '#';
+                            if (parseFloat(invoice.balance || 0) > 0) {
+                                goLink.innerHTML = '<i class="bx bx-credit-card me-1"></i>Make Payment';
+                                goLink.className = 'btn btn-success';
+                            } else {
+                                goLink.innerHTML = '<i class="bx bx-receipt me-1"></i>View Paid Invoice';
+                                goLink.className = 'btn btn-outline-success';
+                            }
+                            show('cmod-go-to-invoice');
+                        }
 
                         show('cmod-invoice-section');
                         hide('cmod-no-invoice');

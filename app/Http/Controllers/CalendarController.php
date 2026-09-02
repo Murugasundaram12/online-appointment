@@ -490,15 +490,21 @@ class CalendarController extends Controller
             ], 403);
         }
 
-        // Terminal status lock: completed, cancelled, and no_show appointments cannot be rescheduled.
-        $terminalStatuses = ['completed', 'cancelled', 'no_show'];
+        // Terminal status lock: completed appointments are strictly read-only; cancelled and no_show cannot be rescheduled.
         $currentStatus = $appointment->status;
+        if ($currentStatus === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Completed appointments are read-only and cannot be modified.',
+            ], 422);
+        }
+
+        $terminalStatuses = ['cancelled', 'no_show'];
         $rescheduleFields = ['start_time', 'end_time', 'staff_id', 'service_id', 'location_id'];
         $isRescheduling = collect($rescheduleFields)->contains(fn($f) => $request->has($f));
 
         if ($isRescheduling && in_array($currentStatus, $terminalStatuses, true)) {
             $label = match ($currentStatus) {
-                'completed' => 'Completed',
                 'cancelled' => 'Cancelled',
                 'no_show'   => 'No-show',
                 default     => ucfirst($currentStatus),
@@ -1219,6 +1225,7 @@ class CalendarController extends Controller
     private function autoCreateInvoiceIfCompleted(Appointment $appointment): void
     {
         if ($appointment->status === 'completed' && $appointment->client_id && $appointment->staff_id) {
+            $appointment->loadMissing(['service', 'client', 'staff', 'location']);
             if (!\App\Models\Invoice::where('appointment_id', $appointment->id)->exists()) {
                 $cost = (float) ($appointment->service?->price ?? 0);
                 $prefix = \App\Models\BusinessSetting::where('key', 'invoice_prefix')->value('value') ?: 'INV';

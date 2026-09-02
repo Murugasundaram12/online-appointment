@@ -139,6 +139,9 @@
 
         <aside class="totals-card" aria-label="Invoice financial summary">
             <div class="summary-row"><span>Subtotal</span><strong>{{ $money($invoice->total_amount) }}</strong></div>
+            <div class="summary-row"><span>Tax</span><strong>{{ $money(0) }}</strong></div>
+            <div class="summary-row"><span>Discount</span><strong>{{ $money(0) }}</strong></div>
+            <div class="summary-row"><span>Total</span><strong>{{ $money($invoice->total_amount) }}</strong></div>
             <div class="summary-row"><span>Amount Paid</span><strong>{{ $money($invoice->paid_amount) }}</strong></div>
             <div class="summary-row balance"><span>Balance Due</span><strong>{{ $money($balance) }}</strong></div>
             <div class="payment-status-box">
