@@ -269,7 +269,7 @@ class InvoiceController extends Controller
             'staff.location',
             'appointment.service',
             'appointment.location',
-            'payments' => fn ($query) => $query->orderBy('payment_date')->orderBy('created_at'),
+            'payments' => fn ($query) => $query->with('insuranceCompany')->orderBy('payment_date')->orderBy('created_at'),
         ]);
     }
 

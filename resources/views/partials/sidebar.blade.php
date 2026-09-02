@@ -12,6 +12,7 @@
             ['Schedule', 'schedule.index', 'schedule.*', 'bx-time-five'],
             ['Services', 'services.index', 'services.*', 'bx-layer-plus'],
             ['Categories', 'categories.index', 'categories.*', 'bx-category'],
+            ['Insurance Companies', 'insurance-companies.index', 'insurance-companies.*', 'bx-shield-quarter'],
             ['Packages', 'packages.index', 'packages.*', 'bx-package'],
             ['Locations', 'locations.index', 'locations.*', 'bx-map'],
         ],

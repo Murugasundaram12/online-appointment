@@ -47,6 +47,16 @@ class ClientController extends Controller
         $validated = $request->validated();
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
+        if (!empty($validated['phone'])) {
+            $validated['phone'] = \App\Services\PhoneFormatter::format($validated['phone']);
+        }
+        if (!empty($validated['alternate_phone'])) {
+            $validated['alternate_phone'] = \App\Services\PhoneFormatter::format($validated['alternate_phone']);
+        }
+        if (!empty($validated['emergency_phone'])) {
+            $validated['emergency_phone'] = \App\Services\PhoneFormatter::format($validated['emergency_phone']);
+        }
+
         $client = Client::create($validated);
 
         return redirect()->route('clients.show', $client->id)
@@ -183,6 +193,9 @@ class ClientController extends Controller
 
         usort($timeline, fn($a, $b) => strtotime((string)$b['date']) <=> strtotime((string)$a['date']));
 
+        $client->load('insuranceInformations.insuranceCompany');
+        $insuranceCompanies = \App\Models\InsuranceCompany::orderBy('name')->get();
+
         return view('clients.show', compact(
             'client',
             'lastVisit',
@@ -196,7 +209,8 @@ class ClientController extends Controller
             'timeline',
             'totalInvoiced',
             'totalPaid',
-            'outstanding'
+            'outstanding',
+            'insuranceCompanies'
         ));
     }
 
@@ -211,6 +225,16 @@ class ClientController extends Controller
         $client = Client::findOrFail($id);
         $validated = $request->validated();
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
+
+        if (!empty($validated['phone'])) {
+            $validated['phone'] = \App\Services\PhoneFormatter::format($validated['phone']);
+        }
+        if (!empty($validated['alternate_phone'])) {
+            $validated['alternate_phone'] = \App\Services\PhoneFormatter::format($validated['alternate_phone']);
+        }
+        if (!empty($validated['emergency_phone'])) {
+            $validated['emergency_phone'] = \App\Services\PhoneFormatter::format($validated['emergency_phone']);
+        }
 
         $client->update($validated);
 

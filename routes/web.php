@@ -20,6 +20,8 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ServiceCategoryController;
+use App\Http\Controllers\InsuranceCompanyController;
+use App\Http\Controllers\InsuranceInformationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -126,6 +128,11 @@ Route::get('invoices/{invoice}/download', [InvoiceController::class, 'download']
 Route::get('payment-records', [PaymentRecordController::class, 'index'])->name('payment-records.index');
 Route::post('payment-records', [PaymentRecordController::class, 'store'])->name('payment-records.store');
 Route::delete('payment-records/{paymentRecord}', [PaymentRecordController::class, 'destroy'])->name('payment-records.destroy');
+
+Route::resource('insurance-companies', InsuranceCompanyController::class);
+Route::post('insurance-information', [InsuranceInformationController::class, 'store'])->name('insurance-information.store');
+Route::put('insurance-information/{insuranceInformation}', [InsuranceInformationController::class, 'update'])->name('insurance-information.update');
+Route::delete('insurance-information/{insuranceInformation}', [InsuranceInformationController::class, 'destroy'])->name('insurance-information.destroy');
 
 Route::middleware(['role:admin,business_owner'])->group(function () {
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

@@ -68,7 +68,6 @@
                 @if($client?->email)<div class="muted">{{ $client->email }}</div>@endif
                 @if($client?->phone)<div class="muted">{{ $client->phone }}</div>@endif
                 @if($client?->city)<div class="muted">{{ $client->city }}</div>@endif
-                @if($client?->client_since)<div class="muted">Patient since {{ $client->client_since->format($dateFormat) }}</div>@endif
                 @if($client?->is_vip)<span class="mini-badge">VIP Patient</span>@endif
             </div>
         </div>
@@ -77,7 +76,15 @@
             <div class="invoice-panel">
                 <h2>Appointment Details</h2>
                 <div class="detail-grid">
-                    <div class="detail-grid-row"><div class="detail-grid-label">Practitioner Name</div><div class="detail-grid-value">{{ $staff->name ?? 'Not available' }}</div></div>
+                    <div class="detail-grid-row">
+                        <div class="detail-grid-label">Practitioner Name</div>
+                        <div class="detail-grid-value">
+                            {{ $staff->name ?? 'Not available' }}
+                            @if(!empty($staff?->registration_number))
+                                <br><span class="muted" style="font-size: 0.82rem;">Reg. No: {{ $staff->registration_number }}</span>
+                            @endif
+                        </div>
+                    </div>
                     <div class="detail-grid-row"><div class="detail-grid-label">Service</div><div class="detail-grid-value">{{ $service->name ?? 'Service' }}</div></div>
                     <div class="detail-grid-row"><div class="detail-grid-label">Clinic Location</div><div class="detail-grid-value">{{ $location->address ?? 'Not available' }}</div></div>
                     <div class="detail-grid-row"><div class="detail-grid-label">Appointment Date</div><div class="detail-grid-value">{{ $start ? $start->format($dateFormat) : 'Not available' }}</div></div>
@@ -107,7 +114,12 @@
                         <strong>{{ $service->name ?? 'Clinic service' }}</strong>
                         @if($start)<div class="muted">{{ $start->format($dateFormat) }}</div>@endif
                     </td>
-                    <td>{{ $staff->name ?? 'Not available' }}</td>
+                    <td>
+                        {{ $staff->name ?? 'Not available' }}
+                        @if(!empty($staff?->registration_number))
+                            <div class="muted" style="font-size: 0.8rem;">Reg. No: {{ $staff->registration_number }}</div>
+                        @endif
+                    </td>
                     <td class="text-center">1</td>
                     <td class="text-right">{{ $money($invoice->total_amount) }}</td>
                     <td class="text-right strong">{{ $money($invoice->total_amount) }}</td>
@@ -132,10 +144,21 @@
                         </thead>
                         <tbody>
                             @foreach($invoice->payments as $payment)
+                                @php
+                                    $methodLabel = ucfirst(str_replace('_', ' ', $payment->payment_method));
+                                    if ($payment->payment_method === 'card' && $payment->card_brand) {
+                                        $methodLabel .= ' • ' . $payment->card_brand . ($payment->card_last_four ? ' • ****' . $payment->card_last_four : '');
+                                    } elseif ($payment->payment_method === 'e_transfer' && $payment->e_transfer_reference) {
+                                        $methodLabel .= ' • ' . $payment->e_transfer_reference;
+                                    } elseif ($payment->payment_method === 'insurance' && $payment->insuranceCompany) {
+                                        $methodLabel .= ' • ' . $payment->insuranceCompany->name;
+                                    }
+                                    $refId = $payment->transaction_reference ?: ($payment->transaction_id ?: ($payment->e_transfer_reference ?: ($payment->claim_reference ?: '-')));
+                                @endphp
                                 <tr>
                                     <td>{{ optional($payment->payment_date)->format($dateFormat) ?: 'Not available' }}</td>
-                                    <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
-                                    <td>{{ $payment->transaction_id ?: '-' }}</td>
+                                    <td>{{ $methodLabel }}</td>
+                                    <td>{{ $refId }}</td>
                                     <td class="text-right">{{ $money($payment->amount) }}</td>
                                 </tr>
                             @endforeach

@@ -260,36 +260,66 @@
 
         /* Staff Schedule Display */
         .staff-schedule-container {
-            padding: 8px 4px;
+            padding: 6px 4px;
             border-top: 1px solid var(--calendar-border-hourly);
-            background: #f8f9fa;
+            border-bottom: 2px solid #e2e8f0;
+            background: #f8fafc;
             font-size: 0.7rem;
             max-height: none;
             overflow: visible;
         }
 
         .staff-schedule-item {
-            padding: 6px 8px;
-            margin: 4px 0;
-            color: #ffffff;
+            padding: 4px 6px;
+            margin: 3px 0;
+            color: #1e293b;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
-            border-radius: 6px;
-            background-color: rgb(11, 128, 67);
-            box-shadow: 0 3px 10px rgba(54, 153, 255, 0.25);
-            /* border-left: 3px solid #187de4; */
+            border-radius: 5px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #10b981;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            text-align: left;
         }
 
-        .staff-schedule-item strong {
+        .staff-schedule-name {
             font-weight: 600;
-            color: #ffffff;
+            color: #1e293b;
             font-size: 0.72rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .staff-schedule-item .hours {
-            color: rgba(255, 255, 255, 0.92);
+        .staff-schedule-hours {
+            color: #475569;
             font-size: 0.68rem;
+            font-weight: 500;
+            margin-top: 1px;
+            line-height: 1.2;
+        }
+
+        .staff-schedule-status {
+            margin-top: 2px;
+            line-height: 1;
+        }
+
+        .schedule-status-pill {
+            display: inline-block;
+            font-size: 0.60rem;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .schedule-status-pill.available {
+            background-color: #dcfce7;
+            color: #15803d;
         }
 
         .calendar-appointment-time {
@@ -1022,6 +1052,7 @@
                                 <p class="modal-subtitle">Manage patient, staff, service, schedule, and status details.</p>
                             </div>
                         </div>
+                        <a id="appt-invoice-action-btn" href="#" class="btn btn-outline-primary btn-sm ms-auto me-2 d-none" target="_blank"></a>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -1353,13 +1384,14 @@
                         info.el.style.color = '#3f4254';
                     },
                     eventContent: function (arg) {
-                        const staff = arg.event.extendedProps.staff || arg.event.title || '';
+                        const client = arg.event.title || (arg.event.extendedProps && arg.event.extendedProps.client) || 'Unassigned';
+                        const staff = (arg.event.extendedProps && arg.event.extendedProps.staff) || '';
                         const start = arg.event.start;
                         const time = start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
 
                         const wrap = document.createElement('div');
-                        wrap.className = 'fc-staff-appointment-inner';
-                        wrap.innerHTML = `<span class="fc-staff-appointment-time">${escapeHtml(time)}</span><span class="fc-staff-appointment-staff">${escapeHtml(staff)}</span>`;
+                        wrap.className = 'fc-staff-appointment-inner px-1 py-1';
+                        wrap.innerHTML = `<div class="fw-bold text-dark text-truncate" style="font-size:11px; line-height:1.2;">${escapeHtml(client)}</div><div class="text-muted text-truncate" style="font-size:10px;">${escapeHtml(time)}${staff ? ' • ' + escapeHtml(staff) : ''}</div>`;
                         return { domNodes: [wrap] };
                     },
                     eventClick: function (info) {
@@ -2390,6 +2422,22 @@
                     startField.value = toInputDateTime(parseCalendarDate(appt.start));
                     endField.value = toInputDateTime(parseCalendarDate(appt.end));
                     clearNewClientFields();
+
+                    const invBtn = document.getElementById('appt-invoice-action-btn');
+                    if (invBtn) {
+                        if (appt.invoiceId) {
+                            invBtn.className = 'btn btn-outline-success btn-sm ms-auto me-2';
+                            invBtn.href = `/invoices/${appt.invoiceId}`;
+                            invBtn.innerHTML = `<i class="bx bx-receipt me-1"></i>View Invoice`;
+                            invBtn.classList.remove('d-none');
+                        } else {
+                            invBtn.className = 'btn btn-outline-primary btn-sm ms-auto me-2';
+                            invBtn.href = `/invoices/create?appointment_id=${appt.id}`;
+                            invBtn.innerHTML = `<i class="bx bx-plus me-1"></i>Create Invoice`;
+                            invBtn.classList.remove('d-none');
+                        }
+                    }
+
                     appointmentModal.show();
                 } catch (err) {
                     showPageNotice(err.message || 'Failed to load appointment');
@@ -2592,7 +2640,7 @@
                             const segments = getEffectiveSegments(staff, currentWeekStart);
                             const hoursHtml = (segments || [])
                                 .filter(s => s && s.is_working)
-                                .map(s => `<div class="staff-schedule-item small"><div class="hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div></div>`)
+                                .map(s => `<div class="staff-schedule-item"><div class="staff-schedule-hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div><div class="staff-schedule-status"><span class="schedule-status-pill available">Available</span></div></div>`)
                                 .join('');
                             if (hoursHtml) {
                                 const segContainer = document.createElement('div');
@@ -2766,7 +2814,11 @@
                             item.className = 'staff-schedule-item';
                             const startTime = format12Hour(sch.start_time);
                             const endTime = format12Hour(sch.end_time);
-                            item.innerHTML = `<strong>${escapeHtml(staff.name)}</strong><div class="hours">${startTime} – ${endTime}</div>`;
+                            item.innerHTML = `
+                                <div class="staff-schedule-name">${escapeHtml(staff.name)}</div>
+                                <div class="staff-schedule-hours">${startTime} – ${endTime}</div>
+                                <div class="staff-schedule-status"><span class="schedule-status-pill available">Available</span></div>
+                            `;
                             container.appendChild(item);
                         });
                     });
@@ -2837,7 +2889,17 @@
                         el.style.fontSize = '12px';
                         el.style.boxSizing = 'border-box';
 
-                        el.innerHTML = `<div class="calendar-appointment-time">${formatTimeShort(ev.start)} - ${formatTimeShort(ev.end)}</div><div class="calendar-appointment-meta">${ev.staff || ''} - ${ev.title || 'Unassigned'}</div>`;
+                        const clientTitle = ev.title || ev.clientName || 'Unassigned';
+                        const serviceName = ev.service || '';
+                        const staffName = ev.staff || '';
+                        const timeStr = `${formatTimeShort(ev.start)} - ${formatTimeShort(ev.end)}`;
+
+                        el.innerHTML = `
+                            <div class="fw-bold text-truncate" style="font-size: 12px; line-height: 1.2;">${escapeHtml(clientTitle)}</div>
+                            ${serviceName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(serviceName)}</div>` : ''}
+                            ${staffName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(staffName)}</div>` : ''}
+                            <div class="opacity-90" style="font-size: 10px;">${escapeHtml(timeStr)}</div>
+                        `;
 
                         el.addEventListener('dragstart', handleDragStart);
                         el.addEventListener('click', function (e) {

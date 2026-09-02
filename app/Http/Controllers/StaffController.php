@@ -134,6 +134,8 @@ class StaffController extends Controller
             'bio' => ['nullable', 'string', 'max:2000'],
             'color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'access_level' => ['nullable', Rule::in(['admin', 'staff', 'business_owner', 'receptionist', 'practitioner'])],
+            'registration_number' => ['nullable', 'string', 'max:100'],
+            'designation' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:100'],
             'salary' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'location_id' => [
@@ -150,8 +152,12 @@ class StaffController extends Controller
             'color.regex' => 'Staff color must be a valid hex color like #4f46e5.',
         ]);
 
-        if (array_key_exists('access_level', $validated) && $validated['access_level'] === null) {
-            $validated['access_level'] = 'staff';
+        if (empty($validated['access_level'])) {
+            $validated['access_level'] = $staff?->access_level ?? 'staff';
+        }
+
+        if (!empty($validated['phone'])) {
+            $validated['phone'] = \App\Services\PhoneFormatter::format($validated['phone']);
         }
 
         return $validated;

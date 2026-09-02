@@ -29,7 +29,15 @@
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $staff->phone) }}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $staff->phone) }}" placeholder="+1 (416) 555-1234">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="registration_number" class="form-label">Registration Number</label>
+                            <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ old('registration_number', $staff->registration_number) }}" placeholder="e.g. RMT-123456">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="designation" class="form-label">Designation</label>
+                            <input type="text" class="form-control" id="designation" name="designation" value="{{ old('designation', $staff->designation) }}" placeholder="e.g. Senior Practitioner">
                         </div>
                         <div class="col-md-6">
                             <label for="access_level" class="form-label">Access Level</label>

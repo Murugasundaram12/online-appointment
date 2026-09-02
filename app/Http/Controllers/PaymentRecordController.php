@@ -38,12 +38,14 @@ class PaymentRecordController extends Controller
             ->latest()
             ->paginate($this->perPage($request));
 
-        $invoices = Invoice::with('client')
+        $invoices = Invoice::with(['client.insuranceInformations.insuranceCompany'])
             ->whereNotIn('status', ['void', 'paid'])
             ->orderByDesc('issued_date')
             ->get();
         $selectedInvoiceId = $request->integer('invoice_id');
         $selectedInvoice = $invoices->firstWhere('id', $selectedInvoiceId);
+
+        $insuranceCompanies = \App\Models\InsuranceCompany::orderBy('name')->get();
 
         $summary = [
             'total' => PaymentRecord::sum('amount'),
@@ -52,7 +54,7 @@ class PaymentRecordController extends Controller
             'e_transfer' => PaymentRecord::whereIn('payment_method', ['e_transfer', 'transfer'])->sum('amount'),
         ];
 
-        return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary', 'selectedInvoice'));
+        return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary', 'selectedInvoice', 'insuranceCompanies'));
     }
 
     public function create()
@@ -65,9 +67,25 @@ class PaymentRecordController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,card,e_transfer',
+            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cheque,gift_certificate,store_credit,other',
             'payment_date' => 'required|date',
             'transaction_id' => 'nullable|string|max:255',
+            'card_brand' => 'nullable|required_if:payment_method,card|in:Visa,Mastercard,American Express,Discover,Other',
+            'cardholder_name' => 'nullable|string|max:255',
+            'card_last_four' => 'nullable|regex:/^\d{4}$/',
+            'transaction_reference' => 'nullable|string|max:255',
+            'e_transfer_reference' => 'nullable|string|max:255',
+            'sender_name' => 'nullable|string|max:255',
+            'transfer_date' => 'nullable|date',
+            'insurance_company_id' => 'nullable|exists:insurance_companies,id',
+            'insurance_information_id' => 'nullable|exists:insurance_information,id',
+            'policy_id' => 'nullable|string|max:255',
+            'member_id_or_contract_number' => 'nullable|string|max:255',
+            'claim_reference' => 'nullable|string|max:255',
+            'amount_submitted' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+        ], [
+            'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
         ]);
 
         try {

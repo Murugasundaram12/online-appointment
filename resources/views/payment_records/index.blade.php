@@ -70,7 +70,7 @@
                     </div>
                 </div>
 
-                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3 align-items-end">
+                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3">
                     @csrf
                     <div class="col-md-4">
                         <label class="form-label">Invoice <span class="required-mark">*</span></label>
@@ -87,6 +87,7 @@
                                     data-paid="${{ number_format((float) $invoice->paid_amount, 2) }}"
                                     data-balance="{{ number_format($invBal, 2, '.', '') }}"
                                     data-balance-formatted="${{ number_format($invBal, 2) }}"
+                                    data-insurance='@json($invoice->client?->insuranceInformations)'
                                     @selected(($selectedInvoice?->id ?? null) === $invoice->id)>
                                     {{ $invoice->invoice_number }} - {{ optional($invoice->client)->name }} - Balance ${{ number_format($invBal, 2) }}
                                 </option>
@@ -99,22 +100,123 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
-                        <select name="payment_method" class="form-select" required>
+                        <select name="payment_method" id="pmt-method-select" class="form-select" required>
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
                             <option value="e_transfer">E-Transfer</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="gift_certificate">Gift Certificate</option>
+                            <option value="store_credit">Store Credit</option>
+                            <option value="other">Other</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Date <span class="required-mark">*</span></label>
                         <input type="date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 d-flex align-items-end">
                         <button class="btn btn-primary w-100">Add payment</button>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Transaction ID</label>
-                        <input name="transaction_id" class="form-control" placeholder="Optional reference / transaction ID">
+
+                    {{-- Card Specific Fields --}}
+                    <div id="pmt-card-block" class="col-12 d-none">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bx bx-credit-card me-1"></i> Card Details (Metadata Only)</h6>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Card Brand <span class="required-mark">*</span></label>
+                                    <select name="card_brand" id="card_brand_input" class="form-select form-select-sm">
+                                        <option value="">Select Brand</option>
+                                        <option value="Visa">Visa</option>
+                                        <option value="Mastercard">Mastercard</option>
+                                        <option value="American Express">American Express</option>
+                                        <option value="Discover">Discover</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Cardholder Name</label>
+                                    <input type="text" name="cardholder_name" class="form-control form-control-sm" placeholder="e.g. John Smith">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Last 4 Digits</label>
+                                    <input type="text" name="card_last_four" maxlength="4" class="form-control form-control-sm" placeholder="1234">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Transaction Reference</label>
+                                    <input type="text" name="transaction_reference" class="form-control form-control-sm" placeholder="TXN-2026-00123">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- E-Transfer Specific Fields --}}
+                    <div id="pmt-etransfer-block" class="col-12 d-none">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bx bx-transfer me-1"></i> E-Transfer Details</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Reference Number</label>
+                                    <input type="text" name="e_transfer_reference" class="form-control form-control-sm" placeholder="e.g. ETR-839291">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Sender Name</label>
+                                    <input type="text" name="sender_name" class="form-control form-control-sm" placeholder="e.g. Sarah Connor">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Transfer Date</label>
+                                    <input type="date" name="transfer_date" class="form-control form-control-sm" value="{{ now()->toDateString() }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Insurance Specific Fields --}}
+                    <div id="pmt-insurance-block" class="col-12 d-none">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bx bx-shield-quarter me-1"></i> Insurance Payment Details</h6>
+                            <div class="row g-2 mb-2" id="client-saved-insurance-row">
+                                <div class="col-12">
+                                    <label class="form-label small">Select Client's Saved Insurance</label>
+                                    <select id="pmt-saved-insurance-select" class="form-select form-select-sm">
+                                        <option value="">-- Choose saved policy or enter details --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Insurance Company</label>
+                                    <select name="insurance_company_id" id="pmt-insurance-company-id" class="form-select form-select-sm">
+                                        <option value="">Select Company</option>
+                                        @foreach($insuranceCompanies as $comp)
+                                            <option value="{{ $comp->id }}">{{ $comp->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Policy ID</label>
+                                    <input type="text" name="policy_id" id="pmt-policy-id" class="form-control form-control-sm" placeholder="POL-123456">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Member ID / Contract No.</label>
+                                    <input type="text" name="member_id_or_contract_number" id="pmt-member-id" class="form-control form-control-sm" placeholder="MEM-987654">
+                                </div>
+                                <div class="col-md-4 mt-2">
+                                    <label class="form-label small">Claim / Reference Number</label>
+                                    <input type="text" name="claim_reference" class="form-control form-control-sm" placeholder="CLM-88391">
+                                </div>
+                                <div class="col-md-4 mt-2">
+                                    <label class="form-label small">Amount Submitted</label>
+                                    <input type="number" step="0.01" name="amount_submitted" class="form-control form-control-sm" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label small">Notes / Reference</label>
+                        <input name="notes" class="form-control form-control-sm" placeholder="Optional payment note">
                     </div>
                 </form>
             </div>
@@ -131,11 +233,60 @@
                 const paidEl = document.getElementById('summary-inv-paid');
                 const balanceEl = document.getElementById('summary-inv-balance');
 
+                const pmtMethod = document.getElementById('pmt-method-select');
+                const cardBlock = document.getElementById('pmt-card-block');
+                const etransferBlock = document.getElementById('pmt-etransfer-block');
+                const insuranceBlock = document.getElementById('pmt-insurance-block');
+                const savedInsSelect = document.getElementById('pmt-saved-insurance-select');
+
+                function toggleMethodBlocks() {
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    if (cardBlock) cardBlock.classList.toggle('d-none', val !== 'card');
+                    if (etransferBlock) etransferBlock.classList.toggle('d-none', val !== 'e_transfer');
+                    if (insuranceBlock) insuranceBlock.classList.toggle('d-none', val !== 'insurance');
+                }
+
+                pmtMethod?.addEventListener('change', toggleMethodBlocks);
+                toggleMethodBlocks();
+
+                function populateClientInsurance(opt) {
+                    if (!savedInsSelect) return;
+                    savedInsSelect.innerHTML = '<option value="">-- Choose saved policy or enter details --</option>';
+                    if (!opt || !opt.dataset.insurance) return;
+                    try {
+                        const list = JSON.parse(opt.dataset.insurance);
+                        if (Array.isArray(list) && list.length > 0) {
+                            list.forEach(item => {
+                                const o = document.createElement('option');
+                                o.value = item.id;
+                                const compName = item.insurance_company ? item.insurance_company.name : 'Insurance';
+                                o.textContent = `${compName} - Policy: ${item.policy_id || 'N/A'} (Member: ${item.member_id_or_contract_number || 'N/A'})`;
+                                o.dataset.companyId = item.insurance_company_id || '';
+                                o.dataset.policyId = item.policy_id || '';
+                                o.dataset.memberId = item.member_id_or_contract_number || '';
+                                savedInsSelect.appendChild(o);
+                            });
+                        }
+                    } catch (e) { console.warn('Insurance parse error', e); }
+                }
+
+                savedInsSelect?.addEventListener('change', () => {
+                    const sel = savedInsSelect.selectedOptions[0];
+                    if (!sel || !sel.value) return;
+                    const compId = document.getElementById('pmt-insurance-company-id');
+                    const polId = document.getElementById('pmt-policy-id');
+                    const memId = document.getElementById('pmt-member-id');
+                    if (compId && sel.dataset.companyId) compId.value = sel.dataset.companyId;
+                    if (polId && sel.dataset.policyId) polId.value = sel.dataset.policyId;
+                    if (memId && sel.dataset.memberId) memId.value = sel.dataset.memberId;
+                });
+
                 invoice?.addEventListener('change', () => {
                     const opt = invoice.selectedOptions[0];
                     if (!opt || !opt.value) {
                         if (banner) banner.classList.add('d-none');
                         if (amount) { amount.value = ''; amount.removeAttribute('max'); }
+                        populateClientInsurance(null);
                         return;
                     }
 
@@ -151,7 +302,12 @@
                     if (paidEl) paidEl.textContent = opt.dataset.paid || '$0.00';
                     if (balanceEl) balanceEl.textContent = opt.dataset.balanceFormatted || '$0.00';
                     if (banner) banner.classList.remove('d-none');
+                    populateClientInsurance(opt);
                 });
+
+                if (invoice && invoice.value) {
+                    populateClientInsurance(invoice.selectedOptions[0]);
+                }
             });
         </script>
 

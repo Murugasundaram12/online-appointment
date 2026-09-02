@@ -18,6 +18,8 @@ class Staff extends Authenticatable
         'bio',
         'color',
         'access_level',
+        'registration_number',
+        'designation',
         'category',
         'salary',
         'password',

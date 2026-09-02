@@ -65,7 +65,7 @@ class CalendarController extends Controller
             'status' => $request->query('status'),
         ];
 
-        $monthAppointmentsQuery = Appointment::with(['staff'])
+        $monthAppointmentsQuery = Appointment::with(['staff', 'client', 'service'])
             ->whereBetween('start_time', [$monthStart, $monthEnd]);
 
         if ($request->filled('location_id')) {
@@ -85,12 +85,16 @@ class CalendarController extends Controller
 
         $monthEvents = $monthAppointments->map(function ($appointment) use ($statusColorMap) {
             $staffName = $appointment->staff ? $appointment->staff->name : 'N/A';
+            $clientName = $appointment->client ? $appointment->client->name : 'Unassigned';
+            $serviceName = $appointment->service ? $appointment->service->name : '';
             $status = $appointment->status ?? 'booked';
 
             return [
                 'id' => $appointment->id,
-                'title' => $staffName,
+                'title' => $clientName,
+                'client' => $clientName,
                 'staff' => $staffName,
+                'service' => $serviceName,
                 'start' => $appointment->start_time->toIso8601String(),
                 'end' => $appointment->end_time->toIso8601String(),
                 'status' => $status,

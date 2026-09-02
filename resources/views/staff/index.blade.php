@@ -87,6 +87,8 @@
                                             data-update-url="{{ route('staff.update', $staff->id) }}"
                                             data-name="{{ $staff->name }}" data-email="{{ $staff->email }}"
                                             data-access_level="{{ $staff->access_level }}"
+                                            data-registration_number="{{ e($staff->registration_number) }}"
+                                            data-designation="{{ e($staff->designation) }}"
                                             data-category="{{ $staff->category }}" data-salary="{{ $staff->salary }}"
                                             data-location_id="{{ $staff->location_id }}"
                                             data-is_active="{{ $staff->is_active ? 1 : 0 }}"
@@ -141,22 +143,27 @@
                             </div>
                         </div>
 
+                        <input type="hidden" name="access_level" value="staff">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="field-group">
-                                    <div class="field-icon"><i class='bx bx-shield-quarter'></i></div>
+                                    <div class="field-icon"><i class='bx bx-id-card'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Access level</label>
-                                        <select class="form-select" name="access_level">
-                                            <option selected disabled>Select access level</option>
-                                            <option value="business_owner">Business owner</option>
-                                            <option value="receptionist">Receptionist</option>
-                                            <option value="practitioner">Practitioner</option>
-                                            <option value="admin">Admin</option>
-                                        </select>
+                                        <label class="form-label">Registration Number</label>
+                                        <input type="text" class="form-control" name="registration_number" placeholder="e.g. RMT-123456">
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="field-group">
+                                    <div class="field-icon"><i class='bx bx-briefcase'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label">Designation</label>
+                                        <input type="text" class="form-control" name="designation" placeholder="e.g. Senior Practitioner">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                             <div class="col-md-6">
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
@@ -273,6 +280,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="field-group">
+                                    <div class="field-icon"><i class='bx bx-id-card'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label">Registration Number</label>
+                                        <input type="text" class="form-control" id="edit-staff-registration-number" name="registration_number" placeholder="e.g. RMT-123456">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-group">
+                                    <div class="field-icon"><i class='bx bx-briefcase'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label">Designation</label>
+                                        <input type="text" class="form-control" id="edit-staff-designation" name="designation" placeholder="e.g. Senior Practitioner">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-shield-quarter'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Access level</label>
@@ -281,6 +308,7 @@
                                             <option value="business_owner">Business owner</option>
                                             <option value="receptionist">Receptionist</option>
                                             <option value="practitioner">Practitioner</option>
+                                            <option value="staff">Staff</option>
                                             <option value="admin">Admin</option>
                                         </select>
                                     </div>
@@ -389,6 +417,8 @@
                     document.getElementById('edit-staff-name').value = btn.dataset.name || '';
                     document.getElementById('edit-staff-email').value = btn.dataset.email || '';
                     document.getElementById('edit-staff-access-level').value = btn.dataset.access_level || '';
+                    if (document.getElementById('edit-staff-registration-number')) document.getElementById('edit-staff-registration-number').value = btn.dataset.registration_number || '';
+                    if (document.getElementById('edit-staff-designation')) document.getElementById('edit-staff-designation').value = btn.dataset.designation || '';
                     document.getElementById('edit-staff-category').value = btn.dataset.category || '';
                     document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
                     document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';

@@ -40,6 +40,10 @@
                             <dd class="col-7">{{ $staff->location->name ?? '-' }}</dd>
                             <dt class="col-5 text-muted">Access</dt>
                             <dd class="col-7">{{ $staff->access_level ? ucfirst(str_replace('_', ' ', $staff->access_level)) : '-' }}</dd>
+                            <dt class="col-5 text-muted">Registration No.</dt>
+                            <dd class="col-7">{{ $staff->registration_number ?: '-' }}</dd>
+                            <dt class="col-5 text-muted">Designation</dt>
+                            <dd class="col-7">{{ $staff->designation ?: '-' }}</dd>
                             <dt class="col-5 text-muted">Category</dt>
                             <dd class="col-7">{{ $staff->category ?: '-' }}</dd>
                             <dt class="col-5 text-muted">Salary</dt>

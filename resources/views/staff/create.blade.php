@@ -26,17 +26,16 @@
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone') }}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone') }}" placeholder="+1 (416) 555-1234">
+                        </div>
+                        <input type="hidden" name="access_level" value="staff">
+                        <div class="col-md-6">
+                            <label for="registration_number" class="form-label">Registration Number</label>
+                            <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ old('registration_number') }}" placeholder="e.g. RMT-123456">
                         </div>
                         <div class="col-md-6">
-                            <label for="access_level" class="form-label">Access Level</label>
-                            <select class="form-select" id="access_level" name="access_level">
-                                <option value="staff" {{ old('access_level') == 'staff' ? 'selected' : '' }}>Staff</option>
-                                <option value="practitioner" {{ old('access_level') == 'practitioner' ? 'selected' : '' }}>Practitioner</option>
-                                <option value="receptionist" {{ old('access_level') == 'receptionist' ? 'selected' : '' }}>Receptionist</option>
-                                <option value="admin" {{ old('access_level') == 'admin' ? 'selected' : '' }}>Admin</option>
-                                <option value="business_owner" {{ old('access_level') == 'business_owner' ? 'selected' : '' }}>Business Owner</option>
-                            </select>
+                            <label for="designation" class="form-label">Designation</label>
+                            <input type="text" class="form-control" id="designation" name="designation" value="{{ old('designation') }}" placeholder="e.g. Senior Practitioner">
                         </div>
                         <div class="col-md-6">
                             <label for="location_id" class="form-label">Location</label>

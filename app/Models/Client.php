@@ -105,4 +105,9 @@ class Client extends Model
     {
         return $this->hasMany(FormRecord::class);
     }
+
+    public function insuranceInformations()
+    {
+        return $this->hasMany(InsuranceInformation::class);
+    }
 }

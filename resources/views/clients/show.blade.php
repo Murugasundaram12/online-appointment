@@ -219,6 +219,9 @@
                     <li class="nav-item">
                         <button class="nav-link" id="tab-notes-btn" data-bs-toggle="tab" data-bs-target="#tab-notes" type="button"><i class="bx bx-note me-1"></i> Notes</button>
                     </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-insurance-btn" data-bs-toggle="tab" data-bs-target="#tab-insurance" type="button"><i class="bx bx-shield-quarter me-1"></i> Insurance</button>
+                    </li>
                 </ul>
             </div>
 
@@ -530,7 +533,132 @@
                             <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Save Notes</button>
                         </form>
                     </div>
+
+                    <!-- TAB 9: INSURANCE INFORMATION -->
+                    <div class="tab-pane fade" id="tab-insurance" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-dark m-0"><i class="bx bx-shield-quarter me-2 text-primary"></i>Client Insurance Information</h6>
+                            <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addInsuranceModal">
+                                <i class="bx bx-plus me-1"></i> Add Insurance Information
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted small">
+                                    <tr>
+                                        <th>Insurance Company</th>
+                                        <th>Policy ID</th>
+                                        <th>Member ID / Contract No.</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($client->insuranceInformations as $info)
+                                        <tr>
+                                            <td class="fw-semibold text-dark">{{ $info->insuranceCompany->name ?? 'Unknown' }}</td>
+                                            <td>{{ $info->policy_id ?: '-' }}</td>
+                                            <td>{{ $info->member_id_or_contract_number ?: '-' }}</td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-link text-muted p-0 me-2" data-bs-toggle="modal" data-bs-target="#editInsuranceModal{{ $info->id }}">
+                                                    <i class="bx bx-pencil"></i>
+                                                </button>
+                                                <form action="{{ route('insurance-information.destroy', $info->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this insurance information?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-link text-muted p-0">
+                                                        <i class="bx bx-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Edit Insurance Modal -->
+                                        <div class="modal fade" id="editInsuranceModal{{ $info->id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <form action="{{ route('insurance-information.update', $info->id) }}" method="POST">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Edit Insurance Information</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
+                                                                <select name="insurance_company_id" class="form-select" required>
+                                                                    @foreach($insuranceCompanies as $comp)
+                                                                        <option value="{{ $comp->id }}" @selected($info->insurance_company_id == $comp->id)>{{ $comp->name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Policy ID</label>
+                                                                <input type="text" name="policy_id" class="form-control" value="{{ old('policy_id', $info->policy_id) }}" placeholder="POL-123456">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Member ID / Contract Number</label>
+                                                                <input type="text" name="member_id_or_contract_number" class="form-control" value="{{ old('member_id_or_contract_number', $info->member_id_or_contract_number) }}" placeholder="MEM-987654">
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Update Insurance</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">No insurance information on file for this client.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Insurance Modal -->
+    <div class="modal fade" id="addInsuranceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('insurance-information.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="client_id" value="{{ $client->id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Add Insurance Information</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
+                            <select name="insurance_company_id" class="form-select" required>
+                                <option value="">Select Company</option>
+                                @foreach($insuranceCompanies as $comp)
+                                    <option value="{{ $comp->id }}">{{ $comp->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Policy ID</label>
+                            <input type="text" name="policy_id" class="form-control" placeholder="e.g. POL-123456">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Member ID / Contract Number</label>
+                            <input type="text" name="member_id_or_contract_number" class="form-control" placeholder="e.g. MEM-987654">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Insurance</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
