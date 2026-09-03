@@ -7,12 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Appointment extends Model
 {
-    protected $fillable = ['client_id', 'staff_id', 'service_id', 'location_id', 'start_time', 'end_time', 'status', 'notes', 'reminder_sent_at'];
+    protected $fillable = [
+        'client_id',
+        'staff_id',
+        'service_id',
+        'location_id',
+        'start_time',
+        'end_time',
+        'status',
+        'notes',
+        'cancellation_reason',
+        'reminder_sent_at',
+        'confirmation_sent_at',
+    ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'reminder_sent_at' => 'datetime',
+        'confirmation_sent_at' => 'datetime',
     ];
 
     public function client()

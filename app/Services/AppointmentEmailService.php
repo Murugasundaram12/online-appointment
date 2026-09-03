@@ -18,13 +18,20 @@ class AppointmentEmailService
 {
     public function sendBooked(Appointment $appointment): array
     {
-        return $this->send($appointment, AppointmentBookedMail::class, 'booked');
+        if ($appointment->confirmation_sent_at !== null) {
+            return ['attempted' => false, 'sent' => false, 'message' => 'Booking confirmation email already sent.'];
+        }
+
+        $res = $this->send($appointment, AppointmentBookedMail::class, 'booked');
+        if (!empty($res['attempted']) || !empty($res['sent'])) {
+            $appointment->update(['confirmation_sent_at' => now()]);
+        }
+
+        return $res;
     }
 
     public function sendForCreation(Appointment $appointment): array
     {
-        // The existing booking email is the customer-facing notification for
-        // newly created pending and booked appointments.
         return $this->sendBooked($appointment);
     }
 
@@ -106,16 +113,28 @@ class AppointmentEmailService
     {
         $appointment->loadMissing(['client', 'staff', 'service', 'location']);
         $client = $appointment->client;
+        $staff = $appointment->staff;
 
-        if (!$client || !$client->email || Validator::make(['email' => $client->email], ['email' => 'email'])->fails()) {
+        $recipients = [];
+        if ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails()) {
+            $recipients[] = $client->email;
+        }
+        if ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails()) {
+            if (!in_array($staff->email, $recipients, true)) {
+                $recipients[] = $staff->email;
+            }
+        }
+
+        if (empty($recipients)) {
             Log::info('Appointment email skipped', [
                 'appointment_id' => $appointment->id,
                 'client_email' => $client?->email,
+                'staff_email' => $staff?->email,
                 'mail_type' => $type,
-                'reason' => 'Missing or invalid client email',
+                'reason' => 'Missing or invalid recipient email(s)',
             ]);
 
-            return ['attempted' => false, 'sent' => false, 'message' => 'No valid client email available.'];
+            return ['attempted' => false, 'sent' => false, 'message' => 'No valid recipient email available.'];
         }
 
         try {
@@ -123,7 +142,7 @@ class AppointmentEmailService
 
             Log::info('Appointment email SMTP attempt', [
                 'appointment_id' => $appointment->id,
-                'client_email' => $client->email,
+                'recipients' => $recipients,
                 'mail_type' => $type,
                 'mailer' => config('mail.default'),
                 'host' => config('mail.mailers.smtp.host'),
@@ -133,24 +152,24 @@ class AppointmentEmailService
             ]);
 
             if (config('queue.default') !== 'sync') {
-                Mail::to($client->email)->queue($mail);
+                Mail::to($recipients)->queue($mail);
                 $verb = 'queued';
             } else {
-                Mail::to($client->email)->send($mail);
+                Mail::to($recipients)->send($mail);
                 $verb = 'sent';
             }
 
             Log::info('Appointment email ' . $verb, [
                 'appointment_id' => $appointment->id,
-                'client_email' => $client->email,
+                'recipients' => $recipients,
                 'mail_type' => $type,
             ]);
 
-            return ['attempted' => true, 'sent' => true, 'message' => 'Confirmation email ' . $verb . '.'];
+            return ['attempted' => true, 'sent' => true, 'message' => 'Notification email ' . $verb . '.'];
         } catch (\Throwable $exception) {
             Log::error('Appointment email failed', [
                 'appointment_id' => $appointment->id,
-                'client_email' => $client->email,
+                'recipients' => $recipients,
                 'mail_type' => $type,
                 'mailer' => config('mail.default'),
                 'host' => config('mail.mailers.smtp.host'),
@@ -159,7 +178,7 @@ class AppointmentEmailService
                 'exception' => $exception->getMessage(),
             ]);
 
-            return ['attempted' => true, 'sent' => false, 'message' => 'Confirmation email could not be sent.'];
+            return ['attempted' => true, 'sent' => false, 'message' => 'Notification email could not be sent.'];
         }
     }
 

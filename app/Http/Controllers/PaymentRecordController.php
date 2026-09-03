@@ -66,11 +66,14 @@ class PaymentRecordController extends Controller
     {
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cheque,gift_certificate,store_credit,other',
+            'amount' => 'required|numeric|gt:0',
+            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cash_card,card_e_transfer,cash_e_transfer',
+            'cash_amount' => 'required_if:payment_method,cash_card,cash_e_transfer|nullable|numeric|gt:0',
+            'card_amount' => 'required_if:payment_method,cash_card,card_e_transfer|nullable|numeric|gt:0',
+            'e_transfer_amount' => 'required_if:payment_method,card_e_transfer,cash_e_transfer|nullable|numeric|gt:0',
             'payment_date' => 'required|date',
             'transaction_id' => 'nullable|string|max:255',
-            'card_brand' => 'nullable|required_if:payment_method,card|in:Visa,Mastercard,American Express,Discover,Other',
+            'card_brand' => 'nullable|required_if:payment_method,card,cash_card,card_e_transfer|in:Visa,Mastercard,American Express,Discover,Other',
             'cardholder_name' => 'nullable|string|max:255',
             'card_last_four' => 'nullable|regex:/^\d{4}$/',
             'transaction_reference' => 'nullable|string|max:255',
@@ -86,6 +89,7 @@ class PaymentRecordController extends Controller
             'notes' => 'nullable|string|max:1000',
         ], [
             'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
+            'amount.gt' => 'Paid amount must be greater than 0.',
         ]);
 
         try {
@@ -111,8 +115,40 @@ class PaymentRecordController extends Controller
 
                 if ((float) $validated['amount'] > ($remainingBalance + 0.0001)) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'amount' => 'Payment amount ($' . number_format((float) $validated['amount'], 2) . ') cannot exceed remaining invoice balance ($' . number_format($remainingBalance, 2) . ').',
+                        'amount' => 'Paid amount cannot exceed the remaining balance.',
                     ]);
+                }
+
+                $method = $validated['payment_method'];
+                if (in_array($method, ['cash_card', 'card_e_transfer', 'cash_e_transfer'], true)) {
+                    if ($method === 'cash_card') {
+                        $validated['primary_method'] = 'cash';
+                        $validated['secondary_method'] = 'card';
+                        $validated['primary_amount'] = (float) ($validated['cash_amount'] ?? 0);
+                        $validated['secondary_amount'] = (float) ($validated['card_amount'] ?? 0);
+                    } elseif ($method === 'card_e_transfer') {
+                        $validated['primary_method'] = 'card';
+                        $validated['secondary_method'] = 'e_transfer';
+                        $validated['primary_amount'] = (float) ($validated['card_amount'] ?? 0);
+                        $validated['secondary_amount'] = (float) ($validated['e_transfer_amount'] ?? 0);
+                    } elseif ($method === 'cash_e_transfer') {
+                        $validated['primary_method'] = 'cash';
+                        $validated['secondary_method'] = 'e_transfer';
+                        $validated['primary_amount'] = (float) ($validated['cash_amount'] ?? 0);
+                        $validated['secondary_amount'] = (float) ($validated['e_transfer_amount'] ?? 0);
+                    }
+
+                    $splitSum = (float) $validated['primary_amount'] + (float) $validated['secondary_amount'];
+                    if (abs($splitSum - (float) $validated['amount']) > 0.0001) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'amount' => 'Split payment amounts must equal the paid amount.',
+                        ]);
+                    }
+                } else {
+                    $validated['primary_method'] = null;
+                    $validated['secondary_method'] = null;
+                    $validated['primary_amount'] = null;
+                    $validated['secondary_amount'] = null;
                 }
 
                 PaymentRecord::create($validated);

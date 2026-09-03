@@ -98,18 +98,25 @@
                         <label class="form-label">Amount <span class="required-mark">*</span></label>
                         <input type="number" step="0.01" min="0.01" max="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : '' }}" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
                         <select name="payment_method" id="pmt-method-select" class="form-select" required>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="e_transfer">E-Transfer</option>
-                            <option value="insurance">Insurance</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="gift_certificate">Gift Certificate</option>
-                            <option value="store_credit">Store Credit</option>
-                            <option value="other">Other</option>
+                            <optgroup label="Single Payment">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="e_transfer">E-Transfer</option>
+                                <option value="insurance">Insurance</option>
+                            </optgroup>
+                            <optgroup label="Split Payment">
+                                <option value="cash_card">Cash + Card</option>
+                                <option value="card_e_transfer">Card + E-Transfer</option>
+                                <option value="cash_e_transfer">Cash + E-Transfer</option>
+                            </optgroup>
                         </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Total Paid Amount <span class="required-mark">*</span></label>
+                        <input type="number" step="0.01" min="0.01" max="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : '' }}" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Date <span class="required-mark">*</span></label>
@@ -117,6 +124,27 @@
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button class="btn btn-primary w-100">Add payment</button>
+                    </div>
+
+                    {{-- Split Payment Component Inputs --}}
+                    <div id="pmt-split-block" class="col-12 d-none">
+                        <div class="p-3 bg-light rounded border border-primary-subtle">
+                            <h6 class="fw-bold mb-2 text-primary"><i class="bx bx-git-repo-forked me-1"></i> Split Payment Breakdown</h6>
+                            <div class="row g-2">
+                                <div id="pmt-cash-amount-col" class="col-md-4 d-none">
+                                    <label class="form-label small">Cash Amount <span class="required-mark">*</span></label>
+                                    <input type="number" step="0.01" min="0.01" name="cash_amount" id="split-cash-amount" class="form-control form-control-sm" placeholder="0.00">
+                                </div>
+                                <div id="pmt-card-amount-col" class="col-md-4 d-none">
+                                    <label class="form-label small">Card Amount <span class="required-mark">*</span></label>
+                                    <input type="number" step="0.01" min="0.01" name="card_amount" id="split-card-amount" class="form-control form-control-sm" placeholder="0.00">
+                                </div>
+                                <div id="pmt-etransfer-amount-col" class="col-md-4 d-none">
+                                    <label class="form-label small">E-Transfer Amount <span class="required-mark">*</span></label>
+                                    <input type="number" step="0.01" min="0.01" name="e_transfer_amount" id="split-etransfer-amount" class="form-control form-control-sm" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Card Specific Fields --}}
@@ -234,17 +262,61 @@
                 const balanceEl = document.getElementById('summary-inv-balance');
 
                 const pmtMethod = document.getElementById('pmt-method-select');
+                const splitBlock = document.getElementById('pmt-split-block');
+                const cashCol = document.getElementById('pmt-cash-amount-col');
+                const cardCol = document.getElementById('pmt-card-amount-col');
+                const etransferCol = document.getElementById('pmt-etransfer-amount-col');
                 const cardBlock = document.getElementById('pmt-card-block');
                 const etransferBlock = document.getElementById('pmt-etransfer-block');
                 const insuranceBlock = document.getElementById('pmt-insurance-block');
                 const savedInsSelect = document.getElementById('pmt-saved-insurance-select');
 
+                const cashInput = document.getElementById('split-cash-amount');
+                const cardInput = document.getElementById('split-card-amount');
+                const etransferInput = document.getElementById('split-etransfer-amount');
+
                 function toggleMethodBlocks() {
                     const val = pmtMethod ? pmtMethod.value : 'cash';
-                    if (cardBlock) cardBlock.classList.toggle('d-none', val !== 'card');
-                    if (etransferBlock) etransferBlock.classList.toggle('d-none', val !== 'e_transfer');
-                    if (insuranceBlock) insuranceBlock.classList.toggle('d-none', val !== 'insurance');
+                    const isSplit = ['cash_card', 'card_e_transfer', 'cash_e_transfer'].includes(val);
+
+                    if (splitBlock) splitBlock.classList.toggle('d-none', !isSplit);
+                    if (cashCol) cashCol.classList.toggle('d-none', !['cash_card', 'cash_e_transfer'].includes(val));
+                    if (cardCol) cardCol.classList.toggle('d-none', !['cash_card', 'card_e_transfer'].includes(val));
+                    if (etransferCol) etransferCol.classList.toggle('d-none', !['card_e_transfer', 'cash_e_transfer'].includes(val));
+
+                    const hasCard = ['card', 'cash_card', 'card_e_transfer'].includes(val);
+                    const hasEtransfer = ['e_transfer', 'card_e_transfer', 'cash_e_transfer'].includes(val);
+                    const hasInsurance = val === 'insurance';
+
+                    if (cardBlock) cardBlock.classList.toggle('d-none', !hasCard);
+                    if (etransferBlock) etransferBlock.classList.toggle('d-none', !hasEtransfer);
+                    if (insuranceBlock) insuranceBlock.classList.toggle('d-none', !hasInsurance);
                 }
+
+                function autoCalcSplitTotal() {
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    if (!['cash_card', 'card_e_transfer', 'cash_e_transfer'].includes(val)) return;
+
+                    let c1 = 0, c2 = 0;
+                    if (val === 'cash_card') {
+                        c1 = parseFloat(cashInput?.value || 0);
+                        c2 = parseFloat(cardInput?.value || 0);
+                    } else if (val === 'card_e_transfer') {
+                        c1 = parseFloat(cardInput?.value || 0);
+                        c2 = parseFloat(etransferInput?.value || 0);
+                    } else if (val === 'cash_e_transfer') {
+                        c1 = parseFloat(cashInput?.value || 0);
+                        c2 = parseFloat(etransferInput?.value || 0);
+                    }
+
+                    if (c1 > 0 || c2 > 0) {
+                        amount.value = (c1 + c2).toFixed(2);
+                    }
+                }
+
+                [cashInput, cardInput, etransferInput].forEach(inp => {
+                    inp?.addEventListener('input', autoCalcSplitTotal);
+                });
 
                 pmtMethod?.addEventListener('change', toggleMethodBlocks);
                 toggleMethodBlocks();
@@ -319,13 +391,17 @@
                     :clearUrl="route('payment-records.index', ['per_page' => request('per_page', $paymentRecords->perPage())])" />
                 <div class="dropdown">
                     <button class="btn btn-light border dropdown-toggle btn-sm text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ request()->filled('payment_method') ? (request('payment_method') === 'e_transfer' ? 'E-Transfer' : ucfirst(request('payment_method'))) : 'Payment method' }}
+                        {{ request()->filled('payment_method') ? (request('payment_method') === 'e_transfer' ? 'E-Transfer' : ucfirst(str_replace('_', ' ', request('payment_method')))) : 'Payment method' }}
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', request()->except(['payment_method', 'page'])) }}">All</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash'])) }}">Cash</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card'])) }}">Card</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'e_transfer'])) }}">E-Transfer</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'insurance'])) }}">Insurance</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash_card'])) }}">Cash + Card</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card_e_transfer'])) }}">Card + E-Transfer</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash_e_transfer'])) }}">Cash + E-Transfer</a></li>
                     </ul>
                 </div>
             </x-slot>
@@ -362,7 +438,22 @@
                                         <i class='bx bx-check-circle'></i> Paid
                                     </span>
                                 </td>
-                                <td class="small">{{ $record->payment_method }}</td>
+                                <td class="small">
+                                    @php
+                                        $methodDisplay = match($record->payment_method) {
+                                            'cash' => 'Cash',
+                                            'card' => 'Card' . ($record->card_brand ? ' • ' . $record->card_brand : '') . ($record->card_last_four ? ' • ****' . $record->card_last_four : ''),
+                                            'e_transfer' => 'E-Transfer' . ($record->e_transfer_reference ? ' • ' . $record->e_transfer_reference : ''),
+                                            'insurance' => 'Insurance' . ($record->insuranceCompany ? ' • ' . $record->insuranceCompany->name : ''),
+                                            'cash_card' => 'Cash + Card (Cash: $' . number_format((float)$record->primary_amount, 2) . ' | Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
+                                            'card_e_transfer' => 'Card + E-Transfer (Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->primary_amount, 2) . ' | E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
+                                            'cash_e_transfer' => 'Cash + E-Transfer (Cash: $' . number_format((float)$record->primary_amount, 2) . ' | E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
+                                            default => ucfirst(str_replace('_', ' ', $record->payment_method))
+                                        };
+                                    @endphp
+                                    <span class="fw-medium text-dark">{{ $methodDisplay }}</span>
+                                </td>
+                                <td class="small fw-500 text-end">${{ number_format($record->amount, 2) }}</td>
                                 <td class="small fw-500 text-end">${{ number_format($record->amount, 2) }}</td>
                                 <td class="text-end">
                                     @if($record->invoice)

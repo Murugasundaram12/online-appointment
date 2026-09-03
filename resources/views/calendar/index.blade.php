@@ -1135,13 +1135,16 @@
                             <div class="mb-2">
                                 <label class="form-label">Status <span class="required-mark">*</span></label>
                                 <select id="appt-status" class="form-select" required>
-                                    <option value="pending">Pending</option>
                                     <option value="booked">Booked</option>
-                                    <option value="confirmed">Confirmed</option>
                                     <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
+                                    <option value="cancelled">Canceled</option>
                                     <option value="no_show">No Show</option>
                                 </select>
+                            </div>
+
+                            <div class="mb-2 d-none" id="cancellation-reason-wrapper">
+                                <label class="form-label text-danger fw-semibold">Cancellation Reason <span class="required-mark">*</span></label>
+                                <textarea id="appt-cancellation-reason" class="form-control border-danger" rows="2" placeholder="Enter reason for cancellation..."></textarea>
                             </div>
 
                             <div class="mb-2">
@@ -1154,7 +1157,7 @@
                             <div class="card border-0 bg-light p-3 mb-2" style="border-radius: 10px;">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span class="badge bg-success px-3 py-2 fs-6 fw-bold"><i class="bx bx-check-circle me-1"></i> COMPLETED</span>
+                                        <span id="readonly-status-badge" class="badge bg-success px-3 py-2 fs-6 fw-bold"><i class="bx bx-check-circle me-1"></i> COMPLETED</span>
                                         <span id="readonly-payment-badge" class="badge px-3 py-2 fs-6 fw-bold ms-2"></span>
                                     </div>
                                     <a id="readonly-invoice-link" href="#" class="btn btn-sm btn-outline-primary fw-semibold d-none" target="_blank">
@@ -1181,24 +1184,32 @@
                                         <div class="fw-semibold text-dark" id="readonly-start-end"></div>
                                     </div>
                                 </div>
-                                <hr class="my-3 text-muted opacity-25" />
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">Invoice Amount</div>
-                                        <div class="fw-bold text-dark fs-6" id="readonly-invoice-total">$0.00</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">Paid Amount</div>
-                                        <div class="fw-bold text-success fs-6" id="readonly-invoice-paid">$0.00</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">Remaining Balance</div>
-                                        <div class="fw-bold text-danger fs-6" id="readonly-invoice-balance">$0.00</div>
-                                    </div>
+
+                                <div id="readonly-cancellation-reason-row" class="mt-3 p-2 bg-danger-subtle text-danger rounded border border-danger-subtle d-none">
+                                    <div class="fw-bold small me-1"><i class="bx bx-error-circle me-1"></i>Cancellation Reason:</div>
+                                    <div class="small text-danger fw-semibold" id="readonly-cancellation-reason-text">-</div>
                                 </div>
 
-                                <div class="mt-2 text-muted small" id="readonly-payment-method-row">
-                                    Payment Method: <strong id="readonly-payment-method" class="text-dark">N/A</strong>
+                                <div id="readonly-invoice-section">
+                                    <hr class="my-3 text-muted opacity-25" />
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="text-muted small">Invoice Amount</div>
+                                            <div class="fw-bold text-dark fs-6" id="readonly-invoice-total">$0.00</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-muted small">Paid Amount</div>
+                                            <div class="fw-bold text-success fs-6" id="readonly-invoice-paid">$0.00</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-muted small">Remaining Balance</div>
+                                            <div class="fw-bold text-danger fs-6" id="readonly-invoice-balance">$0.00</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2 text-muted small" id="readonly-payment-method-row">
+                                        Payment Method: <strong id="readonly-payment-method" class="text-dark">N/A</strong>
+                                    </div>
                                 </div>
 
                                 <div class="mt-3 pt-2 border-top">
@@ -1560,6 +1571,45 @@
 
                 if (readonlyNotes) readonlyNotes.textContent = appt.notes || 'No notes provided.';
 
+                const apptStatus = String(appt.status || 'booked').toLowerCase();
+                const statusBadgeEl = document.getElementById('readonly-status-badge');
+                if (statusBadgeEl) {
+                    statusBadgeEl.className = 'badge px-3 py-2 fs-6 fw-bold ';
+                    if (apptStatus === 'completed') {
+                        statusBadgeEl.classList.add('bg-success');
+                        statusBadgeEl.innerHTML = '<i class="bx bx-check-circle me-1"></i> COMPLETED';
+                    } else if (apptStatus === 'cancelled') {
+                        statusBadgeEl.classList.add('bg-danger');
+                        statusBadgeEl.innerHTML = '<i class="bx bx-x-circle me-1"></i> CANCELED';
+                    } else if (apptStatus === 'no_show') {
+                        statusBadgeEl.classList.add('bg-secondary');
+                        statusBadgeEl.innerHTML = '<i class="bx bx-user-x me-1"></i> NO SHOW';
+                    } else {
+                        statusBadgeEl.classList.add('bg-primary');
+                        statusBadgeEl.innerHTML = '<i class="bx bx-calendar-event me-1"></i> BOOKED';
+                    }
+                }
+
+                const reasonRow = document.getElementById('readonly-cancellation-reason-row');
+                const reasonText = document.getElementById('readonly-cancellation-reason-text');
+                if (reasonRow) {
+                    if (apptStatus === 'cancelled' && appt.cancellationReason) {
+                        if (reasonText) reasonText.textContent = appt.cancellationReason;
+                        reasonRow.classList.remove('d-none');
+                    } else {
+                        reasonRow.classList.add('d-none');
+                    }
+                }
+
+                const invSection = document.getElementById('readonly-invoice-section');
+                if (invSection) {
+                    if (apptStatus === 'cancelled' || apptStatus === 'no_show') {
+                        invSection.classList.add('d-none');
+                    } else {
+                        invSection.classList.remove('d-none');
+                    }
+                }
+
                 const invTotalEl = document.getElementById('readonly-invoice-total');
                 const invPaidEl = document.getElementById('readonly-invoice-paid');
                 const invBalanceEl = document.getElementById('readonly-invoice-balance');
@@ -1579,21 +1629,26 @@
                 if (pmtMethodEl) pmtMethodEl.textContent = appt.paymentMethod || 'N/A';
 
                 if (pmtBadgeEl) {
-                    pmtBadgeEl.className = 'badge px-3 py-2 fs-6 fw-bold ms-2 ';
-                    if (pmtStatus === 'paid') {
-                        pmtBadgeEl.classList.add('bg-success');
-                        pmtBadgeEl.textContent = 'PAID';
-                    } else if (pmtStatus === 'partially_paid') {
-                        pmtBadgeEl.classList.add('bg-warning', 'text-dark');
-                        pmtBadgeEl.textContent = 'PARTIALLY PAID';
+                    if (apptStatus === 'completed' || (apptStatus !== 'cancelled' && apptStatus !== 'no_show' && appt.invoiceId)) {
+                        pmtBadgeEl.className = 'badge px-3 py-2 fs-6 fw-bold ms-2 ';
+                        if (pmtStatus === 'paid') {
+                            pmtBadgeEl.classList.add('bg-success');
+                            pmtBadgeEl.textContent = 'PAID';
+                        } else if (pmtStatus === 'partially_paid') {
+                            pmtBadgeEl.classList.add('bg-warning', 'text-dark');
+                            pmtBadgeEl.textContent = 'PARTIALLY PAID';
+                        } else {
+                            pmtBadgeEl.classList.add('bg-danger');
+                            pmtBadgeEl.textContent = 'UNPAID';
+                        }
+                        pmtBadgeEl.classList.remove('d-none');
                     } else {
-                        pmtBadgeEl.classList.add('bg-danger');
-                        pmtBadgeEl.textContent = 'UNPAID';
+                        pmtBadgeEl.classList.add('d-none');
                     }
                 }
 
                 if (invLinkEl) {
-                    if (appt.invoiceId) {
+                    if (appt.invoiceId && apptStatus !== 'cancelled' && apptStatus !== 'no_show') {
                         invLinkEl.href = `/invoices/${appt.invoiceId}`;
                         if (invNumEl) invNumEl.textContent = appt.invoiceNumber ? `#${appt.invoiceNumber}` : '';
                         invLinkEl.classList.remove('d-none');
@@ -2341,6 +2396,20 @@
                 }
             }
 
+            function toggleCancellationReasonField() {
+                const wrapper = document.getElementById('cancellation-reason-wrapper');
+                const reasonInput = document.getElementById('appt-cancellation-reason');
+                if (!wrapper || !reasonInput) return;
+                if (statusField && statusField.value === 'cancelled') {
+                    wrapper.classList.remove('d-none');
+                } else {
+                    wrapper.classList.add('d-none');
+                }
+            }
+            if (statusField) {
+                statusField.addEventListener('change', toggleCancellationReasonField);
+            }
+
             function openAppointmentModalForCreate(startDate, endDate, staffId = '') {
                 hideAppointmentDetailsCard();
                 modalTitle.textContent = 'New Appointment';
@@ -2364,8 +2433,12 @@
                 hydrateServiceOptionsForSelectedStaff();
                 serviceField.value = '';
                 clientField.value = '';
-                statusField.value = 'pending';
+                statusField.value = 'booked';
                 notesField.value = '';
+                const reasonInput = document.getElementById('appt-cancellation-reason');
+                if (reasonInput) reasonInput.value = '';
+                toggleCancellationReasonField();
+
                 startField.value = toInputDateTime(startDate);
                 endField.value = toInputDateTime(endDate);
                 clearNewClientFields();
@@ -2417,8 +2490,12 @@
                     ensureSelectOption(clientField, appt.clientId, appt.clientName || appt.title);
                     clientField.value = appt.clientId ? String(appt.clientId) : '';
 
-                    statusField.value = appt.status || 'pending';
+                    statusField.value = appt.status || 'booked';
                     notesField.value = appt.notes || '';
+                    const reasonInput = document.getElementById('appt-cancellation-reason');
+                    if (reasonInput) reasonInput.value = appt.cancellationReason || '';
+                    toggleCancellationReasonField();
+
                     startField.value = toInputDateTime(parseCalendarDate(appt.start));
                     endField.value = toInputDateTime(parseCalendarDate(appt.end));
                     clearNewClientFields();
@@ -2980,6 +3057,17 @@
                         return;
                     }
 
+                    const cancellationReason = document.getElementById('appt-cancellation-reason')?.value?.trim() || null;
+
+                    if (statusField.value === 'cancelled' && !cancellationReason) {
+                        showPageNotice('Cancellation reason is required when canceling an appointment.');
+                        if (apptSaveBtn) {
+                            apptSaveBtn.disabled = false;
+                            apptSaveBtn.textContent = apptSaveBtn.dataset.originalText || 'Save';
+                        }
+                        return;
+                    }
+
                     const payload = {
                         staff_id: staffId,
                         service_id: serviceId,
@@ -2988,6 +3076,7 @@
                         start_time: toApiDateTime(start),
                         end_time: toApiDateTime(end),
                         status: statusField.value,
+                        cancellation_reason: statusField.value === 'cancelled' ? cancellationReason : null,
                         notes: notesField.value.trim() || null
                     };
 

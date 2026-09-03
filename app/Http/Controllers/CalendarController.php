@@ -401,9 +401,12 @@ class CalendarController extends Controller
             'location_id' => ['nullable', 'exists:locations,id'],
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'status' => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'status' => 'nullable|in:booked,completed,cancelled,no_show',
+            'cancellation_reason' => 'required_if:status,cancelled|nullable|string',
             'notes' => 'nullable|string'
         ]);
+
+        $validated['status'] = $validated['status'] ?? 'booked';
 
         if (!$this->authorizeAppointmentStaffAccess((int) $validated['staff_id'])) {
             return response()->json([
@@ -526,14 +529,15 @@ class CalendarController extends Controller
         $previousAppointment->setRelation('location', $appointment->location);
 
         $validated = $request->validate([
-            'staff_id'    => ['nullable', 'exists:staff,id'],
-            'service_id'  => ['nullable', 'exists:services,id'],
-            'location_id' => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
-            'start_time'  => 'nullable|date',
-            'end_time'    => 'nullable|date|after:start_time',
-            'status'      => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
-            'client_id'   => 'sometimes|exists:clients,id',
-            'notes'       => 'nullable|string'
+            'staff_id'            => ['nullable', 'exists:staff,id'],
+            'service_id'          => ['nullable', 'exists:services,id'],
+            'location_id'         => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
+            'start_time'          => 'nullable|date',
+            'end_time'            => 'nullable|date|after:start_time',
+            'status'              => 'nullable|in:booked,completed,cancelled,no_show',
+            'cancellation_reason' => 'required_if:status,cancelled|nullable|string',
+            'client_id'           => 'sometimes|exists:clients,id',
+            'notes'               => 'nullable|string'
         ]);
 
         // Status transition guard
@@ -1164,6 +1168,7 @@ class CalendarController extends Controller
             'hasClient' => !is_null($appointment->client_id),
             'color' => $statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff',
             'notes' => $appointment->notes,
+            'cancellationReason' => $appointment->cancellation_reason,
             'invoiceId' => $invoice?->id,
             'invoiceNumber' => $invoice?->invoice_number,
             'invoiceTotal' => number_format($totalAmount, 2, '.', ''),
@@ -1217,9 +1222,9 @@ class CalendarController extends Controller
     private function allowedTransitions(): array
     {
         return [
-            'pending'   => ['booked', 'confirmed', 'completed', 'cancelled', 'no_show'],
-            'booked'    => ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'],
-            'confirmed' => ['pending', 'booked', 'completed', 'cancelled', 'no_show'],
+            'pending'   => ['booked', 'completed', 'cancelled', 'no_show'],
+            'booked'    => ['completed', 'cancelled', 'no_show'],
+            'confirmed' => ['booked', 'completed', 'cancelled', 'no_show'],
             'completed' => [],
             'cancelled' => [],
             'no_show'   => [],

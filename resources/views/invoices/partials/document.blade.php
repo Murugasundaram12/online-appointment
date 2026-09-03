@@ -145,14 +145,16 @@
                         <tbody>
                             @foreach($invoice->payments as $payment)
                                 @php
-                                    $methodLabel = ucfirst(str_replace('_', ' ', $payment->payment_method));
-                                    if ($payment->payment_method === 'card' && $payment->card_brand) {
-                                        $methodLabel .= ' • ' . $payment->card_brand . ($payment->card_last_four ? ' • ****' . $payment->card_last_four : '');
-                                    } elseif ($payment->payment_method === 'e_transfer' && $payment->e_transfer_reference) {
-                                        $methodLabel .= ' • ' . $payment->e_transfer_reference;
-                                    } elseif ($payment->payment_method === 'insurance' && $payment->insuranceCompany) {
-                                        $methodLabel .= ' • ' . $payment->insuranceCompany->name;
-                                    }
+                                    $methodLabel = match($payment->payment_method) {
+                                        'cash' => 'Cash',
+                                        'card' => 'Card' . ($payment->card_brand ? ' • ' . $payment->card_brand : '') . ($payment->card_last_four ? ' • ****' . $payment->card_last_four : ''),
+                                        'e_transfer' => 'E-Transfer' . ($payment->e_transfer_reference ? ' • ' . $payment->e_transfer_reference : ''),
+                                        'insurance' => 'Insurance' . ($payment->insuranceCompany ? ' • ' . $payment->insuranceCompany->name : ''),
+                                        'cash_card' => 'Cash + Card (Cash: ' . $money($payment->primary_amount) . ' | Card: ' . ($payment->card_brand ?: 'Card') . ($payment->card_last_four ? ' ****' . $payment->card_last_four : '') . ' — ' . $money($payment->secondary_amount) . ')',
+                                        'card_e_transfer' => 'Card + E-Transfer (Card: ' . ($payment->card_brand ?: 'Card') . ($payment->card_last_four ? ' ****' . $payment->card_last_four : '') . ' — ' . $money($payment->primary_amount) . ' | E-Transfer: ' . ($payment->e_transfer_reference ?: 'ETR') . ' — ' . $money($payment->secondary_amount) . ')',
+                                        'cash_e_transfer' => 'Cash + E-Transfer (Cash: ' . $money($payment->primary_amount) . ' | E-Transfer: ' . ($payment->e_transfer_reference ?: 'ETR') . ' — ' . $money($payment->secondary_amount) . ')',
+                                        default => ucfirst(str_replace('_', ' ', $payment->payment_method))
+                                    };
                                     $refId = $payment->transaction_reference ?: ($payment->transaction_id ?: ($payment->e_transfer_reference ?: ($payment->claim_reference ?: '-')));
                                 @endphp
                                 <tr>

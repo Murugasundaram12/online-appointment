@@ -13,6 +13,10 @@ class PaymentRecord extends Model
         'invoice_id',
         'amount',
         'payment_method',
+        'primary_method',
+        'secondary_method',
+        'primary_amount',
+        'secondary_amount',
         'payment_date',
         'transaction_id',
         'card_brand',
@@ -35,6 +39,8 @@ class PaymentRecord extends Model
         'payment_date' => 'date',
         'transfer_date' => 'date',
         'amount' => 'decimal:2',
+        'primary_amount' => 'decimal:2',
+        'secondary_amount' => 'decimal:2',
         'amount_submitted' => 'decimal:2',
     ];
 
