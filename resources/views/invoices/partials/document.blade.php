@@ -153,6 +153,11 @@
                                         'cash_card' => 'Cash + Card (Cash: ' . $money($payment->primary_amount) . ' | Card: ' . ($payment->card_brand ?: 'Card') . ($payment->card_last_four ? ' ****' . $payment->card_last_four : '') . ' — ' . $money($payment->secondary_amount) . ')',
                                         'card_e_transfer' => 'Card + E-Transfer (Card: ' . ($payment->card_brand ?: 'Card') . ($payment->card_last_four ? ' ****' . $payment->card_last_four : '') . ' — ' . $money($payment->primary_amount) . ' | E-Transfer: ' . ($payment->e_transfer_reference ?: 'ETR') . ' — ' . $money($payment->secondary_amount) . ')',
                                         'cash_e_transfer' => 'Cash + E-Transfer (Cash: ' . $money($payment->primary_amount) . ' | E-Transfer: ' . ($payment->e_transfer_reference ?: 'ETR') . ' — ' . $money($payment->secondary_amount) . ')',
+                                        'both' => 'Both (' .
+                                            ($payment->cash_amount > 0 ? 'Cash: ' . $money($payment->cash_amount) . ' ' : '') .
+                                            ($payment->card_amount > 0 ? '| Card: ' . ($payment->card_brand ?: 'Card') . ($payment->card_last_four ? ' ****' . $payment->card_last_four : '') . ' — ' . $money($payment->card_amount) . ' ' : '') .
+                                            ($payment->e_transfer_amount > 0 ? '| E-Transfer: ' . ($payment->e_transfer_reference ?: 'ETR') . ' — ' . $money($payment->e_transfer_amount) : '') .
+                                        ')',
                                         default => ucfirst(str_replace('_', ' ', $payment->payment_method))
                                     };
                                     $refId = $payment->transaction_reference ?: ($payment->transaction_id ?: ($payment->e_transfer_reference ?: ($payment->claim_reference ?: '-')));

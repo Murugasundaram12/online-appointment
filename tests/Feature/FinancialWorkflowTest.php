@@ -228,9 +228,10 @@ class FinancialWorkflowTest extends TestCase
             'invoice_id' => $invoice->id,
             'amount' => 40.00,
             'payment_method' => 'card',
+            'card_brand' => 'Visa',
             'payment_date' => now()->toDateString(),
         ]);
-        $res1->assertRedirect(route('payment-records.index'));
+        $res1->assertRedirect(route('invoices.show', $invoice->id));
 
         $invoice->refresh();
         $this->assertEquals(40.00, (float) $invoice->paid_amount);
@@ -243,7 +244,7 @@ class FinancialWorkflowTest extends TestCase
             'payment_method' => 'cash',
             'payment_date' => now()->toDateString(),
         ]);
-        $res2->assertRedirect(route('payment-records.index'));
+        $res2->assertRedirect(route('invoices.show', $invoice->id));
 
         $invoice->refresh();
         $this->assertEquals(100.00, (float) $invoice->paid_amount);

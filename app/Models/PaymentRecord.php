@@ -58,4 +58,52 @@ class PaymentRecord extends Model
     {
         return $this->belongsTo(InsuranceInformation::class);
     }
+
+    public function getCashAmountAttribute(): float
+    {
+        if ($this->payment_method === 'cash') {
+            return (float) $this->amount;
+        }
+        if ($this->primary_method === 'cash') {
+            return (float) $this->primary_amount;
+        }
+        if ($this->secondary_method === 'cash') {
+            return (float) $this->secondary_amount;
+        }
+        return 0.0;
+    }
+
+    public function getCardAmountAttribute(): float
+    {
+        if ($this->payment_method === 'card') {
+            return (float) $this->amount;
+        }
+        if ($this->primary_method === 'card') {
+            return (float) $this->primary_amount;
+        }
+        if ($this->secondary_method === 'card') {
+            return (float) $this->secondary_amount;
+        }
+        return 0.0;
+    }
+
+    public function getETransferAmountAttribute(): float
+    {
+        if (in_array($this->payment_method, ['e_transfer', 'transfer'], true)) {
+            return (float) $this->amount;
+        }
+        if ($this->primary_method === 'e_transfer') {
+            return (float) $this->primary_amount;
+        }
+        if ($this->secondary_method === 'e_transfer') {
+            return (float) $this->secondary_amount;
+        }
+        return 0.0;
+    }
+
+    public function getIsSplitPaymentAttribute(): bool
+    {
+        return in_array($this->payment_method, ['cash_card', 'card_e_transfer', 'cash_e_transfer', 'both'], true)
+            || (!empty($this->primary_method) && !empty($this->secondary_method));
+    }
 }

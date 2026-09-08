@@ -33,7 +33,12 @@ class PaymentRecordController extends Controller
                 });
             })
             ->when($request->filled('payment_method'), function ($query) use ($request) {
-                $query->where('payment_method', $request->input('payment_method'));
+                $method = $request->input('payment_method');
+                if ($method === 'both') {
+                    $query->whereIn('payment_method', ['both', 'cash_card', 'card_e_transfer', 'cash_e_transfer']);
+                } else {
+                    $query->where('payment_method', $method);
+                }
             })
             ->latest()
             ->paginate($this->perPage($request));
@@ -49,9 +54,15 @@ class PaymentRecordController extends Controller
 
         $summary = [
             'total' => PaymentRecord::sum('amount'),
-            'cash' => PaymentRecord::where('payment_method', 'cash')->sum('amount'),
-            'card' => PaymentRecord::where('payment_method', 'card')->sum('amount'),
-            'e_transfer' => PaymentRecord::whereIn('payment_method', ['e_transfer', 'transfer'])->sum('amount'),
+            'cash' => PaymentRecord::where('payment_method', 'cash')->sum('amount')
+                + PaymentRecord::where('primary_method', 'cash')->sum('primary_amount')
+                + PaymentRecord::where('secondary_method', 'cash')->sum('secondary_amount'),
+            'card' => PaymentRecord::where('payment_method', 'card')->sum('amount')
+                + PaymentRecord::where('primary_method', 'card')->sum('primary_amount')
+                + PaymentRecord::where('secondary_method', 'card')->sum('secondary_amount'),
+            'e_transfer' => PaymentRecord::whereIn('payment_method', ['e_transfer', 'transfer'])->sum('amount')
+                + PaymentRecord::where('primary_method', 'e_transfer')->sum('primary_amount')
+                + PaymentRecord::where('secondary_method', 'e_transfer')->sum('secondary_amount'),
         ];
 
         return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary', 'selectedInvoice', 'insuranceCompanies'));
@@ -89,6 +100,7 @@ class PaymentRecordController extends Controller
             'notes' => 'nullable|string|max:1000',
         ], [
             'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
+            'card_brand.required_if' => 'The card brand field is required when paying with card.',
             'amount.gt' => 'Paid amount must be greater than 0.',
         ]);
 
@@ -126,10 +138,23 @@ class PaymentRecordController extends Controller
                     $cardAmt = (float) ($validated['card_amount'] ?? 0);
                     $etransferAmt = (float) ($validated['e_transfer_amount'] ?? 0);
 
-                    if ($cardAmt > 0 && empty($validated['card_brand'])) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
-                            'card_brand' => 'The card brand field is required when paying with card.',
-                        ]);
+                    // When Card Amount > 0, validate card details
+                    if ($cardAmt > 0) {
+                        if (empty($validated['card_brand'])) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'card_brand' => 'The card brand field is required when paying with card.',
+                            ]);
+                        }
+                        if (!empty($validated['card_last_four']) && !preg_match('/^\d{4}$/', $validated['card_last_four'])) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'card_last_four' => 'Card last 4 digits must be exactly 4 numeric digits.',
+                            ]);
+                        }
+                    } else {
+                        // When Card Amount = 0, card details should not be required or stored
+                        $validated['card_brand'] = null;
+                        $validated['cardholder_name'] = null;
+                        $validated['card_last_four'] = null;
                     }
 
                     if ($cashAmt > 0 && $cardAmt > 0 && $etransferAmt <= 0) {
@@ -138,18 +163,18 @@ class PaymentRecordController extends Controller
                         $method = 'card_e_transfer';
                     } elseif ($cashAmt > 0 && $etransferAmt > 0 && $cardAmt <= 0) {
                         $method = 'cash_e_transfer';
-                    } elseif ($cashAmt > 0 && $cardAmt > 0) {
-                        $method = 'cash_card';
-                    } elseif ($cardAmt > 0 && $etransferAmt > 0) {
-                        $method = 'card_e_transfer';
-                    } elseif ($cashAmt > 0 && $etransferAmt > 0) {
-                        $method = 'cash_e_transfer';
                     } else {
                         throw \Illuminate\Validation\ValidationException::withMessages([
                             'amount' => 'Split payment amounts must equal the paid amount.',
                         ]);
                     }
                     $validated['payment_method'] = $method;
+                }
+
+                if (in_array($method, ['cash', 'e_transfer', 'cash_e_transfer'], true)) {
+                    $validated['card_brand'] = null;
+                    $validated['cardholder_name'] = null;
+                    $validated['card_last_four'] = null;
                 }
 
                 if (in_array($method, ['cash_card', 'card_e_transfer', 'cash_e_transfer'], true)) {

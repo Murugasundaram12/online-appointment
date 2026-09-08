@@ -9,6 +9,11 @@
                 <h1 class="fs-3 fw-bold mb-1">Payments</h1>
                 <p class="text-muted mb-0">Record and track payments against invoices.</p>
             </div>
+            <div>
+                <button type="button" id="btn-show-add-payment" class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm" aria-expanded="false" aria-controls="payment-form-card">
+                    <i class='bx bx-plus me-1' aria-hidden="true"></i> Add Payment
+                </button>
+            </div>
         </div>
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
@@ -43,8 +48,15 @@
             @endforeach
         </div>
 
-        <div class="card shadow-sm border-0 rounded mb-4">
+        <div class="card shadow-sm border-0 rounded mb-4 {{ ($errors->any() || request()->filled('invoice_id')) ? '' : 'd-none' }}" id="payment-form-card" tabindex="-1" aria-labelledby="payment-form-title">
             <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="fs-6 fw-bold m-0 text-dark" id="payment-form-title">
+                        <i class='bx bx-credit-card me-1 text-primary'></i> Record Payment
+                    </h5>
+                    <button type="button" class="btn-close btn-cancel-payment-trigger" aria-label="Cancel and close form" title="Cancel"></button>
+                </div>
+
                 <div id="invoice-summary-banner" class="alert alert-light border mb-3 {{ $selectedInvoice ? '' : 'd-none' }}">
                     <div class="row g-2 align-items-center text-dark">
                         <div class="col-sm-6 col-md-3">
@@ -81,7 +93,7 @@
 
                 <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3" id="payment-record-form">
                     @csrf
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Invoice <span class="required-mark">*</span></label>
                         <select name="invoice_id" id="payment-invoice" class="form-select" required>
                             <option value="">Select invoice</option>
@@ -121,8 +133,9 @@
                         <label class="form-label">Date <span class="required-mark">*</span></label>
                         <input type="date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" id="pmt-submit-btn" class="btn btn-primary w-100">Add payment</button>
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button type="submit" id="pmt-submit-btn" class="btn btn-primary flex-grow-1">Add payment</button>
+                        <button type="button" class="btn btn-light border btn-cancel-payment-trigger" id="btn-cancel-payment">Cancel</button>
                     </div>
 
                     {{-- Split Payment Component Inputs --}}
@@ -155,7 +168,7 @@
                             <h6 class="fw-bold mb-2 text-dark"><i class="bx bx-credit-card me-1"></i> Card Details (Metadata Only)</h6>
                             <div class="row g-2">
                                 <div class="col-md-3">
-                                    <label class="form-label small">Card Brand <span class="required-mark">*</span></label>
+                                    <label class="form-label small" for="card_brand_input">Card Brand <span class="required-mark">*</span></label>
                                     <select name="card_brand" id="card_brand_input" class="form-select form-select-sm">
                                         <option value="">Select Brand</option>
                                         <option value="Visa">Visa</option>
@@ -164,18 +177,20 @@
                                         <option value="Discover">Discover</option>
                                         <option value="Other">Other</option>
                                     </select>
+                                    <div class="invalid-feedback small" id="card-brand-feedback">Please select a Card Brand.</div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label small">Cardholder Name</label>
-                                    <input type="text" name="cardholder_name" class="form-control form-control-sm" placeholder="e.g. John Smith">
+                                    <label class="form-label small" for="cardholder_name_input">Cardholder Name</label>
+                                    <input type="text" name="cardholder_name" id="cardholder_name_input" class="form-control form-control-sm" placeholder="e.g. John Smith">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label small">Last 4 Digits</label>
-                                    <input type="text" name="card_last_four" maxlength="4" class="form-control form-control-sm" placeholder="1234">
+                                    <label class="form-label small" for="card_last_four_input">Last 4 Digits</label>
+                                    <input type="text" name="card_last_four" id="card_last_four_input" maxlength="4" class="form-control form-control-sm" placeholder="1234">
+                                    <div class="invalid-feedback small" id="card-last-four-feedback">Card last 4 digits must be exactly 4 numeric digits.</div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label small">Transaction Reference</label>
-                                    <input type="text" name="transaction_reference" class="form-control form-control-sm" placeholder="TXN-2026-00123">
+                                    <label class="form-label small" for="transaction_reference_input">Transaction Reference</label>
+                                    <input type="text" name="transaction_reference" id="transaction_reference_input" class="form-control form-control-sm" placeholder="TXN-2026-00123">
                                 </div>
                             </div>
                         </div>
@@ -271,18 +286,70 @@
 
                 const pmtMethod = document.getElementById('pmt-method-select');
                 const splitBlock = document.getElementById('pmt-split-block');
-                const cashCol = document.getElementById('pmt-cash-amount-col');
-                const cardCol = document.getElementById('pmt-card-amount-col');
-                const etransferCol = document.getElementById('pmt-etransfer-amount-col');
-
-                const cardBlock = document.getElementById('pmt-card-block');
-                const etransferBlock = document.getElementById('pmt-etransfer-block');
-                const insuranceBlock = document.getElementById('pmt-insurance-block');
-                const savedInsSelect = document.getElementById('pmt-saved-insurance-select');
-
                 const cashInput = document.getElementById('split-cash-amount');
                 const cardInput = document.getElementById('split-card-amount');
                 const etransferInput = document.getElementById('split-etransfer-amount');
+
+                const cardBlock = document.getElementById('pmt-card-block');
+                const cardBrandInput = document.getElementById('card_brand_input');
+                const cardholderNameInput = document.getElementById('cardholder_name_input');
+                const cardLastFourInput = document.getElementById('card_last_four_input');
+                const transactionReferenceInput = document.getElementById('transaction_reference_input');
+
+                const etransferBlock = document.getElementById('pmt-etransfer-block');
+                const insuranceBlock = document.getElementById('pmt-insurance-block');
+                const savedInsSelect = document.getElementById('pmt-saved-insurance-select');
+                const addPaymentBtn = document.getElementById('btn-show-add-payment');
+                const paymentFormCard = document.getElementById('payment-form-card');
+                const cancelBtns = document.querySelectorAll('.btn-cancel-payment-trigger');
+
+                addPaymentBtn?.addEventListener('click', () => {
+                    paymentFormCard?.classList.remove('d-none');
+                    addPaymentBtn.setAttribute('aria-expanded', 'true');
+                    paymentFormCard?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    setTimeout(() => {
+                        if (invoice) {
+                            invoice.focus();
+                        } else if (paymentFormCard) {
+                            paymentFormCard.focus();
+                        }
+                    }, 100);
+                });
+
+                cancelBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (form) {
+                            form.reset();
+                        }
+                        if (splitBlock) splitBlock.classList.add('d-none');
+                        if (cardBlock) cardBlock.classList.add('d-none');
+                        if (etransferBlock) etransferBlock.classList.add('d-none');
+                        if (insuranceBlock) insuranceBlock.classList.add('d-none');
+                        if (banner) banner.classList.add('d-none');
+                        if (amount) {
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light', 'is-invalid');
+                            amount.value = '';
+                        }
+                        [cashInput, cardInput, etransferInput, cardBrandInput, cardLastFourInput].forEach(inp => {
+                            if (inp) {
+                                inp.value = '';
+                                inp.classList.remove('is-invalid');
+                            }
+                        });
+                        if (validationMsg) validationMsg.classList.add('d-none');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-secondary';
+                            statusBadge.textContent = 'Pending';
+                        }
+                        if (submitBtn) submitBtn.disabled = false;
+                        isOverpaid = false;
+
+                        paymentFormCard?.classList.add('d-none');
+                        addPaymentBtn?.setAttribute('aria-expanded', 'false');
+                        addPaymentBtn?.focus();
+                    });
+                });
 
                 let isOverpaid = false;
 
@@ -327,6 +394,12 @@
                         }
                     }
 
+                    if (!isBoth) {
+                        if (cashInput) cashInput.value = '';
+                        if (cardInput) cardInput.value = '';
+                        if (etransferInput) etransferInput.value = '';
+                    }
+
                     toggleMetadataBlocks();
                     validateAmounts();
                 }
@@ -342,7 +415,13 @@
                     const showEtransfer = val === 'e_transfer' || (isBoth && etransferVal > 0);
                     const showInsurance = val === 'insurance';
 
-                    if (cardBlock) cardBlock.classList.toggle('d-none', !showCard);
+                    if (cardBlock) {
+                        cardBlock.classList.toggle('d-none', !showCard);
+                        if (!showCard) {
+                            if (cardBrandInput) cardBrandInput.classList.remove('is-invalid');
+                            if (cardLastFourInput) cardLastFourInput.classList.remove('is-invalid');
+                        }
+                    }
                     if (etransferBlock) etransferBlock.classList.toggle('d-none', !showEtransfer);
                     if (insuranceBlock) insuranceBlock.classList.toggle('d-none', !showInsurance);
                 }
@@ -399,7 +478,7 @@
                     const total = calculateTotalEntered();
                     const EPS = 0.005;
 
-                    // When invoice balance exists and entered total exceeds balance
+                    // Compare against the invoice remaining balance
                     if (balance > 0 && total > (balance + EPS)) {
                         if (!isOverpaid) {
                             showOverpaymentToast();
@@ -415,7 +494,7 @@
                             statusBadge.textContent = 'Overpayment';
                         }
                     } else {
-                        // Valid range
+                        // Valid range (Lower or Equal)
                         isOverpaid = false;
                         if (submitBtn) submitBtn.disabled = false;
                         if (validationMsg) validationMsg.classList.add('d-none');
@@ -435,6 +514,20 @@
                         }
                     }
                 }
+
+                // Strictly ensure card last 4 digits only accepts digits and max 4
+                cardLastFourInput?.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    if (e.target.value.length === 4 || e.target.value.length === 0) {
+                        e.target.classList.remove('is-invalid');
+                    }
+                });
+
+                cardBrandInput?.addEventListener('change', () => {
+                    if (cardBrandInput.value) {
+                        cardBrandInput.classList.remove('is-invalid');
+                    }
+                });
 
                 [amount, cashInput, cardInput, etransferInput].forEach(inp => {
                     if (inp) {
@@ -529,7 +622,11 @@
                     const balance = getRemainingBalance();
                     const total = calculateTotalEntered();
                     const EPS = 0.005;
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    const isBoth = val === 'both';
+                    const cardVal = isBoth ? (parseFloat(cardInput?.value || 0) || 0) : (val === 'card' ? total : 0);
 
+                    // Overpayment check
                     if (balance > 0 && total > (balance + EPS)) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -541,6 +638,39 @@
                     if (total <= 0) {
                         e.preventDefault();
                         return false;
+                    }
+
+                    // When Card Amount > 0: Card details must be validated before allowing submission
+                    if ((val === 'card' && total > 0) || (isBoth && cardVal > 0)) {
+                        if (cardBrandInput && !cardBrandInput.value) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            cardBrandInput.classList.add('is-invalid');
+                            cardBrandInput.focus();
+                            if (window.AppToast && typeof window.AppToast.show === 'function') {
+                                window.AppToast.show({
+                                    type: 'danger',
+                                    title: 'Validation Error',
+                                    message: 'The card brand field is required when paying with card.'
+                                });
+                            }
+                            return false;
+                        }
+
+                        if (cardLastFourInput && cardLastFourInput.value && !/^\d{4}$/.test(cardLastFourInput.value)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            cardLastFourInput.classList.add('is-invalid');
+                            cardLastFourInput.focus();
+                            if (window.AppToast && typeof window.AppToast.show === 'function') {
+                                window.AppToast.show({
+                                    type: 'danger',
+                                    title: 'Validation Error',
+                                    message: 'Card last 4 digits must be exactly 4 numeric digits.'
+                                });
+                            }
+                            return false;
+                        }
                     }
                 });
 
@@ -568,6 +698,7 @@
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card'])) }}">Card</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'e_transfer'])) }}">E-Transfer</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'insurance'])) }}">Insurance</a></li>
+                        <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'both'])) }}">Both (Split)</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash_card'])) }}">Cash + Card</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'card_e_transfer'])) }}">Card + E-Transfer</a></li>
                         <li><a class="dropdown-item" href="{{ route('payment-records.index', array_merge(request()->except(['payment_method', 'page']), ['payment_method' => 'cash_e_transfer'])) }}">Cash + E-Transfer</a></li>
@@ -609,20 +740,25 @@
                                 </td>
                                 <td class="small">
                                     @php
+                                        $refText = $record->transaction_reference ? ' • Ref: ' . $record->transaction_reference : '';
                                         $methodDisplay = match($record->payment_method) {
                                             'cash' => 'Cash',
-                                            'card' => 'Card' . ($record->card_brand ? ' • ' . $record->card_brand : '') . ($record->card_last_four ? ' • ****' . $record->card_last_four : ''),
+                                            'card' => 'Card' . ($record->card_brand ? ' • ' . $record->card_brand : '') . ($record->card_last_four ? ' • ****' . $record->card_last_four : '') . $refText,
                                             'e_transfer' => 'E-Transfer' . ($record->e_transfer_reference ? ' • ' . $record->e_transfer_reference : ''),
                                             'insurance' => 'Insurance' . ($record->insuranceCompany ? ' • ' . $record->insuranceCompany->name : ''),
-                                            'cash_card' => 'Cash + Card (Cash: $' . number_format((float)$record->primary_amount, 2) . ' | Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
-                                            'card_e_transfer' => 'Card + E-Transfer (Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->primary_amount, 2) . ' | E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
+                                            'cash_card' => 'Cash + Card (Cash: $' . number_format((float)$record->primary_amount, 2) . ' | Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')' . $refText,
+                                            'card_e_transfer' => 'Card + E-Transfer (Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format((float)$record->primary_amount, 2) . ' | E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')' . $refText,
                                             'cash_e_transfer' => 'Cash + E-Transfer (Cash: $' . number_format((float)$record->primary_amount, 2) . ' | E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format((float)$record->secondary_amount, 2) . ')',
+                                            'both' => 'Both (' .
+                                                ($record->cash_amount > 0 ? 'Cash: $' . number_format($record->cash_amount, 2) . ' ' : '') .
+                                                ($record->card_amount > 0 ? '| Card: ' . ($record->card_brand ?: 'Card') . ($record->card_last_four ? ' ****' . $record->card_last_four : '') . ' — $' . number_format($record->card_amount, 2) . ' ' : '') .
+                                                ($record->e_transfer_amount > 0 ? '| E-Transfer: ' . ($record->e_transfer_reference ?: 'ETR') . ' — $' . number_format($record->e_transfer_amount, 2) : '') .
+                                            ')' . $refText,
                                             default => ucfirst(str_replace('_', ' ', $record->payment_method))
                                         };
                                     @endphp
                                     <span class="fw-medium text-dark">{{ $methodDisplay }}</span>
                                 </td>
-                                <td class="small fw-500 text-end">${{ number_format($record->amount, 2) }}</td>
                                 <td class="small fw-500 text-end">${{ number_format($record->amount, 2) }}</td>
                                 <td class="text-end">
                                     @if($record->invoice)
