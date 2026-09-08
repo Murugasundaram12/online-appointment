@@ -116,7 +116,9 @@
 
         .grid-header {
             display: grid;
-            grid-template-columns: 80px repeat(7, 1fr);
+            grid-template-columns: 80px repeat(7, minmax(130px, 1fr));
+            min-width: min-content;
+            width: 100%;
             border-bottom: 2px solid var(--calendar-border-strong);
             position: sticky;
             top: 0;
@@ -129,6 +131,8 @@
             text-align: center;
             border-right: 1px solid var(--calendar-border-strong);
             border-bottom: 1px solid var(--calendar-border-strong);
+            min-width: 0;
+            overflow: hidden;
         }
 
         .header-cell:last-child {
@@ -169,7 +173,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-right: 1px solid var(--calendar-border-hourly);
+            border-right: 1px solid var(--calendar-border-strong);
             border-bottom: 1.5px solid var(--calendar-border-strong);
             background: #fff;
         }
@@ -177,7 +181,9 @@
         /* Grid Body */
         .grid-body {
             display: grid;
-            grid-template-columns: 80px repeat(7, 1fr);
+            grid-template-columns: 80px repeat(7, minmax(130px, 1fr));
+            min-width: min-content;
+            width: 100%;
             min-height: 1000px;
             position: relative;
         }
@@ -254,7 +260,8 @@
             background-size: 100% 120px;
         }
 
-        .grid-cell:last-child {
+        .grid-cell:last-child,
+        .day-column:last-of-type {
             border-right: none;
         }
 
@@ -300,6 +307,9 @@
             font-weight: 500;
             margin-top: 1px;
             line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .staff-schedule-status {
@@ -2691,8 +2701,12 @@
                     const scheduledStaff = getScheduledStaffForDate(currentWeekStart);
                     const colCount = Math.max(scheduledStaff.length, 1);
 
-                    header.style.gridTemplateColumns = `80px repeat(${colCount}, 1fr)`;
-                    gridBody.style.gridTemplateColumns = `80px repeat(${colCount}, 1fr)`;
+                    header.style.gridTemplateColumns = `80px repeat(${colCount}, minmax(130px, 1fr))`;
+                    gridBody.style.gridTemplateColumns = `80px repeat(${colCount}, minmax(130px, 1fr))`;
+                    header.style.minWidth = 'min-content';
+                    header.style.width = '100%';
+                    gridBody.style.minWidth = 'min-content';
+                    gridBody.style.width = '100%';
 
                     if (scheduledStaff.length === 0) {
                         const headerCell = document.createElement('div');
@@ -2742,8 +2756,12 @@
                     dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
                 } else {
                     visibleDays = 7;
-                    header.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
-                    gridBody.style.gridTemplateColumns = `80px repeat(${visibleDays}, 1fr)`;
+                    header.style.gridTemplateColumns = `80px repeat(${visibleDays}, minmax(130px, 1fr))`;
+                    gridBody.style.gridTemplateColumns = `80px repeat(${visibleDays}, minmax(130px, 1fr))`;
+                    header.style.minWidth = 'min-content';
+                    header.style.width = '100%';
+                    gridBody.style.minWidth = 'min-content';
+                    gridBody.style.width = '100%';
 
                     for (let i = 0; i < visibleDays; i++) {
                         const date = new Date(currentWeekStart);
