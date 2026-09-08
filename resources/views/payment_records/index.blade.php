@@ -67,10 +67,19 @@
                             <span class="text-muted small d-block">Balance Due:</span>
                             <strong id="summary-inv-balance" class="text-danger">${{ number_format(max((float) ($selectedInvoice?->total_amount ?? 0) - (float) ($selectedInvoice?->paid_amount ?? 0), 0), 2) }}</strong>
                         </div>
+                        <div class="col-12 mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-muted small fw-medium">Projected Payment Status:</span>
+                                <span id="payment-status-badge" class="badge bg-secondary">Pending</span>
+                            </div>
+                            <div id="payment-validation-msg" class="small text-danger d-none fw-semibold">
+                                <i class="bx bx-error-circle me-1"></i>Paid amount cannot exceed the remaining balance.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3">
+                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3" id="payment-record-form">
                     @csrf
                     <div class="col-md-4">
                         <label class="form-label">Invoice <span class="required-mark">*</span></label>
@@ -95,53 +104,46 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Amount <span class="required-mark">*</span></label>
-                        <input type="number" step="0.01" min="0.01" max="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : '' }}" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
-                    </div>
-                    <div class="col-md-3">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
                         <select name="payment_method" id="pmt-method-select" class="form-select" required>
-                            <optgroup label="Single Payment">
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="e_transfer">E-Transfer</option>
-                                <option value="insurance">Insurance</option>
-                            </optgroup>
-                            <optgroup label="Split Payment">
-                                <option value="cash_card">Cash + Card</option>
-                                <option value="card_e_transfer">Card + E-Transfer</option>
-                                <option value="cash_e_transfer">Cash + E-Transfer</option>
-                            </optgroup>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="e_transfer">E-Transfer</option>
+                            <option value="both">Both</option>
+                            <option value="insurance">Insurance</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Total Paid Amount <span class="required-mark">*</span></label>
-                        <input type="number" step="0.01" min="0.01" max="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : '' }}" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" required>
+                    <div class="col-md-2" id="pmt-amount-wrapper">
+                        <label class="form-label" id="pmt-amount-label">Cash Amount <span class="required-mark">*</span></label>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" placeholder="0.00" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Date <span class="required-mark">*</span></label>
                         <input type="date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button class="btn btn-primary w-100">Add payment</button>
+                        <button type="submit" id="pmt-submit-btn" class="btn btn-primary w-100">Add payment</button>
                     </div>
 
                     {{-- Split Payment Component Inputs --}}
                     <div id="pmt-split-block" class="col-12 d-none">
                         <div class="p-3 bg-light rounded border border-primary-subtle">
-                            <h6 class="fw-bold mb-2 text-primary"><i class="bx bx-git-repo-forked me-1"></i> Split Payment Breakdown</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-primary"><i class="bx bx-git-repo-forked me-1"></i> Split Payment Breakdown</h6>
+                                <span class="small text-muted">Enter amounts for applicable split methods</span>
+                            </div>
                             <div class="row g-2">
-                                <div id="pmt-cash-amount-col" class="col-md-4 d-none">
-                                    <label class="form-label small">Cash Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0.01" name="cash_amount" id="split-cash-amount" class="form-control form-control-sm" placeholder="0.00">
+                                <div id="pmt-cash-amount-col" class="col-md-4">
+                                    <label class="form-label small" for="split-cash-amount">Cash Amount</label>
+                                    <input type="number" step="0.01" min="0.01" name="cash_amount" id="split-cash-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
                                 </div>
-                                <div id="pmt-card-amount-col" class="col-md-4 d-none">
-                                    <label class="form-label small">Card Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0.01" name="card_amount" id="split-card-amount" class="form-control form-control-sm" placeholder="0.00">
+                                <div id="pmt-card-amount-col" class="col-md-4">
+                                    <label class="form-label small" for="split-card-amount">Card Amount</label>
+                                    <input type="number" step="0.01" min="0.01" name="card_amount" id="split-card-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
                                 </div>
-                                <div id="pmt-etransfer-amount-col" class="col-md-4 d-none">
-                                    <label class="form-label small">E-Transfer Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0.01" name="e_transfer_amount" id="split-etransfer-amount" class="form-control form-control-sm" placeholder="0.00">
+                                <div id="pmt-etransfer-amount-col" class="col-md-4">
+                                    <label class="form-label small" for="split-etransfer-amount">E-Transfer Amount</label>
+                                    <input type="number" step="0.01" min="0.01" name="e_transfer_amount" id="split-etransfer-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
                                 </div>
                             </div>
                         </div>
@@ -252,20 +254,27 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('payment-record-form');
                 const invoice = document.getElementById('payment-invoice');
                 const amount = document.getElementById('payment-amount');
+                const amountLabel = document.getElementById('pmt-amount-label');
+                const submitBtn = document.getElementById('pmt-submit-btn');
+
                 const banner = document.getElementById('invoice-summary-banner');
                 const numEl = document.getElementById('summary-inv-number');
                 const clientEl = document.getElementById('summary-inv-client');
                 const totalEl = document.getElementById('summary-inv-total');
                 const paidEl = document.getElementById('summary-inv-paid');
                 const balanceEl = document.getElementById('summary-inv-balance');
+                const statusBadge = document.getElementById('payment-status-badge');
+                const validationMsg = document.getElementById('payment-validation-msg');
 
                 const pmtMethod = document.getElementById('pmt-method-select');
                 const splitBlock = document.getElementById('pmt-split-block');
                 const cashCol = document.getElementById('pmt-cash-amount-col');
                 const cardCol = document.getElementById('pmt-card-amount-col');
                 const etransferCol = document.getElementById('pmt-etransfer-amount-col');
+
                 const cardBlock = document.getElementById('pmt-card-block');
                 const etransferBlock = document.getElementById('pmt-etransfer-block');
                 const insuranceBlock = document.getElementById('pmt-insurance-block');
@@ -275,51 +284,178 @@
                 const cardInput = document.getElementById('split-card-amount');
                 const etransferInput = document.getElementById('split-etransfer-amount');
 
+                let isOverpaid = false;
+
+                function getRemainingBalance() {
+                    const opt = invoice?.selectedOptions[0];
+                    if (!opt || !opt.value) return 0;
+                    return parseFloat(opt.dataset.balance || '0') || 0;
+                }
+
                 function toggleMethodBlocks() {
                     const val = pmtMethod ? pmtMethod.value : 'cash';
-                    const isSplit = ['cash_card', 'card_e_transfer', 'cash_e_transfer'].includes(val);
+                    const isBoth = val === 'both';
 
-                    if (splitBlock) splitBlock.classList.toggle('d-none', !isSplit);
-                    if (cashCol) cashCol.classList.toggle('d-none', !['cash_card', 'cash_e_transfer'].includes(val));
-                    if (cardCol) cardCol.classList.toggle('d-none', !['cash_card', 'card_e_transfer'].includes(val));
-                    if (etransferCol) etransferCol.classList.toggle('d-none', !['card_e_transfer', 'cash_e_transfer'].includes(val));
+                    if (splitBlock) splitBlock.classList.toggle('d-none', !isBoth);
 
-                    const hasCard = ['card', 'cash_card', 'card_e_transfer'].includes(val);
-                    const hasEtransfer = ['e_transfer', 'card_e_transfer', 'cash_e_transfer'].includes(val);
-                    const hasInsurance = val === 'insurance';
+                    if (amountLabel && amount) {
+                        if (val === 'cash') {
+                            amountLabel.innerHTML = 'Cash Amount <span class="required-mark">*</span>';
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light');
+                            amount.placeholder = '0.00';
+                        } else if (val === 'card') {
+                            amountLabel.innerHTML = 'Card Amount <span class="required-mark">*</span>';
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light');
+                            amount.placeholder = '0.00';
+                        } else if (val === 'e_transfer') {
+                            amountLabel.innerHTML = 'E-Transfer Amount <span class="required-mark">*</span>';
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light');
+                            amount.placeholder = '0.00';
+                        } else if (val === 'insurance') {
+                            amountLabel.innerHTML = 'Insurance Amount <span class="required-mark">*</span>';
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light');
+                            amount.placeholder = '0.00';
+                        } else if (isBoth) {
+                            amountLabel.innerHTML = 'Total Paid Amount <span class="required-mark">*</span>';
+                            amount.setAttribute('readonly', 'readonly');
+                            amount.classList.add('bg-light');
+                            amount.placeholder = '0.00';
+                        }
+                    }
 
-                    if (cardBlock) cardBlock.classList.toggle('d-none', !hasCard);
-                    if (etransferBlock) etransferBlock.classList.toggle('d-none', !hasEtransfer);
-                    if (insuranceBlock) insuranceBlock.classList.toggle('d-none', !hasInsurance);
+                    toggleMetadataBlocks();
+                    validateAmounts();
                 }
 
-                function autoCalcSplitTotal() {
+                function toggleMetadataBlocks() {
                     const val = pmtMethod ? pmtMethod.value : 'cash';
-                    if (!['cash_card', 'card_e_transfer', 'cash_e_transfer'].includes(val)) return;
+                    const isBoth = val === 'both';
 
-                    let c1 = 0, c2 = 0;
-                    if (val === 'cash_card') {
-                        c1 = parseFloat(cashInput?.value || 0);
-                        c2 = parseFloat(cardInput?.value || 0);
-                    } else if (val === 'card_e_transfer') {
-                        c1 = parseFloat(cardInput?.value || 0);
-                        c2 = parseFloat(etransferInput?.value || 0);
-                    } else if (val === 'cash_e_transfer') {
-                        c1 = parseFloat(cashInput?.value || 0);
-                        c2 = parseFloat(etransferInput?.value || 0);
-                    }
+                    const cardVal = parseFloat(cardInput?.value || 0) || 0;
+                    const etransferVal = parseFloat(etransferInput?.value || 0) || 0;
 
-                    if (c1 > 0 || c2 > 0) {
-                        amount.value = (c1 + c2).toFixed(2);
+                    const showCard = val === 'card' || (isBoth && cardVal > 0);
+                    const showEtransfer = val === 'e_transfer' || (isBoth && etransferVal > 0);
+                    const showInsurance = val === 'insurance';
+
+                    if (cardBlock) cardBlock.classList.toggle('d-none', !showCard);
+                    if (etransferBlock) etransferBlock.classList.toggle('d-none', !showEtransfer);
+                    if (insuranceBlock) insuranceBlock.classList.toggle('d-none', !showInsurance);
+                }
+
+                function calculateTotalEntered() {
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    if (val === 'both') {
+                        const c = parseFloat(cashInput?.value || 0) || 0;
+                        const cd = parseFloat(cardInput?.value || 0) || 0;
+                        const et = parseFloat(etransferInput?.value || 0) || 0;
+                        const total = c + cd + et;
+                        if (amount) {
+                            amount.value = total > 0 ? total.toFixed(2) : '';
+                        }
+                        return total;
+                    } else {
+                        return parseFloat(amount?.value || 0) || 0;
                     }
                 }
 
-                [cashInput, cardInput, etransferInput].forEach(inp => {
-                    inp?.addEventListener('input', autoCalcSplitTotal);
+                function showOverpaymentToast() {
+                    if (window.AppToast && typeof window.AppToast.show === 'function') {
+                        window.AppToast.show({
+                            type: 'danger',
+                            title: 'Payment Error',
+                            message: 'Paid amount cannot exceed the remaining balance.'
+                        });
+                    }
+                }
+
+                function setInputInvalidClass(invalid) {
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    if (val === 'both') {
+                        [cashInput, cardInput, etransferInput].forEach(inp => {
+                            if (inp) {
+                                if (invalid) inp.classList.add('is-invalid');
+                                else inp.classList.remove('is-invalid');
+                            }
+                        });
+                        if (amount) {
+                            if (invalid) amount.classList.add('is-invalid');
+                            else amount.classList.remove('is-invalid');
+                        }
+                    } else {
+                        if (amount) {
+                            if (invalid) amount.classList.add('is-invalid');
+                            else amount.classList.remove('is-invalid');
+                        }
+                    }
+                }
+
+                function validateAmounts() {
+                    const balance = getRemainingBalance();
+                    const total = calculateTotalEntered();
+                    const EPS = 0.005;
+
+                    // When invoice balance exists and entered total exceeds balance
+                    if (balance > 0 && total > (balance + EPS)) {
+                        if (!isOverpaid) {
+                            showOverpaymentToast();
+                            isOverpaid = true;
+                        }
+
+                        if (submitBtn) submitBtn.disabled = true;
+                        if (validationMsg) validationMsg.classList.remove('d-none');
+                        setInputInvalidClass(true);
+
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-danger';
+                            statusBadge.textContent = 'Overpayment';
+                        }
+                    } else {
+                        // Valid range
+                        isOverpaid = false;
+                        if (submitBtn) submitBtn.disabled = false;
+                        if (validationMsg) validationMsg.classList.add('d-none');
+                        setInputInvalidClass(false);
+
+                        if (statusBadge) {
+                            if (total <= 0) {
+                                statusBadge.className = 'badge bg-secondary';
+                                statusBadge.textContent = 'Pending';
+                            } else if (Math.abs(total - balance) <= EPS) {
+                                statusBadge.className = 'badge bg-success';
+                                statusBadge.textContent = 'Paid';
+                            } else {
+                                statusBadge.className = 'badge bg-warning text-dark';
+                                statusBadge.textContent = 'Partially Paid';
+                            }
+                        }
+                    }
+                }
+
+                [amount, cashInput, cardInput, etransferInput].forEach(inp => {
+                    if (inp) {
+                        inp.addEventListener('input', () => {
+                            toggleMetadataBlocks();
+                            validateAmounts();
+                        });
+                        inp.addEventListener('keyup', () => {
+                            toggleMetadataBlocks();
+                            validateAmounts();
+                        });
+                        inp.addEventListener('change', () => {
+                            toggleMetadataBlocks();
+                            validateAmounts();
+                        });
+                    }
                 });
 
-                pmtMethod?.addEventListener('change', toggleMethodBlocks);
-                toggleMethodBlocks();
+                pmtMethod?.addEventListener('change', () => {
+                    toggleMethodBlocks();
+                });
 
                 function populateClientInsurance(opt) {
                     if (!savedInsSelect) return;
@@ -357,15 +493,26 @@
                     const opt = invoice.selectedOptions[0];
                     if (!opt || !opt.value) {
                         if (banner) banner.classList.add('d-none');
-                        if (amount) { amount.value = ''; amount.removeAttribute('max'); }
+                        if (amount) { amount.value = ''; }
+                        if (cashInput) cashInput.value = '';
+                        if (cardInput) cardInput.value = '';
+                        if (etransferInput) etransferInput.value = '';
                         populateClientInsurance(null);
+                        validateAmounts();
                         return;
                     }
 
                     const balance = opt.dataset.balance;
-                    if (balance && amount) {
-                        amount.value = balance;
-                        amount.setAttribute('max', balance);
+                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    if (balance) {
+                        if (val === 'both') {
+                            if (cashInput) cashInput.value = '';
+                            if (cardInput) cardInput.value = '';
+                            if (etransferInput) etransferInput.value = '';
+                            if (amount) amount.value = '';
+                        } else {
+                            if (amount) amount.value = balance;
+                        }
                     }
 
                     if (numEl) numEl.textContent = opt.dataset.number || '-';
@@ -375,11 +522,33 @@
                     if (balanceEl) balanceEl.textContent = opt.dataset.balanceFormatted || '$0.00';
                     if (banner) banner.classList.remove('d-none');
                     populateClientInsurance(opt);
+                    validateAmounts();
                 });
 
+                form?.addEventListener('submit', (e) => {
+                    const balance = getRemainingBalance();
+                    const total = calculateTotalEntered();
+                    const EPS = 0.005;
+
+                    if (balance > 0 && total > (balance + EPS)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showOverpaymentToast();
+                        if (submitBtn) submitBtn.disabled = true;
+                        return false;
+                    }
+
+                    if (total <= 0) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+
+                toggleMethodBlocks();
                 if (invoice && invoice.value) {
                     populateClientInsurance(invoice.selectedOptions[0]);
                 }
+                validateAmounts();
             });
         </script>
 

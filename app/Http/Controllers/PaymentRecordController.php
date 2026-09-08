@@ -67,10 +67,10 @@ class PaymentRecordController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|gt:0',
-            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cash_card,card_e_transfer,cash_e_transfer',
-            'cash_amount' => 'required_if:payment_method,cash_card,cash_e_transfer|nullable|numeric|gt:0',
-            'card_amount' => 'required_if:payment_method,cash_card,card_e_transfer|nullable|numeric|gt:0',
-            'e_transfer_amount' => 'required_if:payment_method,card_e_transfer,cash_e_transfer|nullable|numeric|gt:0',
+            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cash_card,card_e_transfer,cash_e_transfer,both',
+            'cash_amount' => 'nullable|numeric|min:0',
+            'card_amount' => 'nullable|numeric|min:0',
+            'e_transfer_amount' => 'nullable|numeric|min:0',
             'payment_date' => 'required|date',
             'transaction_id' => 'nullable|string|max:255',
             'card_brand' => 'nullable|required_if:payment_method,card,cash_card,card_e_transfer|in:Visa,Mastercard,American Express,Discover,Other',
@@ -120,6 +120,38 @@ class PaymentRecordController extends Controller
                 }
 
                 $method = $validated['payment_method'];
+
+                if ($method === 'both') {
+                    $cashAmt = (float) ($validated['cash_amount'] ?? 0);
+                    $cardAmt = (float) ($validated['card_amount'] ?? 0);
+                    $etransferAmt = (float) ($validated['e_transfer_amount'] ?? 0);
+
+                    if ($cardAmt > 0 && empty($validated['card_brand'])) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'card_brand' => 'The card brand field is required when paying with card.',
+                        ]);
+                    }
+
+                    if ($cashAmt > 0 && $cardAmt > 0 && $etransferAmt <= 0) {
+                        $method = 'cash_card';
+                    } elseif ($cardAmt > 0 && $etransferAmt > 0 && $cashAmt <= 0) {
+                        $method = 'card_e_transfer';
+                    } elseif ($cashAmt > 0 && $etransferAmt > 0 && $cardAmt <= 0) {
+                        $method = 'cash_e_transfer';
+                    } elseif ($cashAmt > 0 && $cardAmt > 0) {
+                        $method = 'cash_card';
+                    } elseif ($cardAmt > 0 && $etransferAmt > 0) {
+                        $method = 'card_e_transfer';
+                    } elseif ($cashAmt > 0 && $etransferAmt > 0) {
+                        $method = 'cash_e_transfer';
+                    } else {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'amount' => 'Split payment amounts must equal the paid amount.',
+                        ]);
+                    }
+                    $validated['payment_method'] = $method;
+                }
+
                 if (in_array($method, ['cash_card', 'card_e_transfer', 'cash_e_transfer'], true)) {
                     if ($method === 'cash_card') {
                         $validated['primary_method'] = 'cash';
