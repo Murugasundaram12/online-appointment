@@ -35,7 +35,7 @@ class PaymentRecordController extends Controller
             ->when($request->filled('payment_method'), function ($query) use ($request) {
                 $method = $request->input('payment_method');
                 if ($method === 'both') {
-                    $query->whereIn('payment_method', ['both', 'cash_card', 'card_e_transfer', 'cash_e_transfer']);
+                    $query->whereIn('payment_method', ['both', 'cash_card', 'card_e_transfer', 'cash_e_transfer', 'cash_insurance', 'card_insurance', 'e_transfer_insurance']);
                 } else {
                     $query->where('payment_method', $method);
                 }
@@ -43,10 +43,19 @@ class PaymentRecordController extends Controller
             ->latest()
             ->paginate($this->perPage($request));
 
-        $invoices = Invoice::with(['client.insuranceInformations.insuranceCompany'])
+        $invoices = Invoice::with(['client.insuranceInformations.insuranceCompany', 'payments'])
             ->whereNotIn('status', ['void', 'paid'])
             ->orderByDesc('issued_date')
-            ->get();
+            ->get()
+            ->filter(function ($inv) {
+                if ($inv->status === 'void' || $inv->status === 'paid') {
+                    return false;
+                }
+                $existingPaid = (float) $inv->payments->sum('amount');
+                $totalAmount = (float) $inv->total_amount;
+                return ($totalAmount - $existingPaid) > 0.0001;
+            })
+            ->values();
         $selectedInvoiceId = $request->integer('invoice_id');
         $selectedInvoice = $invoices->firstWhere('id', $selectedInvoiceId);
 
@@ -55,14 +64,17 @@ class PaymentRecordController extends Controller
         $summary = [
             'total' => PaymentRecord::sum('amount'),
             'cash' => PaymentRecord::where('payment_method', 'cash')->sum('amount')
-                + PaymentRecord::where('primary_method', 'cash')->sum('primary_amount')
-                + PaymentRecord::where('secondary_method', 'cash')->sum('secondary_amount'),
+                + PaymentRecord::where('payment_method', '!=', 'cash')->whereNotNull('cash_amount')->sum('cash_amount')
+                + PaymentRecord::whereNull('cash_amount')->where('primary_method', 'cash')->sum('primary_amount')
+                + PaymentRecord::whereNull('cash_amount')->where('secondary_method', 'cash')->sum('secondary_amount'),
             'card' => PaymentRecord::where('payment_method', 'card')->sum('amount')
-                + PaymentRecord::where('primary_method', 'card')->sum('primary_amount')
-                + PaymentRecord::where('secondary_method', 'card')->sum('secondary_amount'),
+                + PaymentRecord::where('payment_method', '!=', 'card')->whereNotNull('card_amount')->sum('card_amount')
+                + PaymentRecord::whereNull('card_amount')->where('primary_method', 'card')->sum('primary_amount')
+                + PaymentRecord::whereNull('card_amount')->where('secondary_method', 'card')->sum('secondary_amount'),
             'e_transfer' => PaymentRecord::whereIn('payment_method', ['e_transfer', 'transfer'])->sum('amount')
-                + PaymentRecord::where('primary_method', 'e_transfer')->sum('primary_amount')
-                + PaymentRecord::where('secondary_method', 'e_transfer')->sum('secondary_amount'),
+                + PaymentRecord::whereNotIn('payment_method', ['e_transfer', 'transfer'])->whereNotNull('e_transfer_amount')->sum('e_transfer_amount')
+                + PaymentRecord::whereNull('e_transfer_amount')->where('primary_method', 'e_transfer')->sum('primary_amount')
+                + PaymentRecord::whereNull('e_transfer_amount')->where('secondary_method', 'e_transfer')->sum('secondary_amount'),
         ];
 
         return view('payment_records.index', compact('paymentRecords', 'invoices', 'summary', 'selectedInvoice', 'insuranceCompanies'));
@@ -78,13 +90,16 @@ class PaymentRecordController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|gt:0',
-            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cash_card,card_e_transfer,cash_e_transfer,both',
+            'payment_method' => 'required|in:cash,card,e_transfer,insurance,cash_card,card_e_transfer,cash_e_transfer,cash_insurance,card_insurance,e_transfer_insurance,both',
+            'split_methods' => 'nullable|array',
+            'split_methods.*' => 'in:cash,card,e_transfer,insurance',
             'cash_amount' => 'nullable|numeric|min:0',
             'card_amount' => 'nullable|numeric|min:0',
             'e_transfer_amount' => 'nullable|numeric|min:0',
+            'insurance_amount' => 'nullable|numeric|min:0',
             'payment_date' => 'required|date',
             'transaction_id' => 'nullable|string|max:255',
-            'card_brand' => 'nullable|required_if:payment_method,card,cash_card,card_e_transfer|in:Visa,Mastercard,American Express,Discover,Other',
+            'card_brand' => 'nullable|in:Visa,Mastercard,American Express,Discover,Other',
             'cardholder_name' => 'nullable|string|max:255',
             'card_last_four' => 'nullable|regex:/^\d{4}$/',
             'transaction_reference' => 'nullable|string|max:255',
@@ -100,12 +115,11 @@ class PaymentRecordController extends Controller
             'notes' => 'nullable|string|max:1000',
         ], [
             'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
-            'card_brand.required_if' => 'The card brand field is required when paying with card.',
             'amount.gt' => 'Paid amount must be greater than 0.',
         ]);
 
         try {
-            DB::transaction(function () use ($validated) {
+            DB::transaction(function () use ($validated, $request) {
                 $invoice = Invoice::with(['staff', 'appointment'])->lockForUpdate()->findOrFail($validated['invoice_id']);
                 $this->authorizeInvoiceAccess($invoice);
 
@@ -133,79 +147,180 @@ class PaymentRecordController extends Controller
 
                 $method = $validated['payment_method'];
 
-                if ($method === 'both') {
-                    $cashAmt = (float) ($validated['cash_amount'] ?? 0);
-                    $cardAmt = (float) ($validated['card_amount'] ?? 0);
-                    $etransferAmt = (float) ($validated['e_transfer_amount'] ?? 0);
+                $isSplit = in_array($method, [
+                    'both',
+                    'cash_card',
+                    'card_e_transfer',
+                    'cash_e_transfer',
+                    'cash_insurance',
+                    'card_insurance',
+                    'e_transfer_insurance',
+                ], true);
 
-                    // When Card Amount > 0, validate card details
-                    if ($cardAmt > 0) {
-                        if (empty($validated['card_brand'])) {
-                            throw \Illuminate\Validation\ValidationException::withMessages([
-                                'card_brand' => 'The card brand field is required when paying with card.',
-                            ]);
+                if ($isSplit) {
+                    // Collect split methods
+                    $selectedMethods = $request->input('split_methods');
+                    if (!is_array($selectedMethods)) {
+                        $selectedMethods = [];
+                        if ($request->filled('cash_amount') && (float) $request->input('cash_amount') > 0) $selectedMethods[] = 'cash';
+                        if ($request->filled('card_amount') && (float) $request->input('card_amount') > 0) $selectedMethods[] = 'card';
+                        if ($request->filled('e_transfer_amount') && (float) $request->input('e_transfer_amount') > 0) $selectedMethods[] = 'e_transfer';
+                        if ($request->filled('insurance_amount') && (float) $request->input('insurance_amount') > 0) $selectedMethods[] = 'insurance';
+
+                        if (empty($selectedMethods) && in_array($method, ['cash_card', 'card_e_transfer', 'cash_e_transfer', 'cash_insurance', 'card_insurance', 'e_transfer_insurance'], true)) {
+                            if (str_contains($method, 'cash')) $selectedMethods[] = 'cash';
+                            if (str_contains($method, 'card')) $selectedMethods[] = 'card';
+                            if (str_contains($method, 'e_transfer')) $selectedMethods[] = 'e_transfer';
+                            if (str_contains($method, 'insurance')) $selectedMethods[] = 'insurance';
                         }
-                        if (!empty($validated['card_last_four']) && !preg_match('/^\d{4}$/', $validated['card_last_four'])) {
-                            throw \Illuminate\Validation\ValidationException::withMessages([
-                                'card_last_four' => 'Card last 4 digits must be exactly 4 numeric digits.',
-                            ]);
-                        }
-                    } else {
-                        // When Card Amount = 0, card details should not be required or stored
-                        $validated['card_brand'] = null;
-                        $validated['cardholder_name'] = null;
-                        $validated['card_last_four'] = null;
                     }
 
-                    if ($cashAmt > 0 && $cardAmt > 0 && $etransferAmt <= 0) {
-                        $method = 'cash_card';
-                    } elseif ($cardAmt > 0 && $etransferAmt > 0 && $cashAmt <= 0) {
-                        $method = 'card_e_transfer';
-                    } elseif ($cashAmt > 0 && $etransferAmt > 0 && $cardAmt <= 0) {
-                        $method = 'cash_e_transfer';
-                    } else {
+                    if (count($selectedMethods) < 2) {
                         throw \Illuminate\Validation\ValidationException::withMessages([
-                            'amount' => 'Split payment amounts must equal the paid amount.',
+                            'payment_method' => 'Split payment requires selecting at least two payment methods.',
                         ]);
                     }
-                    $validated['payment_method'] = $method;
-                }
 
-                if (in_array($method, ['cash', 'e_transfer', 'cash_e_transfer'], true)) {
-                    $validated['card_brand'] = null;
-                    $validated['cardholder_name'] = null;
-                    $validated['card_last_four'] = null;
-                }
-
-                if (in_array($method, ['cash_card', 'card_e_transfer', 'cash_e_transfer'], true)) {
-                    if ($method === 'cash_card') {
-                        $validated['primary_method'] = 'cash';
-                        $validated['secondary_method'] = 'card';
-                        $validated['primary_amount'] = (float) ($validated['cash_amount'] ?? 0);
-                        $validated['secondary_amount'] = (float) ($validated['card_amount'] ?? 0);
-                    } elseif ($method === 'card_e_transfer') {
-                        $validated['primary_method'] = 'card';
-                        $validated['secondary_method'] = 'e_transfer';
-                        $validated['primary_amount'] = (float) ($validated['card_amount'] ?? 0);
-                        $validated['secondary_amount'] = (float) ($validated['e_transfer_amount'] ?? 0);
-                    } elseif ($method === 'cash_e_transfer') {
-                        $validated['primary_method'] = 'cash';
-                        $validated['secondary_method'] = 'e_transfer';
-                        $validated['primary_amount'] = (float) ($validated['cash_amount'] ?? 0);
-                        $validated['secondary_amount'] = (float) ($validated['e_transfer_amount'] ?? 0);
+                    if (count($selectedMethods) > 4) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'payment_method' => 'Split payment allows a maximum of 4 payment methods.',
+                        ]);
                     }
 
-                    $splitSum = (float) $validated['primary_amount'] + (float) $validated['secondary_amount'];
+                    $methodAmounts = [
+                        'cash' => in_array('cash', $selectedMethods, true) ? (float) $request->input('cash_amount', 0) : null,
+                        'card' => in_array('card', $selectedMethods, true) ? (float) $request->input('card_amount', 0) : null,
+                        'e_transfer' => in_array('e_transfer', $selectedMethods, true) ? (float) $request->input('e_transfer_amount', 0) : null,
+                        'insurance' => in_array('insurance', $selectedMethods, true) ? (float) $request->input('insurance_amount', 0) : null,
+                    ];
+
+                    // Check for negative amounts
+                    foreach ($selectedMethods as $m) {
+                        if (($methodAmounts[$m] ?? 0) < 0) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'amount' => 'Payment method amounts cannot be negative.',
+                            ]);
+                        }
+                    }
+
+                    $splitSum = 0.0;
+                    foreach ($selectedMethods as $m) {
+                        $splitSum += ($methodAmounts[$m] ?? 0);
+                    }
+
+                    if ($splitSum <= 0) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'amount' => 'At least one selected payment method amount must be greater than 0.00.',
+                        ]);
+                    }
+
                     if (abs($splitSum - (float) $validated['amount']) > 0.0001) {
                         throw \Illuminate\Validation\ValidationException::withMessages([
                             'amount' => 'Split payment amounts must equal the paid amount.',
                         ]);
+                    }
+
+                    $validated['cash_amount'] = $methodAmounts['cash'];
+                    $validated['card_amount'] = $methodAmounts['card'];
+                    $validated['e_transfer_amount'] = $methodAmounts['e_transfer'];
+                    $validated['insurance_amount'] = $methodAmounts['insurance'];
+
+                    // Populate primary/secondary for backward compatibility
+                    $validated['primary_method'] = $selectedMethods[0] ?? null;
+                    $validated['secondary_method'] = $selectedMethods[1] ?? null;
+                    $validated['primary_amount'] = isset($selectedMethods[0]) ? $methodAmounts[$selectedMethods[0]] : null;
+                    $validated['secondary_amount'] = isset($selectedMethods[1]) ? $methodAmounts[$selectedMethods[1]] : null;
+
+                    if (count($selectedMethods) === 2) {
+                        $p1 = $selectedMethods[0];
+                        $p2 = $selectedMethods[1];
+                        if (($p1 === 'cash' && $p2 === 'card') || ($p1 === 'card' && $p2 === 'cash')) {
+                            $validated['payment_method'] = 'cash_card';
+                        } elseif (($p1 === 'card' && $p2 === 'e_transfer') || ($p1 === 'e_transfer' && $p2 === 'card')) {
+                            $validated['payment_method'] = 'card_e_transfer';
+                        } elseif (($p1 === 'cash' && $p2 === 'e_transfer') || ($p1 === 'e_transfer' && $p2 === 'cash')) {
+                            $validated['payment_method'] = 'cash_e_transfer';
+                        } elseif (($p1 === 'cash' && $p2 === 'insurance') || ($p1 === 'insurance' && $p2 === 'cash')) {
+                            $validated['payment_method'] = 'cash_insurance';
+                        } elseif (($p1 === 'card' && $p2 === 'insurance') || ($p1 === 'insurance' && $p2 === 'card')) {
+                            $validated['payment_method'] = 'card_insurance';
+                        } elseif (($p1 === 'e_transfer' && $p2 === 'insurance') || ($p1 === 'insurance' && $p2 === 'e_transfer')) {
+                            $validated['payment_method'] = 'e_transfer_insurance';
+                        } else {
+                            $validated['payment_method'] = 'both';
+                        }
+                    } else {
+                        $validated['payment_method'] = 'both';
                     }
                 } else {
                     $validated['primary_method'] = null;
                     $validated['secondary_method'] = null;
                     $validated['primary_amount'] = null;
                     $validated['secondary_amount'] = null;
+                    $validated['cash_amount'] = ($method === 'cash') ? (float) $validated['amount'] : null;
+                    $validated['card_amount'] = ($method === 'card') ? (float) $validated['amount'] : null;
+                    $validated['e_transfer_amount'] = in_array($method, ['e_transfer', 'transfer'], true) ? (float) $validated['amount'] : null;
+                    $validated['insurance_amount'] = ($method === 'insurance') ? (float) $validated['amount'] : null;
+                }
+
+                $hasCard = $isSplit ? in_array('card', $selectedMethods, true) : ($method === 'card');
+                $cardAmount = (float) ($validated['card_amount'] ?? 0);
+
+                // Card Validation and Cleanup
+                if ($hasCard && $cardAmount > 0) {
+                    if (empty($validated['card_brand'])) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'card_brand' => 'The card brand field is required when paying with card.',
+                        ]);
+                    }
+                    if (!empty($validated['card_last_four']) && !preg_match('/^\d{4}$/', $validated['card_last_four'])) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'card_last_four' => 'Card last 4 digits must be exactly 4 numeric digits.',
+                        ]);
+                    }
+                } else {
+                    $validated['card_brand'] = null;
+                    $validated['cardholder_name'] = null;
+                    $validated['card_last_four'] = null;
+                    $validated['transaction_reference'] = null;
+                    if (!$hasCard) {
+                        $validated['card_amount'] = null;
+                    }
+                }
+
+                // Insurance Validation and Cleanup
+                $hasInsurance = $isSplit ? in_array('insurance', $selectedMethods, true) : ($method === 'insurance');
+                if ($hasInsurance) {
+                    $insErrors = [];
+                    if (empty($validated['insurance_company_id'])) {
+                        $insErrors['insurance_company_id'] = 'Please select an insurance company when paying with insurance.';
+                    }
+                    if (empty($validated['policy_id'])) {
+                        $insErrors['policy_id'] = 'The policy ID is required when paying with insurance.';
+                    }
+                    if (empty($validated['member_id_or_contract_number'])) {
+                        $insErrors['member_id_or_contract_number'] = 'The member ID or contract number is required when paying with insurance.';
+                    }
+                    if (!empty($insErrors)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages($insErrors);
+                    }
+                } else {
+                    $validated['insurance_company_id'] = null;
+                    $validated['insurance_information_id'] = null;
+                    $validated['policy_id'] = null;
+                    $validated['member_id_or_contract_number'] = null;
+                    $validated['claim_reference'] = null;
+                    $validated['amount_submitted'] = null;
+                    $validated['insurance_amount'] = null;
+                }
+
+                // E-Transfer Cleanup
+                $hasEtransfer = $isSplit ? in_array('e_transfer', $selectedMethods, true) : in_array($method, ['e_transfer', 'transfer'], true);
+                if (!$hasEtransfer) {
+                    $validated['e_transfer_reference'] = null;
+                    $validated['sender_name'] = null;
+                    $validated['transfer_date'] = null;
+                    $validated['e_transfer_amount'] = null;
                 }
 
                 PaymentRecord::create($validated);

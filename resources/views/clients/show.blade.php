@@ -572,44 +572,6 @@
                                                 </form>
                                             </td>
                                         </tr>
-
-                                        <!-- Edit Insurance Modal -->
-                                        <div class="modal fade" id="editInsuranceModal{{ $info->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <form action="{{ route('insurance-information.update', $info->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title fw-bold">Edit Insurance Information</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
-                                                                <select name="insurance_company_id" class="form-select" required>
-                                                                    @foreach($insuranceCompanies as $comp)
-                                                                        <option value="{{ $comp->id }}" @selected($info->insurance_company_id == $comp->id)>{{ $comp->name }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Policy ID</label>
-                                                                <input type="text" name="policy_id" class="form-control" value="{{ old('policy_id', $info->policy_id) }}" placeholder="POL-123456">
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Member ID / Contract Number</label>
-                                                                <input type="text" name="member_id_or_contract_number" class="form-control" value="{{ old('member_id_or_contract_number', $info->member_id_or_contract_number) }}" placeholder="MEM-987654">
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                                                            <button type="submit" class="btn btn-primary">Update Insurance</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
                                     @empty
                                         <tr>
                                             <td colspan="4" class="text-center py-4 text-muted">No insurance information on file for this client.</td>
@@ -623,6 +585,46 @@
             </div>
         </div>
     </div>
+
+    @foreach($client->insuranceInformations as $info)
+        <!-- Edit Insurance Modal -->
+        <div class="modal fade" id="editInsuranceModal{{ $info->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ route('insurance-information.update', $info->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Edit Insurance Information</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
+                                <select name="insurance_company_id" class="form-select" required>
+                                    @foreach($insuranceCompanies as $comp)
+                                        <option value="{{ $comp->id }}" @selected($info->insurance_company_id == $comp->id)>{{ $comp->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Policy ID</label>
+                                <input type="text" name="policy_id" class="form-control" value="{{ old('policy_id', $info->policy_id) }}" placeholder="POL-123456">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Member ID / Contract Number</label>
+                                <input type="text" name="member_id_or_contract_number" class="form-control" value="{{ old('member_id_or_contract_number', $info->member_id_or_contract_number) }}" placeholder="MEM-987654">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Update Insurance</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
 
     <!-- Add Insurance Modal -->
     <div class="modal fade" id="addInsuranceModal" tabindex="-1" aria-hidden="true">

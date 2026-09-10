@@ -17,6 +17,10 @@ class PaymentRecord extends Model
         'secondary_method',
         'primary_amount',
         'secondary_amount',
+        'cash_amount',
+        'card_amount',
+        'e_transfer_amount',
+        'insurance_amount',
         'payment_date',
         'transaction_id',
         'card_brand',
@@ -41,6 +45,10 @@ class PaymentRecord extends Model
         'amount' => 'decimal:2',
         'primary_amount' => 'decimal:2',
         'secondary_amount' => 'decimal:2',
+        'cash_amount' => 'decimal:2',
+        'card_amount' => 'decimal:2',
+        'e_transfer_amount' => 'decimal:2',
+        'insurance_amount' => 'decimal:2',
         'amount_submitted' => 'decimal:2',
     ];
 
@@ -61,6 +69,9 @@ class PaymentRecord extends Model
 
     public function getCashAmountAttribute(): float
     {
+        if (array_key_exists('cash_amount', $this->attributes) && $this->attributes['cash_amount'] !== null) {
+            return (float) $this->attributes['cash_amount'];
+        }
         if ($this->payment_method === 'cash') {
             return (float) $this->amount;
         }
@@ -75,6 +86,9 @@ class PaymentRecord extends Model
 
     public function getCardAmountAttribute(): float
     {
+        if (array_key_exists('card_amount', $this->attributes) && $this->attributes['card_amount'] !== null) {
+            return (float) $this->attributes['card_amount'];
+        }
         if ($this->payment_method === 'card') {
             return (float) $this->amount;
         }
@@ -89,6 +103,9 @@ class PaymentRecord extends Model
 
     public function getETransferAmountAttribute(): float
     {
+        if (array_key_exists('e_transfer_amount', $this->attributes) && $this->attributes['e_transfer_amount'] !== null) {
+            return (float) $this->attributes['e_transfer_amount'];
+        }
         if (in_array($this->payment_method, ['e_transfer', 'transfer'], true)) {
             return (float) $this->amount;
         }
@@ -101,9 +118,93 @@ class PaymentRecord extends Model
         return 0.0;
     }
 
+    public function getInsuranceAmountAttribute(): float
+    {
+        if (array_key_exists('insurance_amount', $this->attributes) && $this->attributes['insurance_amount'] !== null) {
+            return (float) $this->attributes['insurance_amount'];
+        }
+        if ($this->payment_method === 'insurance') {
+            return (float) $this->amount;
+        }
+        if ($this->primary_method === 'insurance') {
+            return (float) $this->primary_amount;
+        }
+        if ($this->secondary_method === 'insurance') {
+            return (float) $this->secondary_amount;
+        }
+        return 0.0;
+    }
+
     public function getIsSplitPaymentAttribute(): bool
     {
-        return in_array($this->payment_method, ['cash_card', 'card_e_transfer', 'cash_e_transfer', 'both'], true)
+        $splitCount = 0;
+        if ($this->cash_amount > 0) $splitCount++;
+        if ($this->card_amount > 0) $splitCount++;
+        if ($this->e_transfer_amount > 0) $splitCount++;
+        if ($this->insurance_amount > 0) $splitCount++;
+
+        return $splitCount >= 2
+            || in_array($this->payment_method, [
+                'cash_card',
+                'card_e_transfer',
+                'cash_e_transfer',
+                'cash_insurance',
+                'card_insurance',
+                'e_transfer_insurance',
+                'both',
+                'split',
+            ], true)
             || (!empty($this->primary_method) && !empty($this->secondary_method));
+    }
+
+    public function getFormattedMethodLabel(?string $currency = '$'): string
+    {
+        $curr = $currency ?: '$';
+        $refText = $this->transaction_reference ? ' • Ref: ' . $this->transaction_reference : '';
+
+        // If not split, render single payment method
+        if (!$this->is_split_payment) {
+            return match ($this->payment_method) {
+                'cash' => 'Cash',
+                'card' => 'Card' . ($this->card_brand ? ' • ' . $this->card_brand : '') . ($this->card_last_four ? ' • ****' . $this->card_last_four : '') . $refText,
+                'e_transfer' => 'E-Transfer' . ($this->e_transfer_reference ? ' • ' . $this->e_transfer_reference : ''),
+                'insurance' => 'Insurance' . ($this->insuranceCompany ? ' • ' . $this->insuranceCompany->name : ''),
+                default => ucfirst(str_replace('_', ' ', $this->payment_method)),
+            };
+        }
+
+        // Split payment: collect methods with amounts > 0
+        $methodNames = [];
+        $breakdowns = [];
+
+        if ($this->cash_amount > 0) {
+            $methodNames[] = 'Cash';
+            $breakdowns[] = 'Cash: ' . $curr . number_format($this->cash_amount, 2);
+        }
+        if ($this->card_amount > 0) {
+            $methodNames[] = 'Card';
+            $cardDetail = ($this->card_brand ?: 'Card') . ($this->card_last_four ? ' ****' . $this->card_last_four : '');
+            $breakdowns[] = 'Card: ' . $cardDetail . ' — ' . $curr . number_format($this->card_amount, 2);
+        }
+        if ($this->e_transfer_amount > 0) {
+            $methodNames[] = 'E-Transfer';
+            $breakdowns[] = 'E-Transfer: ' . ($this->e_transfer_reference ?: 'ETR') . ' — ' . $curr . number_format($this->e_transfer_amount, 2);
+        }
+        if ($this->insurance_amount > 0) {
+            $methodNames[] = 'Insurance';
+            $breakdowns[] = 'Insurance: ' . ($this->insuranceCompany ? $this->insuranceCompany->name : 'Insurance') . ' — ' . $curr . number_format($this->insurance_amount, 2);
+        }
+
+        if (empty($methodNames)) {
+            return ucfirst(str_replace('_', ' ', $this->payment_method));
+        }
+
+        $title = implode(' + ', $methodNames);
+        return $title . ' (' . implode(' | ', $breakdowns) . ')' . $refText;
+    }
+
+    public function getFormattedMethodLabelAttribute(): string
+    {
+        return $this->getFormattedMethodLabel('$');
     }
 }

@@ -274,35 +274,38 @@
             font-size: 0.7rem;
             max-height: none;
             overflow: visible;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .staff-schedule-item {
             padding: 4px 6px;
-            margin: 3px 0;
-            color: #1e293b;
+            margin: 0;
+            color: #ffffff;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
             border-radius: 5px;
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-left: 3px solid #10b981;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-            text-align: left;
+            background-color: rgb(11, 128, 67);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            text-align: center;
         }
 
         .staff-schedule-name {
             font-weight: 600;
-            color: #1e293b;
+            color: #ffffff;
             font-size: 0.72rem;
-            line-height: 1.2;
+            line-height: 1.25;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align: center;
         }
 
         .staff-schedule-hours {
-            color: #475569;
+            color: #ffffff;
             font-size: 0.68rem;
             font-weight: 500;
             margin-top: 1px;
@@ -310,26 +313,16 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align: center;
+            opacity: 0.95;
         }
 
         .staff-schedule-status {
-            margin-top: 2px;
-            line-height: 1;
+            display: none;
         }
 
         .schedule-status-pill {
-            display: inline-block;
-            font-size: 0.60rem;
-            font-weight: 600;
-            padding: 1px 5px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .schedule-status-pill.available {
-            background-color: #dcfce7;
-            color: #15803d;
+            display: none;
         }
 
         .calendar-appointment-time {
@@ -2731,7 +2724,7 @@
                             const segments = getEffectiveSegments(staff, currentWeekStart);
                             const hoursHtml = (segments || [])
                                 .filter(s => s && s.is_working)
-                                .map(s => `<div class="staff-schedule-item"><div class="staff-schedule-hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div><div class="staff-schedule-status"><span class="schedule-status-pill available">Available</span></div></div>`)
+                                .map(s => `<div class="staff-schedule-item small"><div class="staff-schedule-hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div></div>`)
                                 .join('');
                             if (hoursHtml) {
                                 const segContainer = document.createElement('div');
@@ -2912,7 +2905,6 @@
                             item.innerHTML = `
                                 <div class="staff-schedule-name">${escapeHtml(staff.name)}</div>
                                 <div class="staff-schedule-hours">${startTime} – ${endTime}</div>
-                                <div class="staff-schedule-status"><span class="schedule-status-pill available">Available</span></div>
                             `;
                             container.appendChild(item);
                         });
