@@ -1,6 +1,8 @@
 @php
     $timezone = $business['timezone'] ?? config('app.timezone');
     $mapAddress = $business['address'] ?? ($appointment->location->address ?? null);
+    $rawName = $business['name'] ?? null;
+    $brandName = (!empty($rawName) && strtolower(trim($rawName)) !== 'laravel') ? $rawName : 'mrclinicpro';
 @endphp
 <!doctype html>
 <html lang="en">
@@ -17,9 +19,9 @@
                     <tr>
                         <td style="background:#4f46e5;padding:28px 32px;color:#ffffff;">
                             @if(!empty($business['logo']))
-                                <img src="{{ $business['logo'] }}" alt="{{ $business['name'] ?? config('app.name') }}" style="max-height:48px;margin-bottom:16px;">
+                                <img src="{{ $business['logo'] }}" alt="{{ $brandName }}" style="max-height:48px;margin-bottom:16px;">
                             @endif
-                            <div style="font-size:14px;opacity:.9;">{{ $business['name'] ?? config('app.name') }}</div>
+                            <div style="font-size:14px;opacity:.9;font-weight:600;letter-spacing:0.5px;">{{ $brandName }}</div>
                             <h1 style="margin:8px 0 0;font-size:26px;line-height:1.25;">@yield('heading')</h1>
                         </td>
                     </tr>
@@ -30,7 +32,7 @@
                     </tr>
                     <tr>
                         <td style="padding:24px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;line-height:1.6;">
-                            <strong style="color:#111827;">{{ $business['name'] ?? config('app.name') }}</strong><br>
+                            <strong style="color:#111827;">{{ $brandName }}</strong><br>
                             @if(!empty($business['phone'])) Phone: {{ $business['phone'] }}<br>@endif
                             @if(!empty($business['email'])) Email: {{ $business['email'] }}<br>@endif
                             @if(!empty($mapAddress))

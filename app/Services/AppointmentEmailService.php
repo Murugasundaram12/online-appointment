@@ -98,9 +98,13 @@ class AppointmentEmailService
     {
         $settings = BusinessSetting::pluck('value', 'key');
         $location = $appointment?->location;
+        $businessName = $settings->get('business_name');
+        if (empty($businessName) || strtolower(trim($businessName)) === 'laravel') {
+            $businessName = 'mrclinicpro';
+        }
 
         return [
-            'name' => $settings->get('business_name') ?: config('app.name', 'Online Appointment'),
+            'name' => $businessName,
             'email' => $settings->get('business_email') ?: $location?->email ?: config('mail.from.address'),
             'phone' => $settings->get('business_phone') ?: $location?->phone,
             'address' => $settings->get('business_address') ?: $location?->address,
@@ -115,17 +119,14 @@ class AppointmentEmailService
         $client = $appointment->client;
         $staff = $appointment->staff;
 
-        $recipients = [];
-        if ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails()) {
-            $recipients[] = $client->email;
-        }
-        if ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails()) {
-            if (!in_array($staff->email, $recipients, true)) {
-                $recipients[] = $staff->email;
-            }
-        }
+        $clientEmail = ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails())
+            ? $client->email
+            : null;
+        $staffEmail = ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails())
+            ? $staff->email
+            : null;
 
-        if (empty($recipients)) {
+        if (!$clientEmail && !$staffEmail) {
             Log::info('Appointment email skipped', [
                 'appointment_id' => $appointment->id,
                 'client_email' => $client?->email,
@@ -137,49 +138,71 @@ class AppointmentEmailService
             return ['attempted' => false, 'sent' => false, 'message' => 'No valid recipient email available.'];
         }
 
-        try {
-            $mail = new $mailableClass($appointment, $this->businessContext($appointment), $previous, $this->publicReference($appointment));
+        $business = $this->businessContext($appointment);
+        $reference = $this->publicReference($appointment);
+        $isAsync = config('queue.default') !== 'sync';
+        $attempted = false;
+        $anySent = false;
 
-            Log::info('Appointment email SMTP attempt', [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'mail_type' => $type,
-                'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'encryption' => config('mail.mailers.smtp.encryption'),
-                'queue' => config('queue.default'),
-            ]);
-
-            if (config('queue.default') !== 'sync') {
-                Mail::to($recipients)->queue($mail);
-                $verb = 'queued';
-            } else {
-                Mail::to($recipients)->send($mail);
-                $verb = 'sent';
+        // Send client-oriented email if client email is valid
+        if ($clientEmail) {
+            $attempted = true;
+            try {
+                $clientMail = new $mailableClass($appointment, $business, $previous, $reference, 'client');
+                if ($isAsync) {
+                    Mail::to($clientEmail)->queue($clientMail);
+                } else {
+                    Mail::to($clientEmail)->send($clientMail);
+                }
+                $anySent = true;
+                Log::info('Appointment email ' . ($isAsync ? 'queued' : 'sent') . ' to client', [
+                    'appointment_id' => $appointment->id,
+                    'recipient' => $clientEmail,
+                    'mail_type' => $type,
+                ]);
+            } catch (\Throwable $exception) {
+                Log::error('Appointment email to client failed', [
+                    'appointment_id' => $appointment->id,
+                    'recipient' => $clientEmail,
+                    'mail_type' => $type,
+                    'exception' => $exception->getMessage(),
+                ]);
             }
-
-            Log::info('Appointment email ' . $verb, [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'mail_type' => $type,
-            ]);
-
-            return ['attempted' => true, 'sent' => true, 'message' => 'Notification email ' . $verb . '.'];
-        } catch (\Throwable $exception) {
-            Log::error('Appointment email failed', [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'mail_type' => $type,
-                'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'encryption' => config('mail.mailers.smtp.encryption'),
-                'exception' => $exception->getMessage(),
-            ]);
-
-            return ['attempted' => true, 'sent' => false, 'message' => 'Notification email could not be sent.'];
         }
+
+        // Send staff-oriented email if staff email is valid
+        if ($staffEmail) {
+            $attempted = true;
+            try {
+                $staffMail = new $mailableClass($appointment, $business, $previous, $reference, 'staff');
+                if ($isAsync) {
+                    Mail::to($staffEmail)->queue($staffMail);
+                } else {
+                    Mail::to($staffEmail)->send($staffMail);
+                }
+                $anySent = true;
+                Log::info('Appointment email ' . ($isAsync ? 'queued' : 'sent') . ' to staff', [
+                    'appointment_id' => $appointment->id,
+                    'recipient' => $staffEmail,
+                    'mail_type' => $type,
+                ]);
+            } catch (\Throwable $exception) {
+                Log::error('Appointment email to staff failed', [
+                    'appointment_id' => $appointment->id,
+                    'recipient' => $staffEmail,
+                    'mail_type' => $type,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        $verb = $isAsync ? 'queued' : 'sent';
+
+        return [
+            'attempted' => $attempted,
+            'sent' => $anySent,
+            'message' => $anySent ? "Notification email {$verb}." : "Notification email could not be sent.",
+        ];
     }
 
     private function hasRelevantScheduleChange(Appointment $appointment, Appointment $previous): bool

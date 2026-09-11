@@ -1,13 +1,26 @@
 @extends('emails.appointments.layout')
 
-@section('title', 'Appointment Confirmation')
-@section('heading', 'Your appointment is confirmed')
+@php
+    $isStaff = ($recipientType ?? 'client') === 'staff';
+    $clientName = $appointment->client->name ?? 'Client';
+    $staffName = $appointment->staff->name ?? 'Staff';
+@endphp
+
+@section('title', $isStaff ? 'New Appointment Assigned' : 'Appointment Confirmation')
+@section('heading', $isStaff ? 'New Appointment Assigned' : 'Your Appointment is Confirmed')
 
 @section('content')
-    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hello {{ $appointment->client->name ?? 'there' }},</p>
-    <p style="margin:0;color:#4b5563;line-height:1.7;">Your appointment has been booked successfully. Please arrive 10 minutes before your scheduled appointment.</p>
+    @if($isStaff)
+        <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hello {{ $staffName }},</p>
+        <p style="margin:0;color:#4b5563;line-height:1.7;">A new appointment has been assigned to you.</p>
+    @else
+        <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hello {{ $clientName }},</p>
+        <p style="margin:0;color:#4b5563;line-height:1.7;">Your appointment has been booked successfully.</p>
+    @endif
 
-    @include('emails.appointments.partials.details')
+    <div style="margin-top:20px;font-weight:700;font-size:15px;color:#111827;">Appointment Details</div>
+
+    @include('emails.appointments.partials.details', ['recipientType' => $recipientType ?? 'client'])
 
     <p style="margin:0;color:#4b5563;line-height:1.7;">If you need to make a change, please contact us using the details below.</p>
 @endsection

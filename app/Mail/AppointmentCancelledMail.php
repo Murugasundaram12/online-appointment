@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\PreparesAppointmentTimes;
 use App\Models\Appointment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -9,20 +10,35 @@ use Illuminate\Queue\SerializesModels;
 
 class AppointmentCancelledMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, PreparesAppointmentTimes;
 
     public function __construct(
         public Appointment $appointment,
         public array $business,
         public ?Appointment $previous = null,
-        public string $reference = ''
+        public string $reference = '',
+        public string $recipientType = 'client'
     ) {
+        $this->prepareAppointmentTimes();
     }
 
     public function build(): self
     {
+        $clientName = $this->appointment->client->name ?? 'Client';
+        $ref = $this->reference ?: 'APT-' . $this->appointment->id;
+
+        if ($this->recipientType === 'staff') {
+            return $this
+                ->subject("Appointment Cancelled – {$clientName}")
+                ->view('emails.appointments.cancelled', [
+                    'recipientType' => 'staff',
+                ]);
+        }
+
         return $this
-            ->subject('Appointment cancelled - ' . $this->reference)
-            ->view('emails.appointments.cancelled');
+            ->subject("Appointment Cancelled – {$ref}")
+            ->view('emails.appointments.cancelled', [
+                'recipientType' => 'client',
+            ]);
     }
 }

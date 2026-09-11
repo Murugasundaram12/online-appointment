@@ -785,7 +785,7 @@
                         <button class="btn-today" id="btn-today">Today</button>
                     </div>
                     <div class="nav-right d-flex">
-                        <i class='bx bx-plus icon-btn'></i>
+                        <i class='bx bx-plus icon-btn' id="btn-new-appointment" title="New Appointment" style="cursor: pointer;"></i>
                         <i class='bx bx-time-five icon-btn'></i>
                     </div>
                 </div>
@@ -1964,9 +1964,13 @@
                     return 'Appointment must be within one day and inside staff working hours.';
                 }
 
+                if (staffField && !hasSelectOptionValue(staffField, staffId)) {
+                    return 'The selected staff member is not available for this date and time.';
+                }
+
                 const segments = getStaffScheduleForDate(staffId, startDate);
                 if (!Array.isArray(segments) || segments.length === 0) {
-                    return 'Staff is not available at the selected time.';
+                    return null;
                 }
 
                 const apptStart = (startDate.getHours() * 60) + startDate.getMinutes();
@@ -1980,7 +1984,7 @@
                     if (apptStart >= workingStart && apptEnd <= workingEnd) return null;
                 }
 
-                return 'Staff is not available at the selected time.';
+                return 'The selected staff member is not available for this date and time.';
             }
 
             function clearNewClientFields() {
@@ -2110,7 +2114,6 @@
             function hydrateStaffOptionsForSelectedLocation(respectService = false) {
                 const locationId = locationField ? locationField.value : '';
                 const currentStaffId = staffField ? staffField.value : '';
-                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaffId));
 
                 let staffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
                 if (respectService) {
@@ -2119,11 +2122,10 @@
                 }
                 fillSelect(staffField, staffs, staffs.length ? 'Select staff' : 'No staff assigned to this location');
 
-                if (currentStaffId) {
-                    if (currentStaffObj) {
-                        ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
-                    }
+                if (currentStaffId && staffs.some(s => String(s.id) === String(currentStaffId))) {
                     staffField.value = String(currentStaffId);
+                } else if (currentStaffId) {
+                    staffField.value = '';
                 }
                 return staffs;
             }
@@ -2178,8 +2180,6 @@
                 const staff = (window.CALENDAR_DATA.staffs || []).find(item => String(item.id) === String(staffField.value));
                 if (staff && staff.location_id && locationField && hasSelectOptionValue(locationField, staff.location_id)) {
                     locationField.value = String(staff.location_id);
-                    hydrateStaffOptionsForSelectedLocation();
-                    staffField.value = String(staff.id);
                 }
             }
 
@@ -2205,7 +2205,6 @@
                 const locationId = locationField ? locationField.value : '';
                 const serviceId = serviceField ? serviceField.value : '';
                 const currentStaffId = staffField ? staffField.value : '';
-                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaffId));
 
                 let allStaffs = (window.CALENDAR_DATA.staffs || []).filter(staff => staffMatchesLocation(staff, locationId));
                 if (serviceId) {
@@ -2215,19 +2214,17 @@
 
                 if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
                     fillSelect(staffField, allStaffs, 'Select staff');
-                    if (currentStaffId) {
-                        if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                    if (currentStaffId && allStaffs.some(s => String(s.id) === String(currentStaffId))) {
                         staffField.value = String(currentStaffId);
+                    } else if (currentStaffId) {
+                        staffField.value = '';
                     }
                     return { count: allStaffs.length, hasScheduleData: false };
                 }
 
                 if (!Array.isArray(schedules) || schedules.length === 0) {
                     fillSelect(staffField, [], 'No staff schedule data');
-                    if (currentStaffId) {
-                        if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
-                        staffField.value = String(currentStaffId);
-                    }
+                    staffField.value = '';
                     return { count: 0, hasScheduleData: false };
                 }
 
@@ -2248,12 +2245,104 @@
                 const dateStaffs = allStaffs.filter(s => workingStaffIds.has(String(s.id)));
                 fillSelect(staffField, dateStaffs, dateStaffs.length ? 'Select staff' : 'No staff scheduled for selected time');
 
-                if (currentStaffId) {
-                    if (currentStaffObj) ensureSelectOption(staffField, currentStaffId, currentStaffObj.name);
+                if (currentStaffId && dateStaffs.some(s => String(s.id) === String(currentStaffId))) {
                     staffField.value = String(currentStaffId);
+                } else if (currentStaffId) {
+                    staffField.value = '';
                 }
 
                 return { count: dateStaffs.length, hasScheduleData: true };
+            }
+
+            let staffAvailabilityAbortController = null;
+            let staffAvailabilitySeq = 0;
+            let staffRefreshDebounceTimer = null;
+
+            function debouncedRefreshStaffAvailability(delay = 180) {
+                if (staffRefreshDebounceTimer) clearTimeout(staffRefreshDebounceTimer);
+                staffRefreshDebounceTimer = setTimeout(() => {
+                    refreshStaffAvailabilityForCurrentSlot();
+                }, delay);
+            }
+
+            async function refreshStaffAvailabilityForCurrentSlot(options = {}) {
+                const preferredStaffId = options.preferredStaffId !== undefined ? (options.preferredStaffId ? String(options.preferredStaffId) : '') : null;
+                const silent = Boolean(options.silent);
+
+                const currentStaffId = preferredStaffId !== null ? preferredStaffId : (staffField ? String(staffField.value || '') : '');
+                const locationId = locationField ? locationField.value : '';
+                const serviceId = serviceField ? serviceField.value : '';
+                const apptId = apptIdField ? apptIdField.value : '';
+                const startVal = startField ? startField.value : '';
+                const endVal = endField ? endField.value : '';
+
+                if (!startVal || !endVal) {
+                    hydrateStaffOptionsForSelectedLocation(true);
+                    return;
+                }
+
+                const startDate = fromInputDateTime(startVal);
+                const endDate = fromInputDateTime(endVal);
+                if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                    hydrateStaffOptionsForSelectedLocation(true);
+                    return;
+                }
+
+                if (staffAvailabilityAbortController) {
+                    staffAvailabilityAbortController.abort();
+                }
+                staffAvailabilityAbortController = new AbortController();
+                const mySeq = ++staffAvailabilitySeq;
+
+                try {
+                    const params = new URLSearchParams({
+                        start_time: startVal,
+                        end_time: endVal,
+                    });
+                    if (locationId) params.set('location_id', locationId);
+                    if (serviceId) params.set('service_id', serviceId);
+                    if (apptId) params.set('exclude_appointment_id', apptId);
+
+                    const res = await fetch(`${calendarUrl('available-staff')}?${params.toString()}`, {
+                        signal: staffAvailabilityAbortController.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!res.ok) {
+                        return;
+                    }
+
+                    if (mySeq !== staffAvailabilitySeq) return;
+
+                    const data = await res.json();
+                    const availableStaff = Array.isArray(data.staff) ? data.staff : [];
+
+                    fillSelect(
+                        staffField,
+                        availableStaff,
+                        availableStaff.length ? 'Select staff' : 'No staff scheduled for selected time'
+                    );
+
+                    if (currentStaffId && availableStaff.some(s => String(s.id) === currentStaffId)) {
+                        staffField.value = currentStaffId;
+                    } else {
+                        const hadPreviousStaff = Boolean(currentStaffId);
+                        staffField.value = '';
+                        if (hadPreviousStaff && !silent) {
+                            showPageNotice('The selected staff member is not available for this date and time.');
+                        } else if (!availableStaff.length && !silent) {
+                            showPageNotice('No staff scheduled for the selected time.');
+                        }
+                    }
+
+                    hydrateServiceOptionsForSelectedStaff();
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.error('Error refreshing staff availability', err);
+                }
             }
 
             let apptClientTomSelect = null;
@@ -2387,15 +2476,7 @@
                 endField.value = toInputDateTime(autoEnd);
 
                 if (!apptIdField.value) {
-                    const current = staffField.value;
-                    const info = hydrateStaffOptionsForSlot(start, autoEnd);
-                    if (current && hasSelectOptionValue(staffField, current)) {
-                        staffField.value = String(current);
-                    }
-                    if (info && info.hasScheduleData && info.count === 0) {
-                        const msg = 'No staff scheduled for the selected time.';
-                        showPageNotice(msg);
-                    }
+                    refreshStaffAvailabilityForCurrentSlot();
                 }
             }
 
@@ -2419,21 +2500,10 @@
                 setAppointmentReadOnlyMode(false);
                 apptIdField.value = '';
                 hydrateFormOptions();
-                const staffInfo = hydrateStaffOptionsForSlot(startDate, endDate);
-                if (staffInfo && staffInfo.hasScheduleData && staffInfo.count === 0) {
-                    const msg = 'No staff scheduled for the selected time. Please create staff schedule first.';
-                    showPageNotice(msg);
-                    return;
-                }
-                if (staffId) {
-                    const desired = String(staffId);
-                    staffField.value = hasSelectOptionValue(staffField, desired) ? desired : '';
-                    syncLocationFromStaff();
-                } else {
-                    staffField.value = '';
-                    if (locationField) locationField.value = '';
-                }
-                hydrateServiceOptionsForSelectedStaff();
+
+                startField.value = toInputDateTime(startDate);
+                endField.value = toInputDateTime(endDate);
+                clearNewClientFields();
                 serviceField.value = '';
                 clientField.value = '';
                 statusField.value = 'booked';
@@ -2442,10 +2512,10 @@
                 if (reasonInput) reasonInput.value = '';
                 toggleCancellationReasonField();
 
-                startField.value = toInputDateTime(startDate);
-                endField.value = toInputDateTime(endDate);
-                clearNewClientFields();
                 appointmentModal.show();
+
+                const desired = staffId ? String(staffId) : '';
+                refreshStaffAvailabilityForCurrentSlot({ preferredStaffId: desired, silent: true });
             }
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
@@ -3123,41 +3193,15 @@
             });
 
             serviceField.addEventListener('change', function () {
-                const currentStaff = staffField.value;
-                const currentStaffObj = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(currentStaff));
                 if (apptIdField.value) {
-                    hydrateStaffOptionsForSelectedLocation(true);
+                    refreshStaffAvailabilityForCurrentSlot();
                 } else {
                     applyServiceDurationToEndTime();
-                }
-                if (currentStaff) {
-                    if (currentStaffObj) {
-                        ensureSelectOption(staffField, currentStaff, currentStaffObj.name);
-                    }
-                    staffField.value = String(currentStaff);
                 }
             });
             if (locationField) {
                 locationField.addEventListener('change', function () {
-                    const currentStaff = staffField.value;
-                    if (apptIdField.value) {
-                        hydrateStaffOptionsForSelectedLocation(true);
-                    } else {
-                        const start = fromInputDateTime(startField.value);
-                        const end = fromInputDateTime(endField.value);
-                        if (startField.value && endField.value && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-                            hydrateStaffOptionsForSlot(start, end);
-                        } else {
-                            hydrateStaffOptionsForSelectedLocation(true);
-                        }
-                    }
-                    if (currentStaff && hasSelectOptionValue(staffField, currentStaff)) {
-                        staffField.value = currentStaff;
-                    } else if (currentStaff) {
-                        staffField.value = '';
-                        showPageNotice('Selected staff is not assigned to this location.');
-                    }
-                    hydrateServiceOptionsForSelectedStaff();
+                    refreshStaffAvailabilityForCurrentSlot();
                 });
             }
             staffField.addEventListener('change', function () {
@@ -3171,38 +3215,28 @@
             });
             startField.addEventListener('change', function () {
                 if (serviceField.value) applyServiceDurationToEndTime();
-                if (apptIdField.value) return;
-                const start = fromInputDateTime(startField.value);
-                const end = fromInputDateTime(endField.value);
-                if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-                const current = staffField.value;
-                const info = hydrateStaffOptionsForSlot(start, end);
-                if (current && hasSelectOptionValue(staffField, current)) {
-                    staffField.value = String(current);
-                }
-                hydrateServiceOptionsForSelectedStaff();
-                if (info && info.hasScheduleData && info.count === 0) {
-                    const msg = 'No staff scheduled for the selected time.';
-                    showPageNotice(msg);
-                }
+                refreshStaffAvailabilityForCurrentSlot();
+            });
+            startField.addEventListener('input', function () {
+                debouncedRefreshStaffAvailability(200);
             });
 
             endField.addEventListener('change', function () {
-                if (apptIdField.value) return;
-                const start = fromInputDateTime(startField.value);
-                const end = fromInputDateTime(endField.value);
-                if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-                const current = staffField.value;
-                const info = hydrateStaffOptionsForSlot(start, end);
-                if (current && hasSelectOptionValue(staffField, current)) {
-                    staffField.value = String(current);
-                }
-                hydrateServiceOptionsForSelectedStaff();
-                if (info && info.hasScheduleData && info.count === 0) {
-                    const msg = 'No staff scheduled for the selected time.';
-                    showPageNotice(msg);
-                }
+                refreshStaffAvailabilityForCurrentSlot();
             });
+            endField.addEventListener('input', function () {
+                debouncedRefreshStaffAvailability(200);
+            });
+
+            const btnNewAppt = document.getElementById('btn-new-appointment');
+            if (btnNewAppt) {
+                btnNewAppt.addEventListener('click', function () {
+                    const now = new Date();
+                    now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+                    const end = new Date(now.getTime() + 30 * 60000);
+                    openAppointmentModalForCreate(now, end);
+                });
+            }
 
             if (openNewClientModalBtn) {
                 openNewClientModalBtn.addEventListener('click', function (e) {

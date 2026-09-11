@@ -24,15 +24,15 @@ class SendAppointmentReminders extends Command
         $timezone = $this->getBusinessTimezone();
 
         $now = now()->setTimezone($timezone);
-        $windowStart = $now->copy()->addHours(23)->startOfMinute()->setTimezone(config('app.timezone', 'UTC'));
-        $windowEnd = $now->copy()->addHours(25)->endOfMinute()->setTimezone(config('app.timezone', 'UTC'));
+        $windowStart = $now->copy()->addHours(23)->startOfMinute();
+        $windowEnd = $now->copy()->addHours(25)->endOfMinute();
 
         $this->info("Current time ({$timezone}): {$now->toDateTimeString()}");
         $this->info("Search window: {$windowStart->toDateTimeString()} to {$windowEnd->toDateTimeString()}");
 
         $appointments = Appointment::whereIn('status', ['pending', 'booked', 'confirmed'])
             ->whereNull('reminder_sent_at')
-            ->whereBetween('start_time', [$windowStart, $windowEnd])
+            ->whereBetween('start_time', [$windowStart->format('Y-m-d H:i:s'), $windowEnd->format('Y-m-d H:i:s')])
             ->with(['client', 'staff', 'service', 'location'])
             ->get();
 
@@ -73,18 +73,14 @@ class SendAppointmentReminders extends Command
     {
         $client = $appointment->client;
         $staff = $appointment->staff;
+        $clientEmail = ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails())
+            ? $client->email
+            : null;
+        $staffEmail = ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails())
+            ? $staff->email
+            : null;
 
-        $recipients = [];
-        if ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails()) {
-            $recipients[] = $client->email;
-        }
-        if ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails()) {
-            if (!in_array($staff->email, $recipients, true)) {
-                $recipients[] = $staff->email;
-            }
-        }
-
-        if (empty($recipients)) {
+        if (!$clientEmail && !$staffEmail) {
             $this->warn("Skipping appointment {$appointment->id}: Missing or invalid recipient email(s)");
             Log::info('Appointment reminder skipped', [
                 'appointment_id' => $appointment->id,
@@ -97,67 +93,67 @@ class SendAppointmentReminders extends Command
 
         $reference = $this->generateReference($appointment);
         $business = $this->getBusinessContext($appointment);
-        $recipientsList = implode(', ', $recipients);
+        $recipientsList = implode(', ', array_filter([$clientEmail, $staffEmail]));
 
         if ($isDryRun) {
             $this->info("[DRY RUN] Would send reminder for appointment {$appointment->id} to {$recipientsList}");
             Log::info('Appointment reminder dry run', [
                 'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
+                'recipients' => $recipientsList,
                 'reference' => $reference,
             ]);
             return 'sent';
         }
 
-        try {
-            $mail = new AppointmentReminderMail($appointment, $business, $reference);
+        $attempted = false;
+        $anySent = false;
+        $allQueued = config('queue.default') !== 'sync';
 
-            Log::info('Appointment reminder SMTP attempt', [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'encryption' => config('mail.mailers.smtp.encryption'),
-                'queue' => config('queue.default'),
-            ]);
-
+        // Send client reminder
+        if ($clientEmail) {
+            $attempted = true;
             try {
-                if (config('queue.default') !== 'sync') {
-                    Mail::to($recipients)->queue($mail);
-                    $verb = 'queued';
+                $clientMail = new AppointmentReminderMail($appointment, $business, $reference, 'client');
+                if ($allQueued) {
+                    Mail::to($clientEmail)->queue($clientMail);
                 } else {
-                    Mail::to($recipients)->send($mail);
-                    $verb = 'sent';
+                    Mail::to($clientEmail)->send($clientMail);
                 }
+                $anySent = true;
             } catch (\Throwable $mailEx) {
-                Log::warning('SMTP send failed for reminder, marking attempted: ' . $mailEx->getMessage());
-                $verb = 'attempted';
+                Log::warning('SMTP send failed for client reminder: ' . $mailEx->getMessage());
             }
-
-            $appointment->update(['reminder_sent_at' => now()]);
-
-            $this->info("Reminder {$verb} for appointment {$appointment->id} to {$recipientsList} (ref: {$reference})");
-            Log::info('Appointment reminder ' . $verb, [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'reference' => $reference,
-            ]);
-
-            return 'sent';
-        } catch (\Throwable $exception) {
-            $this->error("Failed to send reminder for appointment {$appointment->id}: {$exception->getMessage()}");
-            Log::error('Appointment reminder failed', [
-                'appointment_id' => $appointment->id,
-                'recipients' => $recipients,
-                'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'encryption' => config('mail.mailers.smtp.encryption'),
-                'exception' => $exception->getMessage(),
-            ]);
-            return 'failed';
         }
+
+        // Send staff reminder
+        if ($staffEmail) {
+            $attempted = true;
+            try {
+                $staffMail = new AppointmentReminderMail($appointment, $business, $reference, 'staff');
+                if ($allQueued) {
+                    Mail::to($staffEmail)->queue($staffMail);
+                } else {
+                    Mail::to($staffEmail)->send($staffMail);
+                }
+                $anySent = true;
+            } catch (\Throwable $mailEx) {
+                Log::warning('SMTP send failed for staff reminder: ' . $mailEx->getMessage());
+            }
+        }
+
+        if ($attempted) {
+            $appointment->update(['reminder_sent_at' => now()]);
+        }
+
+        $verb = $anySent ? ($allQueued ? 'queued' : 'sent') : 'attempted';
+        $this->info("Reminder {$verb} for appointment {$appointment->id} to {$recipientsList} (ref: {$reference})");
+        Log::info('Appointment reminder ' . $verb, [
+            'appointment_id' => $appointment->id,
+            'recipients' => $recipientsList,
+            'reference' => $reference,
+        ]);
+
+        return $anySent ? 'sent' : 'failed';
     }
 
     private function getBusinessTimezone(): string
@@ -170,9 +166,13 @@ class SendAppointmentReminders extends Command
     {
         $settings = BusinessSetting::pluck('value', 'key');
         $location = $appointment->location;
+        $businessName = $settings->get('business_name');
+        if (empty($businessName) || strtolower(trim($businessName)) === 'laravel') {
+            $businessName = 'mrclinicpro';
+        }
 
         return [
-            'name' => $settings->get('business_name') ?: config('app.name', 'Online Appointment'),
+            'name' => $businessName,
             'email' => $settings->get('business_email') ?: $location?->email ?: config('mail.from.address'),
             'phone' => $settings->get('business_phone') ?: $location?->phone,
             'address' => $settings->get('business_address') ?: $location?->address,

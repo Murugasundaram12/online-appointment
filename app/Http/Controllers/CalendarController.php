@@ -383,6 +383,63 @@ class CalendarController extends Controller
     }
 
     /**
+     * Return available staff members for a specific slot, location, and service
+     */
+    public function getAvailableStaff(Request $request)
+    {
+        $validated = $request->validate([
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'location_id' => 'nullable|integer',
+            'service_id' => 'nullable|integer',
+            'exclude_appointment_id' => 'nullable|integer',
+        ]);
+
+        $locationId = $validated['location_id'] ?? null;
+        $serviceId = $validated['service_id'] ?? null;
+        $excludeId = $validated['exclude_appointment_id'] ?? null;
+
+        $service = $serviceId ? Service::where('is_active', true)->find($serviceId) : null;
+        $bufferMinutes = (int) ($service?->buffer_minutes ?? 0);
+
+        $staffQuery = Staff::where('is_active', true);
+        if ($locationId) {
+            $staffQuery->where(function ($q) use ($locationId) {
+                $q->whereNull('location_id')->orWhere('location_id', $locationId);
+            });
+        }
+
+        $allStaff = $staffQuery->get();
+
+        $availableStaff = $allStaff->filter(function ($staff) use ($validated, $service, $excludeId, $bufferMinutes, $locationId) {
+            if ($service && !StaffCategoryService::staffCanProvide($staff, $service)) {
+                return false;
+            }
+
+            $availability = $this->validateStaffAvailability(
+                $staff->id,
+                $validated['start_time'],
+                $validated['end_time'],
+                $excludeId,
+                $bufferMinutes,
+                $locationId
+            );
+
+            return !empty($availability['available']);
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'staff' => $availableStaff->map(fn($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'location_id' => $s->location_id,
+                'category' => $s->category,
+            ])
+        ]);
+    }
+
+    /**
      * Create new appointment
      */
     public function storeAppointment(Request $request)
@@ -401,8 +458,8 @@ class CalendarController extends Controller
             'location_id' => ['nullable', 'exists:locations,id'],
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'status' => 'nullable|in:booked,completed,cancelled,no_show',
-            'cancellation_reason' => 'required_if:status,cancelled|nullable|string',
+            'status' => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'cancellation_reason' => 'nullable|string',
             'notes' => 'nullable|string'
         ]);
 
@@ -440,7 +497,8 @@ class CalendarController extends Controller
             $validated['start_time'],
             $validated['end_time'],
             null,
-            (int) ($service->buffer_minutes ?? 0)
+            (int) ($service->buffer_minutes ?? 0),
+            $validated['location_id'] ?? null
         );
 
         if (!$validation['available']) {
@@ -502,7 +560,7 @@ class CalendarController extends Controller
         if ($currentStatus === 'completed') {
             return response()->json([
                 'success' => false,
-                'message' => 'Completed appointments are read-only and cannot be modified.',
+                'message' => 'Completed appointments cannot be rescheduled.',
             ], 422);
         }
 
@@ -534,8 +592,8 @@ class CalendarController extends Controller
             'location_id'         => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
             'start_time'          => 'nullable|date',
             'end_time'            => 'nullable|date|after:start_time',
-            'status'              => 'nullable|in:booked,completed,cancelled,no_show',
-            'cancellation_reason' => 'required_if:status,cancelled|nullable|string',
+            'status'              => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'cancellation_reason' => 'nullable|string',
             'client_id'           => 'sometimes|exists:clients,id',
             'notes'               => 'nullable|string'
         ]);
@@ -611,7 +669,8 @@ class CalendarController extends Controller
                 $startTime,
                 $endTime,
                 $id,
-                (int) ($service->buffer_minutes ?? 0)
+                (int) ($service->buffer_minutes ?? 0),
+                $validated['location_id'] ?? $appointment->location_id
             );
 
             if (!$validation['available']) {
@@ -779,10 +838,27 @@ class CalendarController extends Controller
      */
     public function quickCreateClient(Request $request)
     {
-        $validated = $request->validate(
-            StoreClientRequest::rulesFor(),
-            (new StoreClientRequest())->messages()
-        );
+        // Quick-create from the calendar: email is optional.
+        // Full client form (ClientController) requires email via StoreClientRequest.
+        $validated = $request->validate([
+            'first_name'       => 'required|string|max:100',
+            'last_name'        => 'required|string|max:100',
+            'phone'            => ['required', 'string', 'max:30', \Illuminate\Validation\Rule::unique('clients', 'phone')],
+            'email'            => ['nullable', 'email', 'max:255', \Illuminate\Validation\Rule::unique('clients', 'email')],
+            'gender'           => 'nullable|string|in:male,female,other',
+            'dob'              => 'nullable|date|before:today',
+            'address_line1'    => 'nullable|string|max:255',
+            'address_line2'    => 'nullable|string|max:255',
+            'city'             => 'nullable|string|max:100',
+            'state'            => 'nullable|string|max:100',
+            'country'          => 'nullable|string|max:100',
+            'postal_code'      => 'nullable|string|max:20',
+            'notes'            => 'nullable|string|max:5000',
+            'is_vip'           => 'nullable|boolean',
+        ], [
+            'phone.unique' => 'A client with this phone number already exists.',
+            'email.unique' => 'A client with this email address already exists.',
+        ]);
 
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
@@ -791,12 +867,12 @@ class CalendarController extends Controller
         return response()->json([
             'success' => true,
             'client' => [
-                'id' => $client->id,
-                'name' => $client->name,
+                'id'         => $client->id,
+                'name'       => $client->name,
                 'first_name' => $client->first_name,
-                'last_name' => $client->last_name,
-                'email' => $client->email,
-                'phone' => $client->phone,
+                'last_name'  => $client->last_name,
+                'email'      => $client->email,
+                'phone'      => $client->phone,
             ]
         ], 201);
     }
@@ -882,7 +958,7 @@ class CalendarController extends Controller
     /**
      * Validate staff availability for given time slot
      */
-    private function validateStaffAvailability($staffId, $startTime, $endTime, $excludeAppointmentId = null, int $newBufferMinutes = 0)
+    private function validateStaffAvailability($staffId, $startTime, $endTime, $excludeAppointmentId = null, int $newBufferMinutes = 0, $locationId = null)
     {
         /**
          * Important:
@@ -903,6 +979,28 @@ class CalendarController extends Controller
             $endTime = Carbon::createFromFormat('Y-m-d\TH:i:s', (string) $endTime, $appTz);
         } catch (\Throwable $e) {
             $endTime = Carbon::parse((string) $endTime, $appTz);
+        }
+
+        if ($startTime->gte($endTime) || $startTime->toDateString() !== $endTime->toDateString()) {
+            return [
+                'available' => false,
+                'message' => 'The selected staff member is not available for this date and time.'
+            ];
+        }
+
+        $staff = Staff::find($staffId);
+        if (!$staff || !$staff->is_active) {
+            return [
+                'available' => false,
+                'message' => 'The selected staff member is not available for this date and time.'
+            ];
+        }
+
+        if ($locationId && $staff->location_id && (int) $staff->location_id !== (int) $locationId) {
+            return [
+                'available' => false,
+                'message' => 'The selected staff member is not available for this date and time.'
+            ];
         }
 
         $inputTimezone = $appTz;
@@ -945,7 +1043,7 @@ class CalendarController extends Controller
         if (!$schedule && $dateSchedules->count() > 0) {
             return [
                 'available' => false,
-                'message' => 'Staff is not available at the selected time.'
+                'message' => 'The selected staff member is not available for this date and time.'
             ];
         }
 
@@ -953,6 +1051,13 @@ class CalendarController extends Controller
             $query = StaffSchedule::where('staff_id', $staffId);
             if ($hasWorkingDate) {
                 $query->whereNull('working_date');
+            }
+
+            if (Schema::hasColumn('staff_schedules', 'start_date')) {
+                $query->where(fn($q) => $q->whereNull('start_date')->orWhereDate('start_date', '<=', $appointmentDate));
+            }
+            if (Schema::hasColumn('staff_schedules', 'end_date')) {
+                $query->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', $appointmentDate));
             }
 
             $weeklySchedules = $query
@@ -968,7 +1073,7 @@ class CalendarController extends Controller
             if (!$schedule && $weeklySchedules->count() > 0) {
                 return [
                     'available' => false,
-                    'message' => 'Staff is not available at the selected time.'
+                    'message' => 'The selected staff member is not available for this date and time.'
                 ];
             }
         }
@@ -976,7 +1081,7 @@ class CalendarController extends Controller
         if (!$schedule) {
             return [
                 'available' => false,
-                'message' => 'Staff is not available at the selected time.'
+                'message' => 'The selected staff member is not available for this date and time.'
             ];
         }
 
@@ -989,7 +1094,7 @@ class CalendarController extends Controller
                 if ($startTime->lt($breakEnd) && $endTime->gt($breakStart)) {
                     return [
                         'available' => false,
-                        'message' => 'Staff is not available at the selected time.'
+                        'message' => 'The selected staff member is not available for this date and time.'
                     ];
                 }
             }
@@ -1222,8 +1327,8 @@ class CalendarController extends Controller
     private function allowedTransitions(): array
     {
         return [
-            'pending'   => ['booked', 'completed', 'cancelled', 'no_show'],
-            'booked'    => ['completed', 'cancelled', 'no_show'],
+            'pending'   => ['booked', 'confirmed', 'completed', 'cancelled', 'no_show'],
+            'booked'    => ['confirmed', 'completed', 'cancelled', 'no_show'],
             'confirmed' => ['booked', 'completed', 'cancelled', 'no_show'],
             'completed' => [],
             'cancelled' => [],

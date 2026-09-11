@@ -34,7 +34,7 @@ use App\Http\Controllers\InsuranceInformationController;
 |
 */
 
-Route::redirect('/', '/login');
+
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->name('login.store');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -44,10 +44,12 @@ Route::post('online-booking', [OnlineBookingController::class, 'store'])->name('
 Route::get('online-booking/confirmation/{appointment}', [OnlineBookingController::class, 'confirmation'])->name('online-booking.confirmation');
 
 Route::middleware(['auth:staff', 'active.staff'])->group(function () {
+Route::get('/', [CalendarController::class, 'dashboard'])->name('home');
 Route::get('dashboard', [CalendarController::class, 'dashboard'])->name('dashboard');
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
 Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
 Route::get('/calendar/staff-schedules', [CalendarController::class, 'getStaffSchedules'])->name('calendar.staffSchedules');
+Route::get('/calendar/available-staff', [CalendarController::class, 'getAvailableStaff'])->name('calendar.availableStaff');
 Route::get('/calendar/clients/search', [CalendarController::class, 'searchClients'])->name('calendar.clients.search');
 Route::get('/calendar/clients/{id}/snapshot', [CalendarController::class, 'clientSnapshot'])->name('calendar.clients.snapshot');
 Route::post('/calendar/appointments', [CalendarController::class, 'storeAppointment'])->name('calendar.store');
