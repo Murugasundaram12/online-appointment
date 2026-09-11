@@ -2150,7 +2150,10 @@
                 });
             }
 
-            function hydrateServiceOptionsForSelectedStaff(preserveValue = null) {
+            function hydrateServiceOptionsForSelectedStaff(preserveValue = undefined) {
+                const currentServiceId = preserveValue !== undefined
+                    ? preserveValue
+                    : (serviceField ? serviceField.value : '');
                 const staffId = staffField.value;
                 const matching = servicesForStaff(staffId);
                 const placeholder = staffId
@@ -2158,10 +2161,10 @@
                     : 'Select staff first';
                 fillSelect(serviceField, matching, placeholder);
 
-                if (preserveValue && hasSelectOptionValue(serviceField, preserveValue)) {
-                    serviceField.value = String(preserveValue);
-                } else if (preserveValue) {
-                    const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(preserveValue));
+                if (currentServiceId && hasSelectOptionValue(serviceField, currentServiceId)) {
+                    serviceField.value = String(currentServiceId);
+                } else if (currentServiceId) {
+                    const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(currentServiceId));
                     if (svc) {
                         ensureSelectOption(serviceField, svc.id, svc.name);
                         serviceField.value = String(svc.id);
@@ -2338,7 +2341,7 @@
                         }
                     }
 
-                    hydrateServiceOptionsForSelectedStaff();
+                    hydrateServiceOptionsForSelectedStaff(serviceId);
                 } catch (err) {
                     if (err.name === 'AbortError') return;
                     console.error('Error refreshing staff availability', err);
