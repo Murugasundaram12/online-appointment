@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\Staff;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -107,6 +108,19 @@ class StaffController extends Controller
 
     public function destroy(string $id)
     {
+        $currentStaffId = Auth::guard('staff')->id();
+        if ($currentStaffId !== null && (int) $id === (int) $currentStaffId) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'message' => 'You cannot delete your own account while you are logged in.',
+                ], 422);
+            }
+
+            return redirect()
+                ->route('staff.index')
+                ->with('error', 'You cannot delete your own account while you are logged in.');
+        }
+
         $staff = Staff::withCount(['appointments', 'payrolls'])->findOrFail($id);
 
         if ($staff->appointments_count > 0 || $staff->payrolls_count > 0) {

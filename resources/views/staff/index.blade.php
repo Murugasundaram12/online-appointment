@@ -97,11 +97,16 @@
                                             <i class='bx bx-pencil'></i>
                                         </button>
                                         <form action="{{ route('staff.destroy', $staff->id) }}" method="POST" class="d-inline"
-                                            onsubmit="return confirm('Are you sure?');">
+                                            id="delete-staff-form-{{ $staff->id }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-link text-muted p-0"><i
-                                                    class='bx bx-trash'></i></button>
+                                            <button type="button" class="btn btn-link text-muted p-0 js-delete-staff"
+                                                data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
+                                                data-staff-name="{{ $staff->name }}"
+                                                data-form-id="delete-staff-form-{{ $staff->id }}"
+                                                title="Delete staff">
+                                                <i class='bx bx-trash'></i>
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
@@ -403,32 +408,88 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Staff Confirmation Modal -->
+    <div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-labelledby="deleteStaffModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteStaffModalLabel">Delete Staff</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0 text-muted">
+                        Are you sure you want to delete <strong class="text-dark" id="deleteStaffModalName"></strong>? This action cannot be undone.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteStaffConfirmBtn">Delete Staff</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const editForm = document.getElementById('edit-staff-form');
             const buttons = document.querySelectorAll('.js-edit-staff');
-            if (!editForm || buttons.length === 0) return;
+            if (editForm && buttons.length > 0) {
+                buttons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        editForm.action = btn.dataset.updateUrl || '#';
+                        document.getElementById('edit-staff-name').value = btn.dataset.name || '';
+                        document.getElementById('edit-staff-email').value = btn.dataset.email || '';
+                        document.getElementById('edit-staff-access-level').value = btn.dataset.access_level || '';
+                        if (document.getElementById('edit-staff-registration-number')) document.getElementById('edit-staff-registration-number').value = btn.dataset.registration_number || '';
+                        if (document.getElementById('edit-staff-designation')) document.getElementById('edit-staff-designation').value = btn.dataset.designation || '';
+                        document.getElementById('edit-staff-category').value = btn.dataset.category || '';
+                        document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
+                        document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';
+                        document.getElementById('edit-staff-password').value = '';
+                        document.getElementById('edit-staff-is-active').value = btn.dataset.is_active || '0';
+                        document.getElementById('edit-staff-phone').value = btn.dataset.phone || '';
+                        document.getElementById('edit-staff-bio').value = btn.dataset.bio || '';
+                        document.getElementById('edit-staff-color').value = btn.dataset.color || '';
+                    });
+                });
+            }
 
-            buttons.forEach((btn) => {
+            // Delete staff confirmation modal
+            let activeDeleteForm = null;
+            const deleteModalName = document.getElementById('deleteStaffModalName');
+            const deleteConfirmBtn = document.getElementById('deleteStaffConfirmBtn');
+            const deleteButtons = document.querySelectorAll('.js-delete-staff');
+            const deleteModalEl = document.getElementById('deleteStaffModal');
+
+            deleteButtons.forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    editForm.action = btn.dataset.updateUrl || '#';
-                    document.getElementById('edit-staff-name').value = btn.dataset.name || '';
-                    document.getElementById('edit-staff-email').value = btn.dataset.email || '';
-                    document.getElementById('edit-staff-access-level').value = btn.dataset.access_level || '';
-                    if (document.getElementById('edit-staff-registration-number')) document.getElementById('edit-staff-registration-number').value = btn.dataset.registration_number || '';
-                    if (document.getElementById('edit-staff-designation')) document.getElementById('edit-staff-designation').value = btn.dataset.designation || '';
-                    document.getElementById('edit-staff-category').value = btn.dataset.category || '';
-                    document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
-                    document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';
-                    document.getElementById('edit-staff-password').value = '';
-                    document.getElementById('edit-staff-is-active').value = btn.dataset.is_active || '0';
-                    document.getElementById('edit-staff-phone').value = btn.dataset.phone || '';
-                    document.getElementById('edit-staff-bio').value = btn.dataset.bio || '';
-                    document.getElementById('edit-staff-color').value = btn.dataset.color || '';
+                    const formId = btn.dataset.formId;
+                    activeDeleteForm = document.getElementById(formId);
+                    if (deleteModalName) {
+                        deleteModalName.textContent = btn.dataset.staffName || 'this staff member';
+                    }
                 });
             });
+
+            if (deleteConfirmBtn) {
+                deleteConfirmBtn.addEventListener('click', () => {
+                    if (activeDeleteForm) {
+                        deleteConfirmBtn.disabled = true;
+                        activeDeleteForm.submit();
+                    }
+                });
+            }
+
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('hidden.bs.modal', () => {
+                    activeDeleteForm = null;
+                    if (deleteConfirmBtn) {
+                        deleteConfirmBtn.disabled = false;
+                    }
+                });
+            }
         });
     </script>
 @endpush
