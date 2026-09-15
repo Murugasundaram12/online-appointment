@@ -141,6 +141,10 @@
             </div>
         </div>
     </div>
+    @include('partials.alerts')
+    <div class="toast-container app-toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     <script>
         document.getElementById('togglePassword').addEventListener('click', () => {
             const input = document.getElementById('password');

@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
+    function initApp() {
     const toastContainer = document.querySelector(".app-toast-container");
 
     const iconMap = {
@@ -10,46 +11,73 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     window.AppToast = {
-        show({ type = "info", title = "Notice", message = "", delay = 4200 } = {}) {
-            if (!toastContainer || !window.bootstrap) return;
-            const normalizedType = type === "error" ? "danger" : type;
+        show({ type = "info", title, message = "", delay = 5500 } = {}) {
+            let container = document.querySelector(".app-toast-container");
+            if (!container) {
+                container = document.createElement("div");
+                container.className = "toast-container app-toast-container position-fixed top-0 end-0 p-3";
+                container.setAttribute("aria-live", "polite");
+                container.setAttribute("aria-atomic", "true");
+                document.body.appendChild(container);
+            }
+            if (!window.bootstrap || !window.bootstrap.Toast) return;
+
+            const normalizedType = (type === "error" || type === "danger") ? "danger" : type;
+            const defaultTitles = {
+                danger: "Error",
+                success: "Success",
+                warning: "Warning",
+                info: "Notice"
+            };
+            const resolvedTitle = title || defaultTitles[normalizedType] || "Notice";
+
             const toastEl = document.createElement("div");
             toastEl.className = `toast app-toast app-toast-${normalizedType}`;
             toastEl.setAttribute("role", normalizedType === "danger" ? "alert" : "status");
             toastEl.setAttribute("aria-live", normalizedType === "danger" ? "assertive" : "polite");
             toastEl.setAttribute("aria-atomic", "true");
 
-            const header = document.createElement("div");
-            header.className = "toast-header";
+            const card = document.createElement("div");
+            card.className = "app-toast-card";
 
-            const mark = document.createElement("span");
-            mark.className = "app-toast-mark";
-            mark.setAttribute("aria-hidden", "true");
+            const iconBox = document.createElement("div");
+            iconBox.className = "app-toast-icon-box";
+            iconBox.setAttribute("aria-hidden", "true");
             const icon = document.createElement("i");
             icon.className = `bx ${iconMap[normalizedType] || iconMap.info}`;
-            mark.appendChild(icon);
+            iconBox.appendChild(icon);
 
-            const strong = document.createElement("strong");
-            strong.className = "me-auto";
-            strong.textContent = title;
+            const content = document.createElement("div");
+            content.className = "app-toast-content";
 
-            const close = document.createElement("button");
-            close.type = "button";
-            close.className = "btn-close";
-            close.setAttribute("data-bs-dismiss", "toast");
-            close.setAttribute("aria-label", "Close");
+            const titleEl = document.createElement("div");
+            titleEl.className = "app-toast-title";
+            titleEl.textContent = resolvedTitle;
 
-            const body = document.createElement("div");
-            body.className = "toast-body";
-            body.textContent = message;
+            const messageEl = document.createElement("div");
+            messageEl.className = "app-toast-message";
+            messageEl.textContent = message;
 
-            header.append(mark, strong, close);
-            toastEl.append(header, body);
-            toastContainer.appendChild(toastEl);
+            content.appendChild(titleEl);
+            content.appendChild(messageEl);
+
+            const closeBtn = document.createElement("button");
+            closeBtn.type = "button";
+            closeBtn.className = "btn-close app-toast-close";
+            closeBtn.setAttribute("data-bs-dismiss", "toast");
+            closeBtn.setAttribute("aria-label", "Close");
+
+            card.appendChild(iconBox);
+            card.appendChild(content);
+            card.appendChild(closeBtn);
+
+            toastEl.appendChild(card);
+            container.appendChild(toastEl);
 
             const toast = new bootstrap.Toast(toastEl, { delay, autohide: delay > 0 });
             toastEl.addEventListener("hidden.bs.toast", () => toastEl.remove());
             toast.show();
+            return toast;
         }
     };
 
@@ -136,12 +164,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    const shownAlerts = new Set();
     document.querySelectorAll("[data-app-alert-type]").forEach((alertEl) => {
-        const message = alertEl.textContent.replace(/\s+/g, " ").trim();
-        if (message) {
+        const message = alertEl.dataset.appAlertMessage ||
+            alertEl.querySelector('.app-alert-message')?.textContent?.trim() ||
+            alertEl.querySelector('div:not([class])')?.textContent?.trim() ||
+            alertEl.textContent.replace(/\s+/g, " ").trim();
+        const type = alertEl.dataset.appAlertType || "info";
+        const key = `${type}:${message}`;
+        if (message && !shownAlerts.has(key)) {
+            shownAlerts.add(key);
             window.AppToast.show({
-                type: alertEl.dataset.appAlertType || "info",
-                title: alertEl.dataset.appAlertTitle || "Notice",
+                type: type,
+                title: alertEl.dataset.appAlertTitle || (type === "danger" ? "Error" : "Notice"),
                 message
             });
         }
@@ -315,4 +350,11 @@ document.addEventListener("DOMContentLoaded", function () {
             e.target.querySelectorAll('.js-phone-input, input[name="phone"], input[name="alternate_phone"], input[name="emergency_phone"]').forEach(applyPhoneFormatting);
         }
     });
-});
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+        initApp();
+    }
+})();

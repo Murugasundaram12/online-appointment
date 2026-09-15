@@ -15,6 +15,7 @@
 </head>
 <body>
     <main>
+        @include('partials.alerts')
         @yield('content')
     </main>
     <div class="toast-container app-toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
