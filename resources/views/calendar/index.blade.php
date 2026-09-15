@@ -1341,10 +1341,10 @@
             let monthCalendar = null;
             if (viewSelect && viewSelect.value) currentView = viewSelect.value;
 
-            function showPageNotice(message, type = 'danger', timeout = 4200) {
+            function showPageNotice(message, type = 'danger', timeout = 5500) {
                 window.AppToast?.show({
                     type: type === 'success' ? 'success' : 'danger',
-                    title: type === 'success' ? 'Success' : 'Calendar notice',
+                    title: type === 'success' ? 'Success' : 'Error',
                     message,
                     delay: timeout
                 });
@@ -2335,17 +2335,46 @@
                         const hadPreviousStaff = Boolean(currentStaffId);
                         staffField.value = '';
                         if (hadPreviousStaff && !silent) {
-                            showPageNotice('The selected staff member is not available for this date and time.');
+                            showPageNotice('The selected staff member is not available for this date and time.', 'danger');
                         } else if (!availableStaff.length && !silent) {
-                            showPageNotice('No staff scheduled for the selected time.');
+                            showPageNotice('No staff is scheduled for the selected date and time. Please choose another time.', 'danger');
                         }
                     }
 
                     hydrateServiceOptionsForSelectedStaff(serviceId);
+                    return availableStaff;
                 } catch (err) {
-                    if (err.name === 'AbortError') return;
+                    if (err.name === 'AbortError') return [];
                     console.error('Error refreshing staff availability', err);
+                    return [];
                 }
+            }
+
+            async function checkStaffAvailability(startDate, endDate, locationId = '', serviceId = '', excludeApptId = '') {
+                const startVal = startDate instanceof Date ? toInputDateTime(startDate) : String(startDate);
+                const endVal = endDate instanceof Date ? toInputDateTime(endDate) : String(endDate);
+
+                const params = new URLSearchParams({
+                    start_time: startVal,
+                    end_time: endVal,
+                });
+                if (locationId) params.set('location_id', locationId);
+                if (serviceId) params.set('service_id', serviceId);
+                if (excludeApptId) params.set('exclude_appointment_id', excludeApptId);
+
+                const res = await fetch(`${calendarUrl('available-staff')}?${params.toString()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to check staff availability');
+                }
+
+                const data = await res.json();
+                return Array.isArray(data.staff) ? data.staff : [];
             }
 
             let apptClientTomSelect = null;
@@ -2497,28 +2526,75 @@
                 statusField.addEventListener('change', toggleCancellationReasonField);
             }
 
-            function openAppointmentModalForCreate(startDate, endDate, staffId = '') {
-                hideAppointmentDetailsCard();
-                modalTitle.textContent = 'New Appointment';
-                setAppointmentReadOnlyMode(false);
-                apptIdField.value = '';
-                hydrateFormOptions();
+            let isOpeningAppointmentModal = false;
 
-                startField.value = toInputDateTime(startDate);
-                endField.value = toInputDateTime(endDate);
-                clearNewClientFields();
-                serviceField.value = '';
-                clientField.value = '';
-                statusField.value = 'booked';
-                notesField.value = '';
-                const reasonInput = document.getElementById('appt-cancellation-reason');
-                if (reasonInput) reasonInput.value = '';
-                toggleCancellationReasonField();
+            async function openAppointmentModalForCreate(startDate, endDate, staffId = '') {
+                if (isOpeningAppointmentModal) return false;
+                isOpeningAppointmentModal = true;
 
-                appointmentModal.show();
+                const startVal = startDate instanceof Date ? toInputDateTime(startDate) : String(startDate);
+                const endVal = endDate instanceof Date ? toInputDateTime(endDate) : String(endDate);
 
-                const desired = staffId ? String(staffId) : '';
-                refreshStaffAvailabilityForCurrentSlot({ preferredStaffId: desired, silent: true });
+                const filterLocation = document.getElementById('calendar-filter-location')?.value;
+                const locationId = (locationField && locationField.value) ? locationField.value : (filterLocation || '');
+
+                try {
+                    const availableStaff = await checkStaffAvailability(startVal, endVal, locationId);
+
+                    if (!availableStaff || availableStaff.length === 0) {
+                        showPageNotice('No staff is scheduled for the selected date and time. Please choose another time.', 'danger');
+                        return false;
+                    }
+
+                    hideAppointmentDetailsCard();
+                    modalTitle.textContent = 'New Appointment';
+                    setAppointmentReadOnlyMode(false);
+                    apptIdField.value = '';
+                    hydrateFormOptions();
+
+                    startField.value = startVal;
+                    endField.value = endVal;
+                    if (locationId && locationField && hasSelectOptionValue(locationField, locationId)) {
+                        locationField.value = String(locationId);
+                    }
+                    clearNewClientFields();
+                    serviceField.value = '';
+                    clientField.value = '';
+                    statusField.value = 'booked';
+                    notesField.value = '';
+                    const reasonInput = document.getElementById('appt-cancellation-reason');
+                    if (reasonInput) reasonInput.value = '';
+                    toggleCancellationReasonField();
+
+                    fillSelect(
+                        staffField,
+                        availableStaff,
+                        'Select staff'
+                    );
+
+                    const desired = staffId ? String(staffId) : '';
+                    if (desired && availableStaff.some(s => String(s.id) === desired)) {
+                        staffField.value = desired;
+                    } else if (availableStaff.length === 1) {
+                        staffField.value = String(availableStaff[0].id);
+                    } else {
+                        staffField.value = '';
+                    }
+
+                    if (staffField.value) {
+                        syncLocationFromStaff();
+                    }
+                    hydrateServiceOptionsForSelectedStaff();
+
+                    appointmentModal.show();
+                    return true;
+                } catch (err) {
+                    console.error('Failed to verify staff availability before opening modal', err);
+                    showPageNotice('Unable to check staff availability for the selected time.', 'danger');
+                    return false;
+                } finally {
+                    isOpeningAppointmentModal = false;
+                }
             }
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
@@ -3233,11 +3309,16 @@
 
             const btnNewAppt = document.getElementById('btn-new-appointment');
             if (btnNewAppt) {
-                btnNewAppt.addEventListener('click', function () {
+                btnNewAppt.addEventListener('click', async function () {
                     const now = new Date();
                     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
                     const end = new Date(now.getTime() + 30 * 60000);
-                    openAppointmentModalForCreate(now, end);
+                    try {
+                        window.AppButtonLoading?.set(btnNewAppt, 'Checking...');
+                        await openAppointmentModalForCreate(now, end);
+                    } finally {
+                        window.AppButtonLoading?.reset(btnNewAppt);
+                    }
                 });
             }
 
@@ -3292,14 +3373,17 @@
                                     a.href = '#';
                                     a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
                                     a.innerHTML = `<div><strong>${escapeHtml(c.name)}</strong><br><small class="text-muted">${escapeHtml(c.phone || c.email || '')}</small></div><button class="btn btn-sm btn-outline-primary">Select</button>`;
-                                    a.addEventListener('click', function (ev) {
+                                    a.addEventListener('click', async function (ev) {
                                         ev.preventDefault();
                                         clientField.value = String(c.id);
                                         if (clientSearchModal) clientSearchModal.hide();
                                         if (step1SlotContext) {
-                                            openAppointmentModalForCreate(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId);
+                                            await openAppointmentModalForCreate(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId);
                                         } else {
-                                            appointmentModal.show();
+                                            const now = new Date();
+                                            now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+                                            const end = new Date(now.getTime() + 30 * 60000);
+                                            await openAppointmentModalForCreate(now, end);
                                         }
                                     });
                                     step1Results.appendChild(a);
@@ -3471,7 +3555,12 @@
                     preferredStaffId = availableStaff.length > 0 ? availableStaff[0].id : '';
                 }
 
-                openAppointmentModalForCreate(selectedDate, endDate, preferredStaffId);
+                col.style.cursor = 'wait';
+                try {
+                    await openAppointmentModalForCreate(selectedDate, endDate, preferredStaffId);
+                } finally {
+                    col.style.cursor = '';
+                }
             }
             // Quick status action buttons on details card
             document.querySelectorAll('#card-quick-actions .btn-quick-status').forEach(btn => {
