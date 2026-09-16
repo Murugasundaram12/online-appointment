@@ -128,7 +128,7 @@
     </div>
     <!-- Add Staff Modal -->
     <div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addStaffModalLabel">Add Staff</h5>
@@ -171,7 +171,9 @@
                                 </div>
                             </div>
                         </div>
-                            <div class="col-md-6">
+
+                        <div class="row">
+                            <div class="col-md-12">
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
