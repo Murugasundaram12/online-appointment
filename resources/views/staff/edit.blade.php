@@ -81,10 +81,13 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="password" class="form-label">Password (Leave blank to keep current)</label>
+                            <label for="editStaffPagePassword" class="form-label">Password (Leave blank to keep current)</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="password" name="password">
-                                <button class="btn btn-outline-secondary js-toggle-password-btn" type="button" aria-label="Toggle password visibility"><i class="bx bx-show"></i></button>
+                                <input type="password" class="form-control" id="editStaffPagePassword" name="password"
+                                    placeholder="Leave blank to keep current" autocomplete="new-password">
+                                <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
+                                    id="toggleEditStaffPagePassword" data-target="#editStaffPagePassword"
+                                    aria-label="Show password"><i class="bx bx-show"></i></button>
                             </div>
                         </div>
                         <div class="col-12">

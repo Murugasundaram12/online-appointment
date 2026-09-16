@@ -258,6 +258,39 @@
     }
 
     function initPasswordToggles() {
+        // Handle all explicit toggle buttons
+        document.querySelectorAll('.js-toggle-password-btn, #togglePassword, [data-password-toggle]').forEach((button) => {
+            if (button.dataset.toggleBound === "1") return;
+            button.dataset.toggleBound = "1";
+
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const targetSelector = button.getAttribute('data-target');
+                let input = targetSelector ? document.querySelector(targetSelector) : null;
+                if (!input) {
+                    const parent = button.closest('.input-group') || button.parentElement;
+                    input = parent ? parent.querySelector('input') : null;
+                }
+                if (!input) return;
+
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+
+                const icon = button.querySelector('i');
+                if (icon) {
+                    if (isPassword) {
+                        icon.className = 'bx bx-hide';
+                    } else {
+                        icon.className = 'bx bx-show';
+                    }
+                }
+                button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            });
+        });
+
+        // Auto-wrap any standalone password inputs that don't have a toggle button
         document.querySelectorAll('input[type="password"]').forEach((input) => {
             if (input.dataset.passwordToggleInit === "1") return;
             input.dataset.passwordToggleInit = "1";
@@ -274,19 +307,23 @@
                 button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'btn btn-outline-secondary js-toggle-password-btn';
-                button.setAttribute('aria-label', 'Toggle password visibility');
+                button.setAttribute('aria-label', 'Show password');
                 button.innerHTML = '<i class="bx bx-show"></i>';
                 wrapper.appendChild(button);
-            }
 
-            button.addEventListener('click', () => {
-                const isPassword = input.type === 'password';
-                input.type = isPassword ? 'text' : 'password';
-                const icon = button.querySelector('i');
-                if (icon) {
-                    icon.className = isPassword ? 'bx bx-hide' : 'bx bx-show';
-                }
-            });
+                button.dataset.toggleBound = "1";
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bx bx-hide' : 'bx bx-show';
+                    }
+                    button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                });
+            }
         });
     }
     initPasswordToggles();

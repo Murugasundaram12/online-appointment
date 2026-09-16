@@ -124,8 +124,8 @@
                         <div class="input-group">
                             <input type="password" id="password" name="password" class="form-control form-control-lg"
                                 required autocomplete="current-password">
-                            <button class="btn btn-white" type="button" id="togglePassword"
-                                aria-label="Show password"><i class='bx bx-show'></i></button>
+                            <button class="btn btn-white js-toggle-password-btn" type="button" id="togglePassword"
+                                data-target="#password" aria-label="Show password"><i class='bx bx-show'></i></button>
                         </div>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -146,10 +146,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     <script>
-        document.getElementById('togglePassword').addEventListener('click', () => {
-            const input = document.getElementById('password');
-            input.type = input.type === 'password' ? 'text' : 'password';
-        });
         document.getElementById('loginForm').addEventListener('submit', () => {
             const button = document.getElementById('loginButton');
             button.textContent = 'Signing in...';

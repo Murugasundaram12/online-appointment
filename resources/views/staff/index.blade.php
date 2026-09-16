@@ -224,11 +224,13 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                         <label class="form-label">Password <span class="required-mark">*</span></label>
+                                         <label class="form-label" for="addStaffPassword">Password <span class="required-mark">*</span></label>
                                          <div class="input-group">
-                                             <input type="password" class="form-control" name="password"
-                                                 placeholder="Enter password" required>
-                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button" aria-label="Toggle password visibility"><i class="bx bx-show"></i></button>
+                                             <input type="password" class="form-control" id="addStaffPassword" name="password"
+                                                 placeholder="Enter password" autocomplete="new-password" required>
+                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
+                                                 id="toggleAddStaffPassword" data-target="#addStaffPassword"
+                                                 aria-label="Show password"><i class="bx bx-show"></i></button>
                                          </div>
                                     </div>
                                 </div>
@@ -374,11 +376,13 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                         <label class="form-label">Password</label>
+                                         <label class="form-label" for="editStaffPassword">Password</label>
                                          <div class="input-group">
-                                             <input type="password" class="form-control" id="edit-staff-password"
-                                                 name="password" placeholder="Leave blank to keep current">
-                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button" aria-label="Toggle password visibility"><i class="bx bx-show"></i></button>
+                                             <input type="password" class="form-control" id="editStaffPassword"
+                                                 name="password" placeholder="Leave blank to keep current" autocomplete="new-password">
+                                             <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
+                                                 id="toggleEditStaffPassword" data-target="#editStaffPassword"
+                                                 aria-label="Show password"><i class="bx bx-show"></i></button>
                                          </div>
                                     </div>
                                 </div>
@@ -458,7 +462,13 @@
                         }
                         document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
                         document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';
-                        document.getElementById('edit-staff-password').value = '';
+                        const editPass = document.getElementById('editStaffPassword') || document.getElementById('edit-staff-password');
+                        if (editPass) {
+                            editPass.value = '';
+                            editPass.type = 'password';
+                        }
+                        const editIcon = document.querySelector('#toggleEditStaffPassword i, #edit-staff-password-toggle i');
+                        if (editIcon) editIcon.className = 'bx bx-show';
                         document.getElementById('edit-staff-is-active').value = btn.dataset.is_active || '0';
                         document.getElementById('edit-staff-phone').value = btn.dataset.phone || '';
                         document.getElementById('edit-staff-bio').value = btn.dataset.bio || '';
@@ -499,6 +509,32 @@
                     if (deleteConfirmBtn) {
                         deleteConfirmBtn.disabled = false;
                     }
+                });
+            }
+
+            // Modal hide reset handlers for password fields
+            const addModalEl = document.getElementById('addStaffModal');
+            if (addModalEl) {
+                addModalEl.addEventListener('hidden.bs.modal', () => {
+                    const addPass = document.getElementById('addStaffPassword') || document.getElementById('add-staff-password');
+                    if (addPass) {
+                        addPass.type = 'password';
+                    }
+                    const addIcon = document.querySelector('#toggleAddStaffPassword i, #add-staff-password-toggle i');
+                    if (addIcon) addIcon.className = 'bx bx-show';
+                });
+            }
+
+            const editModalEl = document.getElementById('editStaffModal');
+            if (editModalEl) {
+                editModalEl.addEventListener('hidden.bs.modal', () => {
+                    const editPass = document.getElementById('editStaffPassword') || document.getElementById('edit-staff-password');
+                    if (editPass) {
+                        editPass.value = '';
+                        editPass.type = 'password';
+                    }
+                    const editIcon = document.querySelector('#toggleEditStaffPassword i, #edit-staff-password-toggle i');
+                    if (editIcon) editIcon.className = 'bx bx-show';
                 });
             }
         });
