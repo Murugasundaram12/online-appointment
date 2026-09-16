@@ -96,18 +96,20 @@
                                             data-color="{{ $staff->color }}">
                                             <i class='bx bx-pencil'></i>
                                         </button>
-                                        <form action="{{ route('staff.destroy', $staff->id) }}" method="POST" class="d-inline"
-                                            id="delete-staff-form-{{ $staff->id }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" class="btn btn-link text-muted p-0 js-delete-staff"
-                                                data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
-                                                data-staff-name="{{ $staff->name }}"
-                                                data-form-id="delete-staff-form-{{ $staff->id }}"
-                                                title="Delete staff">
-                                                <i class='bx bx-trash'></i>
-                                            </button>
-                                        </form>
+                                        @if(!$staff->isSuperAdmin())
+                                            <form action="{{ route('staff.destroy', $staff->id) }}" method="POST" class="d-inline"
+                                                id="delete-staff-form-{{ $staff->id }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-link text-muted p-0 js-delete-staff"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
+                                                    data-staff-name="{{ $staff->name }}"
+                                                    data-form-id="delete-staff-form-{{ $staff->id }}"
+                                                    title="Delete staff">
+                                                    <i class='bx bx-trash'></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

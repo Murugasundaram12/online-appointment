@@ -37,6 +37,13 @@ class Staff extends Authenticatable
         'is_active' => 'boolean'
     ];
 
+    public const SUPER_ADMIN_EMAIL = 'udhayakumarn@gmail.com';
+
+    public function isSuperAdmin(): bool
+    {
+        return strtolower(trim((string) $this->email)) === self::SUPER_ADMIN_EMAIL;
+    }
+
     public function location()
     {
         return $this->belongsTo(Location::class);

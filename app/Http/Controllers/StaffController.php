@@ -114,6 +114,20 @@ class StaffController extends Controller
 
     public function destroy(string $id)
     {
+        $staff = Staff::withCount(['appointments', 'payrolls'])->findOrFail($id);
+
+        if ($staff->isSuperAdmin()) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'message' => 'Super Admin account cannot be deleted.',
+                ], 422);
+            }
+
+            return redirect()
+                ->route('staff.index')
+                ->with('error', 'Super Admin account cannot be deleted.');
+        }
+
         $currentStaffId = Auth::guard('staff')->id();
         if ($currentStaffId !== null && (int) $id === (int) $currentStaffId) {
             if (request()->expectsJson()) {
@@ -126,8 +140,6 @@ class StaffController extends Controller
                 ->route('staff.index')
                 ->with('error', 'You cannot delete your own account while you are logged in.');
         }
-
-        $staff = Staff::withCount(['appointments', 'payrolls'])->findOrFail($id);
 
         if ($staff->appointments_count > 0 || $staff->payrolls_count > 0) {
             return redirect()
