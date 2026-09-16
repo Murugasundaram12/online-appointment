@@ -21,7 +21,8 @@ class FormRecordController extends Controller
                 });
             })
             ->latest()
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         return view('form_records.index', compact('formRecords'));
     }
 

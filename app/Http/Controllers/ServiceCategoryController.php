@@ -13,12 +13,16 @@ class ServiceCategoryController extends Controller
         $query = ServiceCategory::withCount('services');
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%")
+            $search = trim($request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
-        $categories = $query->orderBy('name')->paginate(15);
+        $categories = $query->orderBy('name')
+            ->paginate($this->perPage($request, 15))
+            ->withQueryString();
 
         return view('categories.index', compact('categories'));
     }

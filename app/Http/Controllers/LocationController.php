@@ -16,7 +16,8 @@ class LocationController extends Controller
                         ->orWhere('address', 'like', "%{$search}%");
                 });
             })
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         return view('locations.index', compact('locations'));
     }
 

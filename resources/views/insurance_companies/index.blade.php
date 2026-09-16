@@ -27,6 +27,21 @@
             </div>
         @endif
 
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$insuranceCompanies" searchAction="{{ route('insurance-companies.index') }}" searchPlaceholder="Search insurance companies">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('insurance-companies.index', ['per_page' => request('per_page', $insuranceCompanies->perPage())])"
+                    clearLabel="Clear search" />
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
+                    <i class="bx bx-plus me-1"></i>Add Insurance Company
+                </a>
+            </x-slot>
+        </x-list-toolbar>
+
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-0">
                 <div class="table-responsive">

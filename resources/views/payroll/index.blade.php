@@ -85,9 +85,9 @@
             </div>
         </div>
 
-        <x-list-toolbar :paginator="$payrolls" searchAction="{{ route('payroll.index') }}" searchPlaceholder="Staff, payroll ID, status" toolbarClass="no-print">
+        <x-list-toolbar :paginator="$payrolls" searchAction="{{ route('payroll.index') }}" searchPlaceholder="Staff, payroll ID, status" toolbarClass="no-print" :ignore-params="['staff_id', 'status', 'period_start', 'period_end']">
             <x-slot name="formExtra">
-                <div class="d-flex flex-column flex-lg-row gap-2 gap-lg-3 flex-wrap">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
                     <select class="form-select form-select-sm" name="staff_id" style="width: auto;">
                         <option value="">All staff</option>
                         @foreach($staff as $member)
@@ -109,6 +109,11 @@
                         <input type="date" name="period_end" class="form-control form-control-sm" value="{{ request('period_end') }}">
                     </div>
                     <button class="btn btn-primary btn-sm">Filter</button>
+                    @if(request()->filled('search') || request()->filled('staff_id') || request()->filled('status') || request()->filled('period_start') || request()->filled('period_end'))
+                        <a href="{{ route('payroll.index', ['per_page' => request('per_page', $payrolls->perPage())]) }}" class="btn btn-light border btn-sm text-muted">
+                            <i class='bx bx-x me-1'></i>Clear
+                        </a>
+                    @endif
                 </div>
             </x-slot>
             <x-slot name="actions">

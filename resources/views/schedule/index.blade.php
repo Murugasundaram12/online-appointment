@@ -310,6 +310,15 @@ if (!function_exists('ordinalSuffix')) {
                             </select>
                         </div>
 
+                        @if(($selectedRange ?? 'this_week') !== 'this_week' || !empty($fromDate) || !empty($toDate) || !empty($locationId) || !empty($statusFilter))
+                            <div class="col-12 col-sm-6 col-md-auto">
+                                <label class="small text-muted fw-bold d-block mb-1">&nbsp;</label>
+                                <a href="{{ route('schedule.index', array_filter(['staff_id' => $currentStaff->id ?? null])) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bx bx-x me-1"></i>Reset
+                                </a>
+                            </div>
+                        @endif
+
                         <div class="col-12 col-md-auto ms-auto text-end">
                             <a href="{{ route('schedule.create', ['staff_id' => $currentStaff->id ?? '']) }}"
                                 class="btn btn-primary btn-sm px-4 fw-semibold rounded-pill">+ New Schedule</a>

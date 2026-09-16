@@ -20,7 +20,7 @@ class SubscriptionController extends Controller
         }
         $plans = SubscriptionPlan::where('is_active', true)->get();
         $currentSubscription = Subscription::with('plan')->latest()->first();
-        $history = Subscription::with('plan')->latest()->paginate($this->perPage($request));
+        $history = Subscription::with('plan')->latest()->paginate($this->perPage($request))->withQueryString();
         return view('subscription.index', compact('plans', 'currentSubscription', 'history'));
     }
 

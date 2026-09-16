@@ -31,11 +31,17 @@ class InvoiceController extends Controller
                 });
             })
             ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->input('search');
+                $search = trim((string) $request->input('search'));
                 $query->where(function ($q) use ($search) {
-                    $q->where('id', is_numeric($search) ? (int) $search : 0)
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('id', is_numeric($search) ? (int) $search : 0)
                         ->orWhereHas('client', function ($cq) use ($search) {
-                            $cq->where('name', 'like', "%{$search}%");
+                            $cq->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('staff', function ($sq) use ($search) {
+                            $sq->where('name', 'like', "%{$search}%");
                         })
                         ->orWhere('status', 'like', "%{$search}%");
                 });
@@ -44,7 +50,8 @@ class InvoiceController extends Controller
                 $query->where('status', $request->input('status'));
             })
             ->latest()
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return view('invoices.index', compact('invoices'));
     }

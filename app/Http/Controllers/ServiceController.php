@@ -17,10 +17,12 @@ class ServiceController extends Controller
                         ->orWhere('description', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('category_id'), function ($query) use ($request) {
-                $query->where('service_category_id', $request->input('category_id'));
+            ->when($request->filled('category_id') || $request->filled('category'), function ($query) use ($request) {
+                $catId = $request->input('category_id') ?: $request->input('category');
+                $query->where('service_category_id', $catId);
             })
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         $categories = \App\Models\ServiceCategory::all();
         return view('services.index', compact('services', 'categories'));
     }

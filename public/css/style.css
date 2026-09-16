@@ -366,6 +366,24 @@ nav.navbar.navbar-expand-lg.navbar-light h1 {
     transform: translateY(-1px);
 }
 
+/* List Toolbar Card Dropdown Overflow & Stacking */
+.list-toolbar-card,
+.card.list-toolbar-card {
+    overflow: visible !important;
+    position: relative;
+    z-index: 20;
+}
+
+.list-toolbar-card .card-body,
+.card.list-toolbar-card .card-body {
+    overflow: visible !important;
+}
+
+.list-toolbar-card:hover,
+.card.list-toolbar-card:hover {
+    transform: none !important;
+}
+
 /* Form Controls & Styling */
 .form-control,
 .form-select,

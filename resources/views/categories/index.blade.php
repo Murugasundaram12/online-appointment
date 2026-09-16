@@ -21,6 +21,21 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
+        <!-- Toolbar -->
+        <x-list-toolbar :paginator="$categories" searchAction="{{ route('categories.index') }}" searchPlaceholder="Search categories">
+            <x-slot name="filters">
+                <x-list-toolbar-filters
+                    :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('categories.index', ['per_page' => request('per_page', $categories->perPage())])"
+                    clearLabel="Clear search" />
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
+                    <i class="bx bx-plus me-1"></i>Add Category
+                </a>
+            </x-slot>
+        </x-list-toolbar>
+
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-0">
                 <div class="table-responsive">

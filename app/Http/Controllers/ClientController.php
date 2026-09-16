@@ -30,7 +30,8 @@ class ClientController extends Controller
                 });
             })
             ->latest()
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         $newClientsCount = Client::where('created_at', '>=', now()->subDays(30))->count();
 
@@ -93,7 +94,8 @@ class ClientController extends Controller
         $allAppointments = $client->appointments()
             ->with(['staff', 'service', 'location'])
             ->orderByDesc('start_time')
-            ->paginate(10, ['*'], 'appts_page');
+            ->paginate(10, ['*'], 'appts_page')
+            ->withQueryString();
 
         $upcomingAppointments = $client->appointments()
             ->with(['staff', 'service', 'location'])
@@ -105,12 +107,14 @@ class ClientController extends Controller
         $invoices = $client->invoices()
             ->with('staff')
             ->orderByDesc('issued_date')
-            ->paginate(10, ['*'], 'invoices_page');
+            ->paginate(10, ['*'], 'invoices_page')
+            ->withQueryString();
 
         $payments = PaymentRecord::with('invoice')
             ->whereHas('invoice', fn ($query) => $query->where('client_id', $client->id))
             ->orderByDesc('payment_date')
-            ->paginate(10, ['*'], 'payments_page');
+            ->paginate(10, ['*'], 'payments_page')
+            ->withQueryString();
 
         $packages = Package::where('is_active', true)->limit(5)->get();
 

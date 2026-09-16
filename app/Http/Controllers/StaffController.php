@@ -35,7 +35,8 @@ class StaffController extends Controller
                 $query->where('location_id', $request->location_id);
             })
             ->latest()
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         $locations = Location::where('is_active', true)->orderBy('name')->get();
         $categories = Staff::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
         $serviceCategories = ServiceCategory::orderBy('name')->get();

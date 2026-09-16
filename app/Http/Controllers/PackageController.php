@@ -16,7 +16,8 @@ class PackageController extends Controller
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('is_active', $request->input('status') === 'active');
             })
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         return view('packages.index', compact('packages'));
     }
 

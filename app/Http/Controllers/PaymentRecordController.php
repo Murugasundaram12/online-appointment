@@ -25,11 +25,18 @@ class PaymentRecordController extends Controller
                 });
             })
             ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->input('search');
+                $search = trim((string) $request->input('search'));
                 $query->where(function ($q) use ($search) {
-                    $q->whereHas('invoice.client', function ($cq) use ($search) {
-                        $cq->where('name', 'like', "%{$search}%");
-                    })->orWhere('payment_method', 'like', "%{$search}%");
+                    $q->where('transaction_reference', 'like', "%{$search}%")
+                        ->orWhere('payment_method', 'like', "%{$search}%")
+                        ->orWhereHas('invoice', function ($iq) use ($search) {
+                            $iq->where('invoice_number', 'like', "%{$search}%")
+                                ->orWhereHas('client', function ($cq) use ($search) {
+                                    $cq->where('name', 'like', "%{$search}%")
+                                        ->orWhere('email', 'like', "%{$search}%")
+                                        ->orWhere('phone', 'like', "%{$search}%");
+                                });
+                        });
                 });
             })
             ->when($request->filled('payment_method'), function ($query) use ($request) {
@@ -41,7 +48,8 @@ class PaymentRecordController extends Controller
                 }
             })
             ->latest()
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         $invoices = Invoice::with(['client.insuranceInformations.insuranceCompany', 'payments'])
             ->whereNotIn('status', ['void', 'paid'])

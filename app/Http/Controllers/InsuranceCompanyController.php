@@ -16,7 +16,8 @@ class InsuranceCompanyController extends Controller
                 $query->where('name', 'like', "%{$search}%");
             })
             ->orderBy('name')
-            ->paginate($this->perPage($request));
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return view('insurance_companies.index', compact('insuranceCompanies'));
     }
