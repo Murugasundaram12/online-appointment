@@ -12,7 +12,7 @@ class FormRecordSeeder extends Seeder
         FormRecord::create([
             'form_id' => 1,
             'client_id' => 1,
-            'submitted_data' => json_encode(['Name' => 'Alice Johnson', 'Medical History' => 'None', 'Allergies' => 'Peanuts']),
+            'submitted_data' => ['Name' => 'Alice Johnson', 'Medical History' => 'None', 'Allergies' => 'Peanuts'],
             'submitted_at' => now(),
         ]);
     }

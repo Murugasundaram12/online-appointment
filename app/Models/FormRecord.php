@@ -14,6 +14,34 @@ class FormRecord extends Model
         'submitted_at' => 'datetime'
     ];
 
+    public function getSubmittedDataAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_string($decoded)) {
+                $decoded = json_decode($decoded, true);
+            }
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    public function setSubmittedDataAttribute($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+        $this->attributes['submitted_data'] = is_array($value) ? json_encode($value) : $value;
+    }
+
     public function form()
     {
         return $this->belongsTo(Form::class);

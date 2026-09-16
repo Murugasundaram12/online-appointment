@@ -42,20 +42,48 @@ class FormRecordController extends Controller
         ]);
 
         $form = \App\Models\Form::findOrFail($validated['form_id']);
-        $rules = [];
-        foreach (($form->fields ?? []) as $field) {
-            $name = $field['name'] ?? null;
-            if (!$name) {
-                continue;
+        $fields = $form->fields;
+        if (is_string($fields)) {
+            $decoded = json_decode($fields, true);
+            if (is_string($decoded)) {
+                $decoded = json_decode($decoded, true);
             }
-            $fieldRules = !empty($field['required']) ? ['required'] : ['nullable'];
-            $type = $field['type'] ?? 'text';
-            if ($type === 'email') $fieldRules[] = 'email';
-            if ($type === 'number') $fieldRules[] = 'numeric';
-            if ($type === 'date') $fieldRules[] = 'date';
-            $rules['submitted_data.' . $name] = $fieldRules;
+            $fields = is_array($decoded) ? $decoded : [];
         }
-        $request->validate($rules);
+        if (isset($fields['questions']) && is_array($fields['questions'])) {
+            $normalized = [];
+            foreach ($fields['questions'] as $q) {
+                $normalized[] = is_string($q) ? ['name' => $q] : $q;
+            }
+            $fields = $normalized;
+        }
+
+        $rules = [];
+        if (is_array($fields)) {
+            foreach ($fields as $field) {
+                if (is_string($field)) {
+                    $name = $field;
+                    $fieldRules = ['nullable'];
+                } elseif (is_array($field)) {
+                    $name = $field['name'] ?? null;
+                    if (!$name) {
+                        continue;
+                    }
+                    $fieldRules = !empty($field['required']) ? ['required'] : ['nullable'];
+                    $type = $field['type'] ?? 'text';
+                    if ($type === 'email') $fieldRules[] = 'email';
+                    if ($type === 'number') $fieldRules[] = 'numeric';
+                    if ($type === 'date') $fieldRules[] = 'date';
+                } else {
+                    continue;
+                }
+                $rules['submitted_data.' . $name] = $fieldRules;
+            }
+        }
+
+        if (!empty($rules)) {
+            $request->validate($rules);
+        }
 
         \App\Models\FormRecord::create([
             'form_id' => $validated['form_id'],
