@@ -40,7 +40,28 @@ class AuthController extends Controller
         $staff->forceFill(['last_login_at' => now()])->save();
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        $intended = $request->session()->pull('url.intended');
+        if ($intended) {
+            $dashboardUrls = array_filter([
+                route('home'),
+                route('dashboard'),
+                route('login'),
+                url('/'),
+                url('/dashboard'),
+            ]);
+
+            $path = parse_url($intended, PHP_URL_PATH);
+            $normalizedPath = '/' . trim((string) $path, '/');
+
+            if (
+                in_array($intended, $dashboardUrls, true) ||
+                in_array($normalizedPath, ['/', '/dashboard', '/login'], true)
+            ) {
+                $intended = null;
+            }
+        }
+
+        return redirect()->to($intended ?: route('calendar.index'));
     }
 
     public function logout(Request $request)

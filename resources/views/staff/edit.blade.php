@@ -61,9 +61,24 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="category" class="form-label">Category (e.g. RMT, Stylist)</label>
-                            <input type="text" class="form-control" id="category" name="category"
-                                value="{{ old('category', $staff->category) }}">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Select Category</option>
+                                @foreach($serviceCategories ?? $categories ?? [] as $categoryOption)
+                                    @php $catName = is_string($categoryOption) ? $categoryOption : $categoryOption->name; @endphp
+                                    <option value="{{ $catName }}" {{ old('category', $staff->category) == $catName ? 'selected' : '' }}>
+                                        {{ $catName }}
+                                    </option>
+                                @endforeach
+                                @php
+                                    $currentCat = old('category', $staff->category);
+                                    $allCats = collect($serviceCategories ?? $categories ?? []);
+                                    $foundCat = $allCats->contains(fn($c) => (is_string($c) ? $c : $c->name) === $currentCat);
+                                @endphp
+                                @if($currentCat && !$foundCat)
+                                    <option value="{{ $currentCat }}" selected>{{ $currentCat }}</option>
+                                @endif
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="password" class="form-label">Password (Leave blank to keep current)</label>

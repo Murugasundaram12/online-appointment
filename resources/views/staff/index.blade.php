@@ -175,10 +175,10 @@
                                     <div class="field-content">
                                         <label class="form-label">Category</label>
                                         <select class="form-select" name="category">
-                                            <option value="" selected>All</option>
-                                            <option value="Massage Therapy">Massage Therapy</option>
-                                            <option value="Physiotherapy">Physiotherapy</option>
-                                            <option value="Chiropractic">Chiropractic</option>
+                                            <option value="" selected>Select Category</option>
+                                            @foreach($serviceCategories ?? [] as $cat)
+                                                <option value="{{ $cat->name }}" {{ old('category') == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -325,10 +325,10 @@
                                     <div class="field-content">
                                         <label class="form-label">Category</label>
                                         <select class="form-select" id="edit-staff-category" name="category">
-                                            <option value="">All</option>
-                                            <option value="Massage Therapy">Massage Therapy</option>
-                                            <option value="Physiotherapy">Physiotherapy</option>
-                                            <option value="Chiropractic">Chiropractic</option>
+                                            <option value="">Select Category</option>
+                                            @foreach($serviceCategories ?? [] as $cat)
+                                                <option value="{{ $cat->name }}">{{ $cat->name }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -444,7 +444,14 @@
                         document.getElementById('edit-staff-access-level').value = btn.dataset.access_level || '';
                         if (document.getElementById('edit-staff-registration-number')) document.getElementById('edit-staff-registration-number').value = btn.dataset.registration_number || '';
                         if (document.getElementById('edit-staff-designation')) document.getElementById('edit-staff-designation').value = btn.dataset.designation || '';
-                        document.getElementById('edit-staff-category').value = btn.dataset.category || '';
+                        const editCatSelect = document.getElementById('edit-staff-category');
+                        if (editCatSelect) {
+                            const currentCat = btn.dataset.category || '';
+                            if (currentCat && !Array.from(editCatSelect.options).some(o => o.value === currentCat)) {
+                                editCatSelect.add(new Option(currentCat, currentCat, true, true));
+                            }
+                            editCatSelect.value = currentCat;
+                        }
                         document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
                         document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';
                         document.getElementById('edit-staff-password').value = '';

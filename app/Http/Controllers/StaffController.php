@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Location;
+use App\Models\ServiceCategory;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,15 +38,18 @@ class StaffController extends Controller
             ->paginate($this->perPage($request));
         $locations = Location::where('is_active', true)->orderBy('name')->get();
         $categories = Staff::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
+        $serviceCategories = ServiceCategory::orderBy('name')->get();
 
-        return view('staff.index', compact('staffs', 'locations', 'categories'));
+        return view('staff.index', compact('staffs', 'locations', 'categories', 'serviceCategories'));
     }
 
     public function create()
     {
         $locations = Location::where('is_active', true)->orderBy('name')->get();
+        $categories = ServiceCategory::orderBy('name')->get();
+        $serviceCategories = $categories;
 
-        return view('staff.create', compact('locations'));
+        return view('staff.create', compact('locations', 'categories', 'serviceCategories'));
     }
 
     public function store(Request $request)
@@ -83,8 +87,10 @@ class StaffController extends Controller
             ->orWhere('id', $staff->location_id)
             ->orderBy('name')
             ->get();
+        $categories = ServiceCategory::orderBy('name')->get();
+        $serviceCategories = $categories;
 
-        return view('staff.edit', compact('staff', 'locations'));
+        return view('staff.edit', compact('staff', 'locations', 'categories', 'serviceCategories'));
     }
 
     public function update(Request $request, string $id)

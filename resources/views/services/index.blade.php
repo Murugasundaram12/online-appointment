@@ -138,13 +138,16 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Category</label>
-                                        <select class="form-select" name="service_category_id">
-                                            <option value="" selected>Select category</option>
+                                        <label class="form-label">Category <span class="required-mark">*</span></label>
+                                        <select class="form-select @error('service_category_id') is-invalid @enderror" name="service_category_id" required>
+                                            <option value="" selected>Select Category</option>
                                             @foreach($categories as $category)
-                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                <option value="{{ $category->id }}" {{ old('service_category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                             @endforeach
                                         </select>
+                                        @error('service_category_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                             </div>
@@ -246,13 +249,16 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Category</label>
-                                        <select class="form-select" id="edit-service-category" name="service_category_id">
-                                            <option value="" selected>Select category</option>
+                                        <label class="form-label">Category <span class="required-mark">*</span></label>
+                                        <select class="form-select @error('service_category_id') is-invalid @enderror" id="edit-service-category" name="service_category_id" required>
+                                            <option value="">Select Category</option>
                                             @foreach($categories as $category)
                                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                                             @endforeach
                                         </select>
+                                        @error('service_category_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                             </div>

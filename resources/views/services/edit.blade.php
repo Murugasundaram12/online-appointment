@@ -23,13 +23,16 @@
                                 required>
                         </div>
                         <div class="col-md-6">
-                            <label for="service_category_id" class="form-label">Category</label>
-                            <select class="form-select" id="service_category_id" name="service_category_id">
+                            <label for="service_category_id" class="form-label">Category <span class="required-mark">*</span></label>
+                            <select class="form-select @error('service_category_id') is-invalid @enderror" id="service_category_id" name="service_category_id" required>
                                 <option value="">Select Category</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" {{ old('service_category_id', $service->service_category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
                             </select>
+                            @error('service_category_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-md-6">
                             <label for="type" class="form-label">Service Type</label>

@@ -25,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        if (!class_exists(\App\Models\Category::class)) {
+            class_alias(\App\Models\ServiceCategory::class, \App\Models\Category::class);
+        }
+
         Schema::defaultStringLength(191);
         if (env('APP_ENV') !== 'local') {
             URL::forceScheme('https');

@@ -49,8 +49,16 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="category" class="form-label">Category (e.g. RMT, Stylist)</label>
-                            <input type="text" class="form-control" id="category" name="category" value="{{ old('category') }}">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="" selected>Select Category</option>
+                                @foreach($serviceCategories ?? $categories ?? [] as $categoryOption)
+                                    @php $catName = is_string($categoryOption) ? $categoryOption : $categoryOption->name; @endphp
+                                    <option value="{{ $catName }}" {{ old('category') == $catName ? 'selected' : '' }}>
+                                        {{ $catName }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="password" class="form-label">Password <span class="required-mark">*</span></label>

@@ -34,7 +34,7 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'service_category_id' => 'nullable|exists:service_categories,id',
+            'service_category_id' => 'required|exists:service_categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'nullable|string|in:in_person,online',
@@ -43,6 +43,9 @@ class ServiceController extends Controller
             'buffer_minutes' => 'nullable|integer|min:0',
             'color' => 'nullable|string|max:7',
             'is_active' => 'nullable|boolean',
+        ], [
+            'service_category_id.required' => 'The category field is required.',
+            'service_category_id.exists' => 'The selected category is invalid.',
         ]);
 
         if (!isset($validated['is_active'])) {
@@ -70,7 +73,7 @@ class ServiceController extends Controller
     {
         $service = \App\Models\Service::findOrFail($id);
         $validated = $request->validate([
-            'service_category_id' => 'nullable|exists:service_categories,id',
+            'service_category_id' => 'required|exists:service_categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'nullable|string|in:in_person,online',
@@ -79,6 +82,9 @@ class ServiceController extends Controller
             'buffer_minutes' => 'nullable|integer|min:0',
             'color' => 'nullable|string|max:7',
             'is_active' => 'nullable|boolean',
+        ], [
+            'service_category_id.required' => 'The category field is required.',
+            'service_category_id.exists' => 'The selected category is invalid.',
         ]);
 
         if (!isset($validated['is_active'])) {
