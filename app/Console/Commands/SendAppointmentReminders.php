@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\BusinessSetting;
 use App\Services\AppointmentEmailService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -121,7 +122,11 @@ class SendAppointmentReminders extends Command
                 }
                 $anySent = true;
             } catch (\Throwable $mailEx) {
-                Log::warning('SMTP send failed for client reminder: ' . $mailEx->getMessage());
+                $this->error("SMTP send failed for client reminder (appointment {$appointment->id}): " . $mailEx->getMessage());
+                Log::warning('SMTP send failed for client reminder: ' . $mailEx->getMessage(), [
+                    'appointment_id' => $appointment->id,
+                    'exception' => $mailEx->getMessage(),
+                ]);
             }
         }
 
@@ -137,16 +142,25 @@ class SendAppointmentReminders extends Command
                 }
                 $anySent = true;
             } catch (\Throwable $mailEx) {
-                Log::warning('SMTP send failed for staff reminder: ' . $mailEx->getMessage());
+                $this->error("SMTP send failed for staff reminder (appointment {$appointment->id}): " . $mailEx->getMessage());
+                Log::warning('SMTP send failed for staff reminder: ' . $mailEx->getMessage(), [
+                    'appointment_id' => $appointment->id,
+                    'exception' => $mailEx->getMessage(),
+                ]);
             }
         }
 
-        if ($attempted) {
+        if ($anySent) {
             $appointment->update(['reminder_sent_at' => now()]);
         }
 
-        $verb = $anySent ? ($allQueued ? 'queued' : 'sent') : 'attempted';
-        $this->info("Reminder {$verb} for appointment {$appointment->id} to {$recipientsList} (ref: {$reference})");
+        $verb = $anySent ? ($allQueued ? 'queued' : 'sent') : 'failed';
+        if ($anySent) {
+            $this->info("Reminder {$verb} for appointment {$appointment->id} to {$recipientsList} (ref: {$reference})");
+        } else {
+            $this->warn("Reminder failed for appointment {$appointment->id} to {$recipientsList} (ref: {$reference})");
+        }
+
         Log::info('Appointment reminder ' . $verb, [
             'appointment_id' => $appointment->id,
             'recipients' => $recipientsList,
@@ -159,7 +173,38 @@ class SendAppointmentReminders extends Command
     private function getBusinessTimezone(): string
     {
         $settings = BusinessSetting::pluck('value', 'key');
-        return $settings->get('timezone') ?? config('app.timezone');
+        $settingTimezone = $settings->get('timezone');
+        if (!empty($settingTimezone)) {
+            return $settingTimezone;
+        }
+
+        $appTimezone = config('app.timezone');
+        if (!empty($appTimezone) && strtoupper($appTimezone) !== 'UTC') {
+            return $appTimezone;
+        }
+
+        try {
+            $dbDiff = DB::selectOne("SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP()) as diff")?->diff;
+            if ($dbDiff) {
+                $diffStr = (string) $dbDiff;
+                $isNeg = str_starts_with($diffStr, '-');
+                $clean = ltrim($diffStr, '-+');
+                $parts = explode(':', $clean);
+                $h = (int) ($parts[0] ?? 0);
+                $m = (int) ($parts[1] ?? 0);
+                return sprintf('%s%02d:%02d', $isNeg ? '-' : '+', $h, $m);
+            }
+        } catch (\Throwable $e) {
+            // Fallback to PHP system/config timezone if DB query fails
+        }
+
+        $systemOffsetSeconds = (int) date('Z');
+        $isNeg = $systemOffsetSeconds < 0;
+        $abs = abs($systemOffsetSeconds);
+        $hours = floor($abs / 3600);
+        $minutes = floor(($abs % 3600) / 60);
+
+        return sprintf('%s%02d:%02d', $isNeg ? '-' : '+', $hours, $minutes);
     }
 
     private function getBusinessContext(Appointment $appointment): array
@@ -176,7 +221,7 @@ class SendAppointmentReminders extends Command
             'email' => $settings->get('business_email') ?: $location?->email ?: config('mail.from.address'),
             'phone' => $settings->get('business_phone') ?: $location?->phone,
             'address' => $settings->get('business_address') ?: $location?->address,
-            'timezone' => $settings->get('timezone') ?: $location?->timezone ?: config('app.timezone'),
+            'timezone' => $settings->get('timezone') ?: $location?->timezone ?: $this->getBusinessTimezone(),
             'logo' => $settings->get('business_logo') ?: $settings->get('logo'),
         ];
     }
