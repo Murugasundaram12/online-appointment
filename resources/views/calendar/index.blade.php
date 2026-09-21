@@ -2057,6 +2057,46 @@
                 selectEl.appendChild(option);
             }
 
+            function ensureClientSelectOption(clientId, clientName, clientPhone = '', clientEmail = '') {
+                if (!clientField || clientId === null || clientId === undefined || clientId === '') return;
+                const idStr = String(clientId);
+                const label = clientName || `Client #${idStr}`;
+                const phoneStr = (clientPhone && clientPhone !== 'N/A') ? ` (${clientPhone})` : '';
+                const text = `${label}${phoneStr}`;
+
+                ensureSelectOption(clientField, idStr, text);
+
+                if (apptClientTomSelect) {
+                    if (!apptClientTomSelect.options[idStr]) {
+                        apptClientTomSelect.addOption({
+                            id: idStr,
+                            text: text,
+                            name: label,
+                            phone: (clientPhone && clientPhone !== 'N/A') ? clientPhone : '',
+                            email: (clientEmail && clientEmail !== 'N/A') ? clientEmail : ''
+                        });
+                    }
+                }
+            }
+
+            function setAppointmentClient(clientId, clientName = '', clientPhone = '', clientEmail = '') {
+                if (clientId) {
+                    const idStr = String(clientId);
+                    ensureClientSelectOption(idStr, clientName, clientPhone, clientEmail);
+                    clientField.value = idStr;
+                    if (apptClientTomSelect) {
+                        apptClientTomSelect.setValue(idStr, true);
+                    }
+                    loadClientSnapshot(idStr);
+                } else {
+                    clientField.value = '';
+                    if (apptClientTomSelect) {
+                        apptClientTomSelect.clear(true);
+                    }
+                    loadClientSnapshot('');
+                }
+            }
+
             function hydrateFormOptions() {
                 hydrateLocationOptions();
                 hydrateStaffOptionsForSelectedLocation();
@@ -2426,6 +2466,7 @@
 
                 if (apptClientTomSelect) {
                     const currentVal = apptClientTomSelect.getValue();
+                    const currentOption = currentVal ? apptClientTomSelect.options[currentVal] : null;
                     apptClientTomSelect.clearOptions();
                     apptClientTomSelect.addOption({ id: '', text: 'Select client' });
                     clients.forEach(client => {
@@ -2440,6 +2481,9 @@
                         });
                     });
                     if (currentVal) {
+                        if (currentOption && !apptClientTomSelect.options[currentVal]) {
+                            apptClientTomSelect.addOption(currentOption);
+                        }
                         apptClientTomSelect.setValue(currentVal, true);
                     }
                 } else {
@@ -2559,7 +2603,7 @@
                     }
                     clearNewClientFields();
                     serviceField.value = '';
-                    clientField.value = '';
+                    setAppointmentClient('');
                     statusField.value = 'booked';
                     notesField.value = '';
                     const reasonInput = document.getElementById('appt-cancellation-reason');
@@ -2639,8 +2683,7 @@
                     if (serviceField.value) serviceField.disabled = false;
 
                     hydrateClientOptions();
-                    ensureSelectOption(clientField, appt.clientId, appt.clientName || appt.title);
-                    clientField.value = appt.clientId ? String(appt.clientId) : '';
+                    setAppointmentClient(appt.clientId, appt.clientName || appt.title, appt.clientPhone, appt.clientEmail);
 
                     statusField.value = appt.status || 'booked';
                     notesField.value = appt.notes || '';

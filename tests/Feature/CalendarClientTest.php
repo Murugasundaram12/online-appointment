@@ -193,4 +193,53 @@ class CalendarClientTest extends TestCase
 
         $authUpdate->assertStatus(200);
     }
+
+    public function test_appointment_details_endpoint_returns_client_details_for_edit_modal(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'name' => 'Jane Doe',
+            'phone' => '555-0987',
+            'email' => 'jane.doe@example.com',
+        ]);
+
+        $appointment = Appointment::create([
+            'staff_id' => $this->staffA->id,
+            'service_id' => $this->service->id,
+            'client_id' => $client->id,
+            'location_id' => $this->location->id,
+            'start_time' => now()->addDay()->setHour(14)->setMinute(0),
+            'end_time' => now()->addDay()->setHour(15)->setMinute(0),
+            'status' => 'booked',
+        ]);
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->getJson("/calendar/appointments/{$appointment->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'id' => $appointment->id,
+                'clientId' => $client->id,
+                'clientName' => 'Jane Doe',
+                'clientPhone' => '555-0987',
+                'clientEmail' => 'jane.doe@example.com',
+                'title' => 'Jane Doe',
+                'staffId' => $this->staffA->id,
+                'serviceId' => $this->service->id,
+                'locationId' => $this->location->id,
+                'status' => 'booked',
+            ]);
+    }
+
+    public function test_calendar_view_contains_appointment_client_synchronization_logic(): void
+    {
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->get('/calendar');
+
+        $response->assertStatus(200);
+        $response->assertSee('setAppointmentClient', false);
+        $response->assertSee('ensureClientSelectOption', false);
+        $response->assertSee('id="appt-client"', false);
+    }
 }
