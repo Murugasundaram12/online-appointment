@@ -59,9 +59,13 @@ class StaffController extends Controller
             return back()->withInput()->with('error', 'Your current subscription plan staff limit has been reached. Please upgrade.');
         }
 
-        $validated = $this->validateStaff($request, null, true);
+        $validated = $this->validateStaff($request, null, false);
 
-        $validated['password'] = Hash::make($validated['password']);
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            $validated['password'] = null;
+        }
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
 
         Staff::create($validated);

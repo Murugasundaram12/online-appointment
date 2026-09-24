@@ -29,7 +29,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $staff->phone) }}" placeholder="+1 (416) 555-1234">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $staff->phone) }}" placeholder="(xxx) xxx-xxxx">
                         </div>
                         <div class="col-md-6">
                             <label for="registration_number" class="form-label">Registration Number</label>

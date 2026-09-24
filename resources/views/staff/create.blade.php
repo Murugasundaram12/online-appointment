@@ -26,7 +26,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone') }}" placeholder="+1 (416) 555-1234">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone') }}" placeholder="(xxx) xxx-xxxx">
                         </div>
                         <input type="hidden" name="access_level" value="staff">
                         <div class="col-md-6">
@@ -61,9 +61,9 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="createStaffPassword" class="form-label">Password <span class="required-mark">*</span></label>
+                            <label for="createStaffPassword" class="form-label">Password</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="createStaffPassword" name="password" autocomplete="new-password" required>
+                                <input type="password" class="form-control" id="createStaffPassword" name="password" placeholder="Enter password (optional)" autocomplete="new-password">
                                 <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
                                     id="toggleCreateStaffPassword" data-target="#createStaffPassword"
                                     aria-label="Show password"><i class="bx bx-show"></i></button>

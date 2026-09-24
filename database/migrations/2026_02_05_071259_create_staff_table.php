@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->string('color')->nullable();
             $table->string('access_level')->default('staff');
             $table->string('category')->nullable(); // e.g. "RMT", "Stylist"
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->boolean('is_active')->default(true);

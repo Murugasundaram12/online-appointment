@@ -194,6 +194,18 @@
                         </div>
 
                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-group">
+                                    <div class="field-icon"><i class='bx bx-palette'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label">Service Color</label>
+                                        <input type="color" class="form-control form-control-color w-100" name="color" value="#3699ff" title="Choose service color">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-12">
                                 <div class="field-group mb-0">
                                     <div class="field-icon"><i class='bx bx-detail'></i></div>
@@ -208,7 +220,6 @@
 
                         <input type="hidden" name="buffer_minutes" value="0">
                         <input type="hidden" name="is_active" value="1">
-                        <input type="hidden" name="color" value="">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -306,6 +317,18 @@
                         </div>
 
                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-group">
+                                    <div class="field-icon"><i class='bx bx-palette'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label">Service Color</label>
+                                        <input type="color" class="form-control form-control-color w-100" id="edit-service-color" name="color" value="#3699ff" title="Choose service color">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-12">
                                 <div class="field-group mb-0">
                                     <div class="field-icon"><i class='bx bx-detail'></i></div>
@@ -320,7 +343,6 @@
 
                         <input type="hidden" name="buffer_minutes" id="edit-service-buffer" value="0">
                         <input type="hidden" name="is_active" id="edit-service-is-active" value="1">
-                        <input type="hidden" name="color" id="edit-service-color" value="">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -350,7 +372,7 @@
                 document.getElementById('edit-service-description').value = btn.dataset.description || '';
                 document.getElementById('edit-service-buffer').value = btn.dataset.buffer_minutes || '0';
                 document.getElementById('edit-service-is-active').value = btn.dataset.is_active || '0';
-                document.getElementById('edit-service-color').value = btn.dataset.color || '';
+                document.getElementById('edit-service-color').value = btn.dataset.color || '#3699ff';
             });
         });
     });

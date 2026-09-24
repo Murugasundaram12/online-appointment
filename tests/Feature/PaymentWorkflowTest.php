@@ -623,13 +623,13 @@ class PaymentWorkflowTest extends TestCase
         $response0->assertSessionHasErrors(['payment_method']);
     }
 
-    /** 17. Test 6: Split Cash + Insurance requires Insurance Details */
-    public function test_split_payment_cash_and_insurance_requires_insurance_fields(): void
+    /** 17. Test 6: Split Cash + Insurance allows empty insurance details */
+    public function test_split_payment_cash_and_insurance_allows_empty_insurance_fields(): void
     {
         $invoice = Invoice::create([
             'staff_id' => $this->adminStaff->id,
             'client_id' => $this->client->id,
-            'invoice_number' => 'INV-SPLIT-INS-REQ',
+            'invoice_number' => 'INV-SPLIT-INS-OPT',
             'issued_date' => now()->toDateString(),
             'total_amount' => 500.00,
             'paid_amount' => 0,
@@ -645,7 +645,148 @@ class PaymentWorkflowTest extends TestCase
             'payment_date' => now()->toDateString(),
         ]);
 
-        $response->assertSessionHasErrors(['insurance_company_id', 'policy_id', 'member_id_or_contract_number']);
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $payment = PaymentRecord::where('invoice_id', $invoice->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertEquals(250.00, $payment->cash_amount);
+        $this->assertEquals(250.00, $payment->insurance_amount);
+        $this->assertNull($payment->insurance_company_id);
+        $this->assertNull($payment->policy_id);
+        $this->assertNull($payment->member_id_or_contract_number);
+    }
+
+    /** Test: Single Insurance payment with all insurance details empty succeeds */
+    public function test_insurance_payment_with_all_insurance_details_empty_succeeds(): void
+    {
+        $invoice = Invoice::create([
+            'staff_id' => $this->adminStaff->id,
+            'client_id' => $this->client->id,
+            'invoice_number' => 'INV-INS-EMPTY-01',
+            'issued_date' => now()->toDateString(),
+            'total_amount' => 300.00,
+            'paid_amount' => 0,
+            'status' => 'outstanding',
+        ]);
+
+        $response = $this->actingAs($this->adminStaff, 'staff')->post('/payment-records', [
+            'invoice_id' => $invoice->id,
+            'amount' => 300.00,
+            'payment_method' => 'insurance',
+            'payment_date' => now()->toDateString(),
+            'insurance_company_id' => '',
+            'policy_id' => '',
+            'member_id_or_contract_number' => '',
+            'claim_reference' => '',
+            'amount_submitted' => '',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $payment = PaymentRecord::where('invoice_id', $invoice->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertEquals(300.00, $payment->insurance_amount);
+        $this->assertNull($payment->insurance_company_id);
+        $this->assertNull($payment->policy_id);
+        $this->assertNull($payment->member_id_or_contract_number);
+        $this->assertEquals('paid', $invoice->fresh()->status);
+    }
+
+    /** Test: Insurance payment with only one insurance detail succeeds */
+    public function test_insurance_payment_with_only_one_insurance_detail_succeeds(): void
+    {
+        $invoice = Invoice::create([
+            'staff_id' => $this->adminStaff->id,
+            'client_id' => $this->client->id,
+            'invoice_number' => 'INV-INS-ONE-01',
+            'issued_date' => now()->toDateString(),
+            'total_amount' => 200.00,
+            'paid_amount' => 0,
+            'status' => 'outstanding',
+        ]);
+
+        $response = $this->actingAs($this->adminStaff, 'staff')->post('/payment-records', [
+            'invoice_id' => $invoice->id,
+            'amount' => 200.00,
+            'payment_method' => 'insurance',
+            'payment_date' => now()->toDateString(),
+            'policy_id' => 'POL-ONLY-ONE',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $payment = PaymentRecord::where('invoice_id', $invoice->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertEquals('POL-ONLY-ONE', $payment->policy_id);
+        $this->assertNull($payment->insurance_company_id);
+        $this->assertNull($payment->member_id_or_contract_number);
+    }
+
+    /** Test: Insurance payment with all details filled succeeds */
+    public function test_insurance_payment_with_all_details_filled_succeeds(): void
+    {
+        $company = InsuranceCompany::create(['name' => 'All Details Insurance Co']);
+
+        $invoice = Invoice::create([
+            'staff_id' => $this->adminStaff->id,
+            'client_id' => $this->client->id,
+            'invoice_number' => 'INV-INS-ALL-01',
+            'issued_date' => now()->toDateString(),
+            'total_amount' => 450.00,
+            'paid_amount' => 0,
+            'status' => 'outstanding',
+        ]);
+
+        $response = $this->actingAs($this->adminStaff, 'staff')->post('/payment-records', [
+            'invoice_id' => $invoice->id,
+            'amount' => 450.00,
+            'payment_method' => 'insurance',
+            'payment_date' => now()->toDateString(),
+            'insurance_company_id' => $company->id,
+            'policy_id' => 'POL-ALL-FIELDS',
+            'member_id_or_contract_number' => 'MEM-ALL-FIELDS',
+            'claim_reference' => 'CLM-999',
+            'amount_submitted' => 450.00,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $payment = PaymentRecord::where('invoice_id', $invoice->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertEquals($company->id, $payment->insurance_company_id);
+        $this->assertEquals('POL-ALL-FIELDS', $payment->policy_id);
+        $this->assertEquals('MEM-ALL-FIELDS', $payment->member_id_or_contract_number);
+        $this->assertEquals('CLM-999', $payment->claim_reference);
+        $this->assertEquals(450.00, $payment->amount_submitted);
+    }
+
+    /** Test: Invalid non-empty insurance values fail validation */
+    public function test_invalid_non_empty_insurance_values_fail_validation(): void
+    {
+        $invoice = Invoice::create([
+            'staff_id' => $this->adminStaff->id,
+            'client_id' => $this->client->id,
+            'invoice_number' => 'INV-INS-INVALID-01',
+            'issued_date' => now()->toDateString(),
+            'total_amount' => 300.00,
+            'paid_amount' => 0,
+            'status' => 'outstanding',
+        ]);
+
+        $response = $this->actingAs($this->adminStaff, 'staff')->post('/payment-records', [
+            'invoice_id' => $invoice->id,
+            'amount' => 300.00,
+            'payment_method' => 'insurance',
+            'payment_date' => now()->toDateString(),
+            'insurance_company_id' => 999999, // non-existent company
+            'amount_submitted' => -50.00,     // negative amount
+        ]);
+
+        $response->assertSessionHasErrors(['insurance_company_id', 'amount_submitted']);
     }
 
     /** 18. Test 7: Split Cash + Card nullifies insurance fields */

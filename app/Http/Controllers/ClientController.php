@@ -48,15 +48,10 @@ class ClientController extends Controller
         $validated = $request->validated();
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
-        if (!empty($validated['phone'])) {
-            $validated['phone'] = \App\Services\PhoneFormatter::format($validated['phone']);
-        }
-        if (!empty($validated['alternate_phone'])) {
-            $validated['alternate_phone'] = \App\Services\PhoneFormatter::format($validated['alternate_phone']);
-        }
-        if (!empty($validated['emergency_phone'])) {
-            $validated['emergency_phone'] = \App\Services\PhoneFormatter::format($validated['emergency_phone']);
-        }
+        $validated['phone'] = !empty($validated['phone']) ? \App\Services\PhoneFormatter::format($validated['phone']) : null;
+        $validated['email'] = !empty($validated['email']) ? trim($validated['email']) : null;
+        $validated['alternate_phone'] = !empty($validated['alternate_phone']) ? \App\Services\PhoneFormatter::format($validated['alternate_phone']) : null;
+        $validated['emergency_phone'] = !empty($validated['emergency_phone']) ? \App\Services\PhoneFormatter::format($validated['emergency_phone']) : null;
 
         $client = Client::create($validated);
 
@@ -230,15 +225,10 @@ class ClientController extends Controller
         $validated = $request->validated();
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
 
-        if (!empty($validated['phone'])) {
-            $validated['phone'] = \App\Services\PhoneFormatter::format($validated['phone']);
-        }
-        if (!empty($validated['alternate_phone'])) {
-            $validated['alternate_phone'] = \App\Services\PhoneFormatter::format($validated['alternate_phone']);
-        }
-        if (!empty($validated['emergency_phone'])) {
-            $validated['emergency_phone'] = \App\Services\PhoneFormatter::format($validated['emergency_phone']);
-        }
+        $validated['phone'] = !empty($validated['phone']) ? \App\Services\PhoneFormatter::format($validated['phone']) : null;
+        $validated['email'] = !empty($validated['email']) ? trim($validated['email']) : null;
+        $validated['alternate_phone'] = !empty($validated['alternate_phone']) ? \App\Services\PhoneFormatter::format($validated['alternate_phone']) : null;
+        $validated['emergency_phone'] = !empty($validated['emergency_phone']) ? \App\Services\PhoneFormatter::format($validated['emergency_phone']) : null;
 
         $client->update($validated);
 

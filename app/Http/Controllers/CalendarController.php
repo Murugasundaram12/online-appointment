@@ -33,7 +33,7 @@ class CalendarController extends Controller
         $clients = Client::orderByDesc('updated_at')->limit(100)->get(['id', 'name', 'email', 'phone']);
         $services = Service::where('is_active', true)
             ->with('category:id,name')
-            ->get(['id', 'name', 'price', 'duration_minutes', 'service_category_id']);
+            ->get(['id', 'name', 'price', 'duration_minutes', 'service_category_id', 'color']);
         $locations = Location::where('is_active', true)->get(['id', 'name']);
 
         $view = $request->query('view', 'week');
@@ -88,6 +88,9 @@ class CalendarController extends Controller
             $clientName = $appointment->client ? $appointment->client->name : 'Unassigned';
             $serviceName = $appointment->service ? $appointment->service->name : '';
             $status = $appointment->status ?? 'booked';
+            $eventColor = $appointment->service && !empty($appointment->service->color)
+                ? $appointment->service->color
+                : ($statusColorMap[$status] ?? '#3699ff');
 
             return [
                 'id' => $appointment->id,
@@ -98,7 +101,10 @@ class CalendarController extends Controller
                 'start' => $appointment->start_time->toIso8601String(),
                 'end' => $appointment->end_time->toIso8601String(),
                 'status' => $status,
-                'color' => $statusColorMap[$status] ?? '#3699ff',
+                'color' => $eventColor,
+                'backgroundColor' => $eventColor,
+                'borderColor' => $eventColor,
+                'serviceColor' => $appointment->service ? $appointment->service->color : null,
             ];
         })->values();
 
@@ -253,7 +259,7 @@ class CalendarController extends Controller
         $endDate = $end ? Carbon::parse($end)->endOfDay() : Carbon::now()->endOfWeek();
 
         // Get all appointments
-        $appointmentsQuery = Appointment::with(['client:id,name', 'service:id,name', 'staff:id,name', 'location:id,name,is_active', 'invoice:id,appointment_id,invoice_number'])
+        $appointmentsQuery = Appointment::with(['client:id,name', 'service:id,name,color', 'staff:id,name', 'location:id,name,is_active', 'invoice:id,appointment_id,invoice_number'])
             ->whereBetween('start_time', [$startDate, $endDate]);
 
         if ($request->filled('staff_id')) {
@@ -281,6 +287,10 @@ class CalendarController extends Controller
                 'no_show'   => '#8b5cf6',
             ];
 
+            $eventColor = $appointment->service && !empty($appointment->service->color)
+                ? $appointment->service->color
+                : ($statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff');
+
             return [
                 'id' => $appointment->id,
                 'title' => $appointment->client ? $appointment->client->name : 'Unassigned',
@@ -295,7 +305,10 @@ class CalendarController extends Controller
                 'locationId' => $appointment->location_id,
                 'location' => $appointment->location ? $appointment->location->name : null,
                 'hasClient' => !is_null($appointment->client_id),
-                'color' => $statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff',
+                'color' => $eventColor,
+                'backgroundColor' => $eventColor,
+                'borderColor' => $eventColor,
+                'serviceColor' => $appointment->service ? $appointment->service->color : null,
                 'notes' => $appointment->notes,
                 'invoiceId' => $appointment->invoice?->id,
                 'invoiceNumber' => $appointment->invoice?->invoice_number,
@@ -498,7 +511,8 @@ class CalendarController extends Controller
             $validated['end_time'],
             null,
             (int) ($service->buffer_minutes ?? 0),
-            $validated['location_id'] ?? null
+            $validated['location_id'] ?? null,
+            $validated['client_id'] ?? null
         );
 
         if (!$validation['available']) {
@@ -664,13 +678,15 @@ class CalendarController extends Controller
                 return response()->json(['success' => false, 'message' => $locationValidation['message']], 422);
             }
 
+            $clientId = $validated['client_id'] ?? $appointment->client_id;
             $validation = $this->validateStaffAvailability(
                 $staffId,
                 $startTime,
                 $endTime,
                 $id,
                 (int) ($service->buffer_minutes ?? 0),
-                $validated['location_id'] ?? $appointment->location_id
+                $validated['location_id'] ?? $appointment->location_id,
+                $clientId
             );
 
             if (!$validation['available']) {
@@ -843,7 +859,7 @@ class CalendarController extends Controller
         $validated = $request->validate([
             'first_name'       => 'required|string|max:100',
             'last_name'        => 'required|string|max:100',
-            'phone'            => ['required', 'string', 'max:30', \Illuminate\Validation\Rule::unique('clients', 'phone')],
+            'phone'            => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::unique('clients', 'phone')],
             'email'            => ['nullable', 'email', 'max:255', \Illuminate\Validation\Rule::unique('clients', 'email')],
             'gender'           => 'nullable|string|in:male,female,other',
             'dob'              => 'nullable|date|before:today',
@@ -861,6 +877,8 @@ class CalendarController extends Controller
         ]);
 
         $validated['name'] = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
+        $validated['phone'] = !empty($validated['phone']) ? \App\Services\PhoneFormatter::format($validated['phone']) : null;
+        $validated['email'] = !empty($validated['email']) ? trim($validated['email']) : null;
 
         $client = Client::create($validated);
 
@@ -958,7 +976,7 @@ class CalendarController extends Controller
     /**
      * Validate staff availability for given time slot
      */
-    private function validateStaffAvailability($staffId, $startTime, $endTime, $excludeAppointmentId = null, int $newBufferMinutes = 0, $locationId = null)
+    private function validateStaffAvailability($staffId, $startTime, $endTime, $excludeAppointmentId = null, int $newBufferMinutes = 0, $locationId = null, $clientId = null)
     {
         /**
          * Important:
@@ -984,7 +1002,7 @@ class CalendarController extends Controller
         if ($startTime->gte($endTime) || $startTime->toDateString() !== $endTime->toDateString()) {
             return [
                 'available' => false,
-                'message' => 'The selected staff member is not available for this date and time.'
+                'message' => 'Selected staff member is not available during this time.'
             ];
         }
 
@@ -992,14 +1010,14 @@ class CalendarController extends Controller
         if (!$staff || !$staff->is_active) {
             return [
                 'available' => false,
-                'message' => 'The selected staff member is not available for this date and time.'
+                'message' => 'Selected staff member is not scheduled for this date and time.'
             ];
         }
 
         if ($locationId && $staff->location_id && (int) $staff->location_id !== (int) $locationId) {
             return [
                 'available' => false,
-                'message' => 'The selected staff member is not available for this date and time.'
+                'message' => 'The selected staff member is not assigned to this location.'
             ];
         }
 
@@ -1039,12 +1057,22 @@ class CalendarController extends Controller
                 ->get();
         }
 
-        $schedule = $findCoveringSchedule($dateSchedules);
-        if (!$schedule && $dateSchedules->count() > 0) {
-            return [
-                'available' => false,
-                'message' => 'The selected staff member is not available for this date and time.'
-            ];
+        $schedule = null;
+        if ($dateSchedules->count() > 0) {
+            $workingDateSchedules = $dateSchedules->filter(fn($s) => (bool) $s->is_working && !empty($s->start_time) && !empty($s->end_time));
+            if ($workingDateSchedules->isEmpty()) {
+                return [
+                    'available' => false,
+                    'message' => 'Selected staff member is not scheduled for this date and time.'
+                ];
+            }
+            $schedule = $findCoveringSchedule($dateSchedules);
+            if (!$schedule) {
+                return [
+                    'available' => false,
+                    'message' => 'Selected staff member is not available during this time.'
+                ];
+            }
         }
 
         if (!$schedule) {
@@ -1060,20 +1088,58 @@ class CalendarController extends Controller
                 $query->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', $appointmentDate));
             }
 
+            $carbonDow = (string) $startTime->dayOfWeek; // 0=Sun ... 6=Sat
+            $monZeroDow = (string) (($startTime->dayOfWeek + 6) % 7); // 0=Mon ... 6=Sun
+            $isoDow = (string) $startTime->dayOfWeekIso; // 1=Mon ... 7=Sun
+            $dayName = strtolower($startTime->format('l')); // monday ... sunday
+            $dayAbbr = strtolower($startTime->format('D')); // mon ... sun
+
+            $dayMatchValues = array_values(array_unique([
+                $carbonDow,
+                (int) $carbonDow,
+                $monZeroDow,
+                (int) $monZeroDow,
+                $isoDow,
+                (int) $isoDow,
+                $dayName,
+                ucfirst($dayName),
+                $dayAbbr,
+                ucfirst($dayAbbr),
+            ]));
+
             $weeklySchedules = $query
-                ->where(function ($q) use ($dayOfWeek, $dayName) {
-                    $q->where('day_of_week', (string) $dayOfWeek)
-                        ->orWhere('day_of_week', $dayOfWeek)
-                        ->orWhere('day_of_week', $dayName);
+                ->where(function ($q) use ($dayMatchValues, $dayName, $dayAbbr, $carbonDow, $monZeroDow) {
+                    $q->whereIn('day_of_week', $dayMatchValues);
+                    if (Schema::hasColumn('staff_schedules', 'recurrence_days')) {
+                        $q->orWhereJsonContains('recurrence_days->weekly_days', $dayName)
+                            ->orWhereJsonContains('recurrence_days->weekly_days', $dayAbbr)
+                            ->orWhereJsonContains('recurrence_days->weekly_days', $carbonDow)
+                            ->orWhereJsonContains('recurrence_days->weekly_days', $monZeroDow);
+                    }
                 })
                 ->orderBy('start_time')
                 ->get();
 
-            $schedule = $findCoveringSchedule($weeklySchedules);
-            if (!$schedule && $weeklySchedules->count() > 0) {
+            if ($weeklySchedules->isEmpty()) {
                 return [
                     'available' => false,
-                    'message' => 'The selected staff member is not available for this date and time.'
+                    'message' => 'Selected staff member is not scheduled for this date and time.'
+                ];
+            }
+
+            $workingWeekly = $weeklySchedules->filter(fn($s) => (bool) $s->is_working && !empty($s->start_time) && !empty($s->end_time));
+            if ($workingWeekly->isEmpty()) {
+                return [
+                    'available' => false,
+                    'message' => 'Selected staff member is not scheduled for this date and time.'
+                ];
+            }
+
+            $schedule = $findCoveringSchedule($weeklySchedules);
+            if (!$schedule) {
+                return [
+                    'available' => false,
+                    'message' => 'Selected staff member is not available during this time.'
                 ];
             }
         }
@@ -1081,49 +1147,56 @@ class CalendarController extends Controller
         if (!$schedule) {
             return [
                 'available' => false,
-                'message' => 'The selected staff member is not available for this date and time.'
+                'message' => 'Selected staff member is not scheduled for this date and time.'
             ];
         }
 
         // Check if appointment overlaps with breaks
         if ($schedule->breaks && is_array($schedule->breaks)) {
             foreach ($schedule->breaks as $break) {
-                $breakStart = Carbon::parse($startTime->format('Y-m-d') . ' ' . $break['start'], $inputTimezone);
-                $breakEnd = Carbon::parse($startTime->format('Y-m-d') . ' ' . $break['end'], $inputTimezone);
+                $bStartRaw = $break['start'] ?? $break['start_time'] ?? null;
+                $bEndRaw = $break['end'] ?? $break['end_time'] ?? null;
+                if (!$bStartRaw || !$bEndRaw) continue;
+
+                $breakStart = Carbon::parse($startTime->format('Y-m-d') . ' ' . $bStartRaw, $inputTimezone);
+                $breakEnd = Carbon::parse($startTime->format('Y-m-d') . ' ' . $bEndRaw, $inputTimezone);
 
                 if ($startTime->lt($breakEnd) && $endTime->gt($breakStart)) {
                     return [
                         'available' => false,
-                        'message' => 'The selected staff member is not available for this date and time.'
+                        'message' => 'Selected staff member is not available during this time.'
                     ];
                 }
             }
         }
 
-        // Check for conflicts with existing appointments
-        // Compare in UTC to match database datetime storage and avoid timezone-shift false positives.
-        $queryStart = $startTime->copy();
-        $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes));
+        // Check for conflicts with existing client appointments
+        // A staff member is allowed to have appointments for multiple different clients at the same date and time.
+        // Prevent duplicate overlapping appointments for the SAME client.
+        if ($clientId) {
+            $queryStart = $startTime->copy();
+            $queryEnd = $endTime->copy()->addMinutes(max(0, $newBufferMinutes));
 
-        $qs = Carbon::parse($queryStart);
-        $qe = Carbon::parse($queryEnd);
+            $qs = Carbon::parse($queryStart);
+            $qe = Carbon::parse($queryEnd);
 
-        $existingAppointments = Appointment::with('service')
-            ->where('staff_id', $staffId)
-            ->whereIn('status', ['pending', 'booked', 'confirmed'])
-            ->where('start_time', '<', $qe->toDateTimeString())
-            ->where('end_time', '>', $qs->copy()->subHours(12)->toDateTimeString())
-            ->when($excludeAppointmentId, fn ($q) => $q->where('id', '!=', $excludeAppointmentId))
-            ->get();
+            $existingAppointments = Appointment::with('service')
+                ->where('client_id', $clientId)
+                ->whereIn('status', ['pending', 'booked', 'confirmed'])
+                ->where('start_time', '<', $qe->toDateTimeString())
+                ->where('end_time', '>', $qs->copy()->subHours(12)->toDateTimeString())
+                ->when($excludeAppointmentId, fn ($q) => $q->where('id', '!=', $excludeAppointmentId))
+                ->get();
 
-        foreach ($existingAppointments as $existingAppt) {
-            $buffer = (int) ($existingAppt->service?->buffer_minutes ?? 0);
-            $effectiveEnd = $existingAppt->end_time->copy()->addMinutes($buffer);
-            if ($existingAppt->start_time->lt($qe) && $effectiveEnd->gt($qs)) {
-                return [
-                    'available' => false,
-                    'message' => 'This time slot is already booked.'
-                ];
+            foreach ($existingAppointments as $existingAppt) {
+                $buffer = (int) ($existingAppt->service?->buffer_minutes ?? 0);
+                $effectiveEnd = $existingAppt->end_time->copy()->addMinutes($buffer);
+                if ($existingAppt->start_time->lt($qe) && $effectiveEnd->gt($qs)) {
+                    return [
+                        'available' => false,
+                        'message' => 'This time slot is already booked.'
+                    ];
+                }
             }
         }
 
@@ -1197,21 +1270,24 @@ class CalendarController extends Controller
             return null;
         }
         $value = trim(strval($value));
+        $days = [
+            'monday' => 0, 'mon' => 0,
+            'tuesday' => 1, 'tue' => 1,
+            'wednesday' => 2, 'wed' => 2,
+            'thursday' => 3, 'thu' => 3,
+            'friday' => 4, 'fri' => 4,
+            'saturday' => 5, 'sat' => 5,
+            'sunday' => 6, 'sun' => 6,
+        ];
+        $key = strtolower($value);
+        if (isset($days[$key])) {
+            return $days[$key];
+        }
         if (is_numeric($value)) {
             $n = (int) $value;
             return ($n >= 0 && $n <= 6) ? $n : null;
         }
-        $days = [
-            'monday' => 0,
-            'tuesday' => 1,
-            'wednesday' => 2,
-            'thursday' => 3,
-            'friday' => 4,
-            'saturday' => 5,
-            'sunday' => 6,
-        ];
-        $key = strtolower($value);
-        return $days[$key] ?? null;
+        return null;
     }
 
     /**
@@ -1250,6 +1326,10 @@ class CalendarController extends Controller
             ? (int) $appointment->service->duration_minutes
             : ($appointment->start_time && $appointment->end_time ? $appointment->start_time->diffInMinutes($appointment->end_time) : 0);
 
+        $eventColor = $appointment->service && !empty($appointment->service->color)
+            ? $appointment->service->color
+            : ($statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff');
+
         return [
             'id' => $appointment->id,
             'title' => $appointment->client ? $appointment->client->name : 'Unassigned',
@@ -1271,7 +1351,10 @@ class CalendarController extends Controller
             'location' => $appointment->location ? $appointment->location->name : null,
             'locationName' => $appointment->location ? $appointment->location->name : null,
             'hasClient' => !is_null($appointment->client_id),
-            'color' => $statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff',
+            'color' => $eventColor,
+            'backgroundColor' => $eventColor,
+            'borderColor' => $eventColor,
+            'serviceColor' => $appointment->service ? $appointment->service->color : null,
             'notes' => $appointment->notes,
             'cancellationReason' => $appointment->cancellation_reason,
             'invoiceId' => $invoice?->id,

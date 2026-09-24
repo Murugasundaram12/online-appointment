@@ -250,7 +250,7 @@
                                     <tr><td class="text-muted w-50">Address Line 1</td><td class="fw-semibold">{{ $client->address_line1 ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Address Line 2</td><td class="fw-semibold">{{ $client->address_line2 ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">City</td><td class="fw-semibold">{{ $client->city ?: '-' }}</td></tr>
-                                    <tr><td class="text-muted">State</td><td class="fw-semibold">{{ $client->state ?: '-' }}</td></tr>
+                                    <tr><td class="text-muted">Province</td><td class="fw-semibold">{{ $client->state ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Country</td><td class="fw-semibold">{{ $client->country ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Postal Code</td><td class="fw-semibold">{{ $client->postal_code ?: '-' }}</td></tr>
                                     <tr><td class="text-muted">Emergency Contact</td><td class="fw-semibold">{{ $client->emergency_contact ?: '-' }}</td></tr>

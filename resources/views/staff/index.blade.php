@@ -224,10 +224,10 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
-                                         <label class="form-label" for="addStaffPassword">Password <span class="required-mark">*</span></label>
+                                         <label class="form-label" for="addStaffPassword">Password</label>
                                          <div class="input-group">
                                              <input type="password" class="form-control" id="addStaffPassword" name="password"
-                                                 placeholder="Enter password" autocomplete="new-password" required>
+                                                 placeholder="Enter password (optional)" autocomplete="new-password">
                                              <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
                                                  id="toggleAddStaffPassword" data-target="#addStaffPassword"
                                                  aria-label="Show password"><i class="bx bx-show"></i></button>

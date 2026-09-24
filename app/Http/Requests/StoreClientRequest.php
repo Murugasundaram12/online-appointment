@@ -28,14 +28,14 @@ class StoreClientRequest extends FormRequest
             'gender' => 'nullable|string|in:male,female,other',
             'dob' => 'nullable|date|before:today',
             'phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:30',
                 Rule::unique('clients', 'phone')->ignore($clientId),
             ],
             'alternate_phone' => 'nullable|string|max:30',
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('clients', 'email')->ignore($clientId),
@@ -58,9 +58,15 @@ class StoreClientRequest extends FormRequest
     {
         return [
             'phone.unique' => 'A client with this phone number already exists.',
-            'email.required' => 'An email address is required.',
             'email.unique' => 'A client with this email address already exists.',
             'dob.before' => 'Date of birth must be a past date.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'state' => 'province',
         ];
     }
 }

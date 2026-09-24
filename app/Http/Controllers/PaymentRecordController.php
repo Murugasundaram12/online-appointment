@@ -299,19 +299,13 @@ class PaymentRecordController extends Controller
                 // Insurance Validation and Cleanup
                 $hasInsurance = $isSplit ? in_array('insurance', $selectedMethods, true) : ($method === 'insurance');
                 if ($hasInsurance) {
-                    $insErrors = [];
-                    if (empty($validated['insurance_company_id'])) {
-                        $insErrors['insurance_company_id'] = 'Please select an insurance company when paying with insurance.';
-                    }
-                    if (empty($validated['policy_id'])) {
-                        $insErrors['policy_id'] = 'The policy ID is required when paying with insurance.';
-                    }
-                    if (empty($validated['member_id_or_contract_number'])) {
-                        $insErrors['member_id_or_contract_number'] = 'The member ID or contract number is required when paying with insurance.';
-                    }
-                    if (!empty($insErrors)) {
-                        throw \Illuminate\Validation\ValidationException::withMessages($insErrors);
-                    }
+                    // All insurance payment details are optional
+                    $validated['insurance_company_id'] = !empty($validated['insurance_company_id']) ? $validated['insurance_company_id'] : null;
+                    $validated['insurance_information_id'] = !empty($validated['insurance_information_id']) ? $validated['insurance_information_id'] : null;
+                    $validated['policy_id'] = !empty($validated['policy_id']) ? $validated['policy_id'] : null;
+                    $validated['member_id_or_contract_number'] = !empty($validated['member_id_or_contract_number']) ? $validated['member_id_or_contract_number'] : null;
+                    $validated['claim_reference'] = !empty($validated['claim_reference']) ? $validated['claim_reference'] : null;
+                    $validated['amount_submitted'] = isset($validated['amount_submitted']) && $validated['amount_submitted'] !== '' ? $validated['amount_submitted'] : null;
                 } else {
                     $validated['insurance_company_id'] = null;
                     $validated['insurance_information_id'] = null;

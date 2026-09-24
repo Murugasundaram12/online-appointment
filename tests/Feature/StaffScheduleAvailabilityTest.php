@@ -238,9 +238,9 @@ class StaffScheduleAvailabilityTest extends TestCase
     }
 
     /**
-     * Test Case 8: Staff with Friday 09:00–17:00 but conflicting appointment, Friday 10:00–10:30 => HIDE
+     * Test Case 8: Staff with Friday 09:00–17:00 and existing appointment remains available in available-staff
      */
-    public function test_case_8_friday_staff_with_conflicting_appointment_is_not_available(): void
+    public function test_case_8_friday_staff_with_conflicting_appointment_remains_available(): void
     {
         // Create an overlapping appointment for fridayStaff: 10:15 - 11:00
         Appointment::create([
@@ -262,7 +262,7 @@ class StaffScheduleAvailabilityTest extends TestCase
 
         $res->assertStatus(200);
         $staffIds = collect($res->json('staff'))->pluck('id')->all();
-        $this->assertNotContains($this->fridayStaff->id, $staffIds);
+        $this->assertContains($this->fridayStaff->id, $staffIds);
     }
 
     /**
@@ -284,7 +284,7 @@ class StaffScheduleAvailabilityTest extends TestCase
         $res->assertStatus(422);
         $res->assertJson([
             'success' => false,
-            'message' => 'The selected staff member is not available for this date and time.'
+            'message' => 'Selected staff member is not scheduled for this date and time.'
         ]);
     }
 }

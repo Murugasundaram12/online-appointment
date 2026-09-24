@@ -259,7 +259,7 @@
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-4">
-                                    <label class="form-label small">Insurance Company <span class="required-mark">*</span></label>
+                                    <label class="form-label small">Insurance Company</label>
                                     <select name="insurance_company_id" id="pmt-insurance-company-id" class="form-select form-select-sm">
                                         <option value="">Select Company</option>
                                         @foreach($insuranceCompanies as $comp)
@@ -268,11 +268,11 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label small">Policy ID <span class="required-mark">*</span></label>
+                                    <label class="form-label small">Policy ID</label>
                                     <input type="text" name="policy_id" id="pmt-policy-id" class="form-control form-control-sm" placeholder="Enter policy ID">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label small">Member ID / Contract No. <span class="required-mark">*</span></label>
+                                    <label class="form-label small">Member ID / Contract No.</label>
                                     <input type="text" name="member_id_or_contract_number" id="pmt-member-id" class="form-control form-control-sm" placeholder="Enter member ID or contract no.">
                                 </div>
                                 <div class="col-md-4 mt-2">
@@ -1009,52 +1009,7 @@
                         if (transactionReferenceInput) transactionReferenceInput.value = '';
                     }
 
-                    if (val === 'insurance' || isInsuranceSelectedInSplit) {
-                        if (insuranceCompanyInput && !insuranceCompanyInput.value) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            insuranceCompanyInput.classList.add('is-invalid');
-                            insuranceCompanyInput.focus();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'Please select an insurance company when paying with insurance.'
-                                });
-                            }
-                            return false;
-                        }
-
-                        if (policyIdInput && !policyIdInput.value.trim()) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            policyIdInput.classList.add('is-invalid');
-                            policyIdInput.focus();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'The policy ID is required when paying with insurance.'
-                                });
-                            }
-                            return false;
-                        }
-
-                        if (memberIdInput && !memberIdInput.value.trim()) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            memberIdInput.classList.add('is-invalid');
-                            memberIdInput.focus();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'The member ID or contract number is required when paying with insurance.'
-                                });
-                            }
-                            return false;
-                        }
-                    } else {
+                    if (!val.includes('insurance') && !isInsuranceSelectedInSplit) {
                         clearInsuranceFields();
                     }
                 });

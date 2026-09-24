@@ -7,8 +7,9 @@
     <style>
         :root {
             --calendar-border: #eef2f7;
-            --calendar-border-hourly: #c8d0e0;
-            --calendar-border-strong: #b8c3d8;
+            --calendar-border-subtle: #dbe2ea;
+            --calendar-border-hourly: #b0bac9;
+            --calendar-border-strong: #b0bac9;
             --calendar-header-bg: #fff;
             --calendar-active-text: #3699ff;
             --calendar-inactive-text: #a1a5b7;
@@ -119,7 +120,7 @@
             grid-template-columns: 80px repeat(7, minmax(130px, 1fr));
             min-width: min-content;
             width: 100%;
-            border-bottom: 2px solid var(--calendar-border-strong);
+            border-bottom: 1px solid var(--calendar-border-hourly);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -127,12 +128,15 @@
         }
 
         .header-cell {
-            padding: 0.75rem 0.5rem;
+            padding: 0.75rem 0.5rem 0.5rem;
             text-align: center;
             border-right: 1px solid var(--calendar-border-strong);
-            border-bottom: 1px solid var(--calendar-border-strong);
+            border-bottom: none;
             min-width: 0;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
         .header-cell:last-child {
@@ -174,7 +178,7 @@
             align-items: center;
             justify-content: center;
             border-right: 1px solid var(--calendar-border-strong);
-            border-bottom: 1.5px solid var(--calendar-border-strong);
+            border-bottom: none;
             background: #fff;
         }
 
@@ -217,46 +221,62 @@
         }
 
         .time-slot {
-            height: 120px;
-            border-bottom: 1px solid var(--calendar-border-strong);
+            height: 30px;
+            border-bottom: 1px solid var(--calendar-border-subtle);
             position: relative;
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
+            justify-content: flex-end;
             padding-right: 0.5rem;
+            box-sizing: border-box;
+        }
+
+        .time-slot.time-slot-hour,
+        .time-slot.time-slot-hour-end {
+            border-bottom: 1px solid var(--calendar-border-hourly);
         }
 
         .time-label {
-            font-size: 0.75rem;
-            color: #3f4254;
-            font-weight: 600;
-            position: absolute;
-            right: 0.5rem;
+            font-size: 0.68rem;
+            color: #7e8299;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
-        .label-hour {
-            top: 60px;
-            transform: translateY(-50%);
+        .time-slot.time-slot-hour-start .time-label,
+        .time-slot.time-slot-hour .time-label {
+            color: #3f4254;
+            font-weight: 700;
+            font-size: 0.72rem;
         }
 
         .sub-tick {
-            font-size: 0.65rem;
-            color: #b5b5c3;
-            height: 20px;
-            display: flex;
-            align-items: center;
+            display: none;
         }
 
         .grid-cell {
-            height: 120px;
+            height: 100%;
+            min-height: 2880px;
             border-right: 1px solid var(--calendar-border-strong);
-            border-bottom: 1px solid var(--calendar-border-strong);
+            border-bottom: 1px solid var(--calendar-border-hourly);
             position: relative;
             background-image: repeating-linear-gradient(to bottom,
                     transparent 0,
+                    transparent 29px,
+                    var(--calendar-border-subtle) 29px,
+                    var(--calendar-border-subtle) 30px,
+                    transparent 30px,
+                    transparent 59px,
+                    var(--calendar-border-subtle) 59px,
+                    var(--calendar-border-subtle) 60px,
+                    transparent 60px,
+                    transparent 89px,
+                    var(--calendar-border-subtle) 89px,
+                    var(--calendar-border-subtle) 90px,
+                    transparent 90px,
                     transparent 119px,
-                    var(--calendar-border-strong) 119px,
-                    var(--calendar-border-strong) 120px);
+                    var(--calendar-border-hourly) 119px,
+                    var(--calendar-border-hourly) 120px);
             background-size: 100% 120px;
         }
 
@@ -267,9 +287,10 @@
 
         /* Staff Schedule Display */
         .staff-schedule-container {
-            padding: 6px 4px;
-            border-top: 1px solid var(--calendar-border-hourly);
-            border-bottom: 2px solid #e2e8f0;
+            padding: 4px;
+            margin-top: 6px;
+            border-top: 1px solid var(--calendar-border);
+            border-bottom: none;
             background: #f8fafc;
             font-size: 0.7rem;
             max-height: none;
@@ -277,6 +298,13 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+        }
+
+        .staff-schedule-container:empty {
+            display: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
         }
 
         .staff-schedule-item {
@@ -1362,6 +1390,20 @@
                 dateDisplay.textContent = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
             }
 
+            function getContrastColor(hexColor) {
+                if (!hexColor || typeof hexColor !== 'string') return '#ffffff';
+                let hex = hexColor.trim().replace('#', '');
+                if (hex.length === 3) {
+                    hex = hex.split('').map(c => c + c).join('');
+                }
+                if (hex.length !== 6) return '#ffffff';
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                return (yiq >= 150) ? '#181c32' : '#ffffff';
+            }
+
             function ensureMonthCalendar() {
                 if (monthCalendar || !monthCalendarRoot) return monthCalendar;
                 if (typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
@@ -1381,31 +1423,40 @@
                     fixedWeekCount: false,
                     showNonCurrentDates: true,
                     dayMaxEventRows: 4,
-                    events: events.map(e => ({
-                        id: e.id,
-                        title: e.title,
-                        start: e.start,
-                        end: e.end,
-                        color: e.color,
-                        extendedProps: { staff: e.staff, status: e.status }
-                    })),
+                    events: events.map(e => {
+                        const sc = (e.serviceColor && String(e.serviceColor).trim()) || e.color || e.backgroundColor || '#3699ff';
+                        return {
+                            id: e.id,
+                            title: e.title,
+                            start: e.start ? toApiDateTime(parseCalendarDate(e.start)) : null,
+                            end: e.end ? toApiDateTime(parseCalendarDate(e.end)) : null,
+                            color: sc,
+                            backgroundColor: sc,
+                            borderColor: sc,
+                            extendedProps: { staff: e.staff, status: e.status, serviceColor: e.serviceColor }
+                        };
+                    }),
                     eventClassNames: () => ['fc-staff-appointment'],
                     eventDidMount: function (info) {
-                        const statusColor = info.event.backgroundColor || '#3699ff';
-                        info.el.style.backgroundColor = '#f1f4f9';
-                        info.el.style.borderColor = '#eef2f7';
-                        info.el.style.borderLeft = `3px solid ${statusColor}`;
-                        info.el.style.color = '#3f4254';
+                        const eventColor = (info.event.extendedProps?.serviceColor && String(info.event.extendedProps.serviceColor).trim())
+                            || info.event.backgroundColor
+                            || info.event.borderColor
+                            || '#3699ff';
+                        const textColor = getContrastColor(eventColor);
+                        info.el.style.backgroundColor = eventColor;
+                        info.el.style.borderColor = eventColor;
+                        info.el.style.borderLeft = `4px solid rgba(0,0,0,0.25)`;
+                        info.el.style.color = textColor;
                     },
                     eventContent: function (arg) {
                         const client = arg.event.title || (arg.event.extendedProps && arg.event.extendedProps.client) || 'Unassigned';
                         const staff = (arg.event.extendedProps && arg.event.extendedProps.staff) || '';
                         const start = arg.event.start;
-                        const time = start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+                        const time = start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
 
                         const wrap = document.createElement('div');
                         wrap.className = 'fc-staff-appointment-inner px-1 py-1';
-                        wrap.innerHTML = `<div class="fw-bold text-dark text-truncate" style="font-size:11px; line-height:1.2;">${escapeHtml(client)}</div><div class="text-muted text-truncate" style="font-size:10px;">${escapeHtml(time)}${staff ? ' • ' + escapeHtml(staff) : ''}</div>`;
+                        wrap.innerHTML = `<div class="fw-bold text-truncate" style="font-size:11px; line-height:1.2;">${escapeHtml(client)}</div><div class="opacity-90 text-truncate" style="font-size:10px;">${escapeHtml(time)}${staff ? ' • ' + escapeHtml(staff) : ''}</div>`;
                         return { domNodes: [wrap] };
                     },
                     eventClick: function (info) {
@@ -1418,6 +1469,13 @@
                         } else if (typeof openAppointmentModalForEdit === 'function') {
                             openAppointmentModalForEdit(info.event.id, info.jsEvent);
                         }
+                    },
+                    dateClick: async function (info) {
+                        if (info.jsEvent && info.jsEvent.target.closest('.fc-event')) return;
+                        const clickedDate = parseCalendarDate(info.dateStr) || new Date(info.date);
+                        clickedDate.setHours(9, 0, 0, 0);
+                        const endDate = new Date(clickedDate.getTime() + 30 * 60000);
+                        await checkSlotAvailabilityAndOpen(clickedDate, endDate);
                     }
                 });
 
@@ -1427,11 +1485,12 @@
             }
 
             function showMonthView() {
-                const cal = ensureMonthCalendar();
-                if (!cal) return;
                 if (monthContainer) monthContainer.classList.remove('d-none');
                 if (header) header.classList.add('d-none');
                 if (gridBody) gridBody.classList.add('d-none');
+                const cal = ensureMonthCalendar();
+                if (!cal) return;
+                cal.updateSize();
                 updateMonthHeader(cal.getDate());
             }
 
@@ -1454,16 +1513,24 @@
             const newClientModalEl = document.getElementById('newClientModal');
             const newClientModal = new bootstrap.Modal(newClientModalEl);
             const newClientForm = document.getElementById('new-client-form');
-            // Generate 24-hour time column
+            // Generate 24-hour time column with 15-minute slots (4 per hour = 96 total, each 30px)
             function generateTimeColumn() {
                 timeCol.innerHTML = '';
                 for (let h = 0; h < 24; h++) {
-                    const slot = document.createElement('div');
-                    slot.className = 'time-slot';
                     const period = h >= 12 ? 'PM' : 'AM';
                     const hour12 = h % 12 === 0 ? 12 : h % 12;
-                    slot.innerHTML = `<span class="time-label label-hour">${String(hour12).padStart(2, '0')}:00 ${period}</span>`;
-                    timeCol.appendChild(slot);
+                    const hourPad = String(hour12).padStart(2, '0');
+                    const minuteLabels = ['00', '15', '30', '45'];
+
+                    for (let m = 0; m < 4; m++) {
+                        const slot = document.createElement('div');
+                        let slotClasses = 'time-slot';
+                        if (m === 0) slotClasses += ' time-slot-hour-start';
+                        if (m === 3) slotClasses += ' time-slot-hour-end';
+                        slot.className = slotClasses;
+                        slot.innerHTML = `<span class="time-label">${hourPad}:${minuteLabels[m]} ${period}</span>`;
+                        timeCol.appendChild(slot);
+                    }
                 }
             }
 
@@ -1961,30 +2028,43 @@
                 if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return null;
 
                 if (toLocalDate(startDate) !== toLocalDate(endDate)) {
-                    return 'Appointment must be within one day and inside staff working hours.';
-                }
-
-                if (staffField && !hasSelectOptionValue(staffField, staffId)) {
-                    return 'The selected staff member is not available for this date and time.';
+                    return 'Selected staff member is not available during this time.';
                 }
 
                 const segments = getStaffScheduleForDate(staffId, startDate);
                 if (!Array.isArray(segments) || segments.length === 0) {
-                    return null;
+                    return 'Selected staff member is not scheduled for this date and time.';
+                }
+
+                const workingSegments = segments.filter(s => s && s.is_working);
+                if (workingSegments.length === 0) {
+                    return 'Selected staff member is not scheduled for this date and time.';
                 }
 
                 const apptStart = (startDate.getHours() * 60) + startDate.getMinutes();
                 const apptEnd = (endDate.getHours() * 60) + endDate.getMinutes();
 
-                for (const schedule of segments) {
-                    if (!schedule || !schedule.is_working) continue;
+                for (const schedule of workingSegments) {
                     const workingStart = parseTimeToMinutes(schedule.start_time);
                     const workingEnd = parseTimeToMinutes(schedule.end_time);
                     if (workingStart === null || workingEnd === null) continue;
-                    if (apptStart >= workingStart && apptEnd <= workingEnd) return null;
+                    if (apptStart >= workingStart && apptEnd <= workingEnd) {
+                        if (Array.isArray(schedule.breaks) && schedule.breaks.length > 0) {
+                            for (const brk of schedule.breaks) {
+                                const brkStart = parseTimeToMinutes(brk.start_time || brk.start);
+                                const brkEnd = parseTimeToMinutes(brk.end_time || brk.end);
+                                if (brkStart !== null && brkEnd !== null) {
+                                    if (apptStart < brkEnd && apptEnd > brkStart) {
+                                        return 'Appointment overlaps with staff break time.';
+                                    }
+                                }
+                            }
+                        }
+                        return null;
+                    }
                 }
 
-                return 'The selected staff member is not available for this date and time.';
+                return 'Selected staff member is not available during this time.';
             }
 
             function clearNewClientFields() {
@@ -2355,6 +2435,9 @@
                     });
 
                     if (!res.ok) {
+                        if (!silent) {
+                            showPageNotice('Unable to check staff availability for the selected time.', 'danger');
+                        }
                         return;
                     }
 
@@ -2375,9 +2458,10 @@
                         const hadPreviousStaff = Boolean(currentStaffId);
                         staffField.value = '';
                         if (hadPreviousStaff && !silent) {
-                            showPageNotice('The selected staff member is not available for this date and time.', 'danger');
+                            const err = validateAppointmentWithinStaffHours(currentStaffId, parseCalendarDate(startVal), parseCalendarDate(endVal));
+                            showPageNotice(err || 'Selected staff member is not available during this time.', 'danger');
                         } else if (!availableStaff.length && !silent) {
-                            showPageNotice('No staff is scheduled for the selected date and time. Please choose another time.', 'danger');
+                            showPageNotice('Selected staff member is not scheduled for this date and time.', 'danger');
                         }
                     }
 
@@ -2386,6 +2470,9 @@
                 } catch (err) {
                     if (err.name === 'AbortError') return [];
                     console.error('Error refreshing staff availability', err);
+                    if (!silent) {
+                        showPageNotice('Unable to check staff availability for the selected time.', 'danger');
+                    }
                     return [];
                 }
             }
@@ -2570,75 +2657,134 @@
                 statusField.addEventListener('change', toggleCancellationReasonField);
             }
 
-            let isOpeningAppointmentModal = false;
+            let slotAvailabilityAbortController = null;
+            let slotAvailabilitySeq = 0;
 
-            async function openAppointmentModalForCreate(startDate, endDate, staffId = '') {
-                if (isOpeningAppointmentModal) return false;
-                isOpeningAppointmentModal = true;
-
+            async function checkSlotAvailabilityAndOpen(startDate, endDate, preferredStaffId = '', clientId = '') {
                 const startVal = startDate instanceof Date ? toInputDateTime(startDate) : String(startDate);
                 const endVal = endDate instanceof Date ? toInputDateTime(endDate) : String(endDate);
 
+                if (slotAvailabilityAbortController) {
+                    slotAvailabilityAbortController.abort();
+                }
+                slotAvailabilityAbortController = new AbortController();
+                const mySeq = ++slotAvailabilitySeq;
+
                 const filterLocation = document.getElementById('calendar-filter-location')?.value;
                 const locationId = (locationField && locationField.value) ? locationField.value : (filterLocation || '');
+                const filterService = document.getElementById('calendar-filter-service')?.value;
+                const serviceId = (serviceField && serviceField.value) ? serviceField.value : (filterService || '');
+
+                const params = new URLSearchParams({
+                    start_time: startVal,
+                    end_time: endVal,
+                });
+                if (locationId) params.set('location_id', locationId);
+                if (serviceId) params.set('service_id', serviceId);
+
+                document.body.style.cursor = 'wait';
 
                 try {
-                    const availableStaff = await checkStaffAvailability(startVal, endVal, locationId);
+                    const res = await fetch(`${calendarUrl('available-staff')}?${params.toString()}`, {
+                        signal: slotAvailabilityAbortController.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
 
-                    if (!availableStaff || availableStaff.length === 0) {
-                        showPageNotice('No staff is scheduled for the selected date and time. Please choose another time.', 'danger');
-                        return false;
+                    if (mySeq !== slotAvailabilitySeq) return;
+
+                    if (!res.ok) {
+                        showPageNotice('Unable to check staff availability for the selected time.', 'danger');
+                        return;
                     }
 
-                    hideAppointmentDetailsCard();
-                    modalTitle.textContent = 'New Appointment';
-                    setAppointmentReadOnlyMode(false);
-                    apptIdField.value = '';
-                    hydrateFormOptions();
+                    const data = await res.json();
+                    const availableStaff = Array.isArray(data.staff) ? data.staff : [];
 
-                    startField.value = startVal;
-                    endField.value = endVal;
-                    if (locationId && locationField && hasSelectOptionValue(locationField, locationId)) {
-                        locationField.value = String(locationId);
+                    // If user clicked in Day view on a specific staff column:
+                    let isAvailable = availableStaff.length > 0;
+                    if (currentView === 'day' && preferredStaffId) {
+                        isAvailable = availableStaff.some(s => String(s.id) === String(preferredStaffId));
                     }
-                    clearNewClientFields();
-                    serviceField.value = '';
-                    setAppointmentClient('');
-                    statusField.value = 'booked';
-                    notesField.value = '';
-                    const reasonInput = document.getElementById('appt-cancellation-reason');
-                    if (reasonInput) reasonInput.value = '';
-                    toggleCancellationReasonField();
 
+                    if (!isAvailable) {
+                        showPageNotice('No staff is scheduled for the selected date and time.', 'danger');
+                        return;
+                    }
+
+                    openAppointmentModalForCreate(startDate, endDate, preferredStaffId, clientId, availableStaff);
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.error('Error checking slot availability:', err);
+                    showPageNotice('Unable to check staff availability for the selected time.', 'danger');
+                } finally {
+                    if (mySeq === slotAvailabilitySeq) {
+                        document.body.style.cursor = '';
+                    }
+                }
+            }
+
+            function openAppointmentModalForCreate(startDate, endDate, staffId = '', clientId = '', preloadedStaff = null) {
+                const startVal = startDate instanceof Date ? toInputDateTime(startDate) : String(startDate);
+                const endVal = endDate instanceof Date ? toInputDateTime(endDate) : String(endDate);
+
+                hideAppointmentDetailsCard();
+                modalTitle.textContent = 'New Appointment';
+                setAppointmentReadOnlyMode(false);
+                apptIdField.value = '';
+                hydrateFormOptions();
+
+                startField.value = startVal;
+                endField.value = endVal;
+                const filterLocation = document.getElementById('calendar-filter-location')?.value;
+                const locationId = (locationField && locationField.value) ? locationField.value : (filterLocation || '');
+                if (locationId && locationField && hasSelectOptionValue(locationField, locationId)) {
+                    locationField.value = String(locationId);
+                    hydrateStaffOptionsForSelectedLocation();
+                }
+
+                clearNewClientFields();
+                serviceField.value = '';
+                setAppointmentClient(clientId || '');
+                statusField.value = 'booked';
+                notesField.value = '';
+                const reasonInput = document.getElementById('appt-cancellation-reason');
+                if (reasonInput) reasonInput.value = '';
+                toggleCancellationReasonField();
+
+                if (Array.isArray(preloadedStaff) && preloadedStaff.length > 0) {
                     fillSelect(
                         staffField,
-                        availableStaff,
+                        preloadedStaff,
                         'Select staff'
                     );
-
                     const desired = staffId ? String(staffId) : '';
-                    if (desired && availableStaff.some(s => String(s.id) === desired)) {
+                    if (desired && preloadedStaff.some(s => String(s.id) === desired)) {
                         staffField.value = desired;
-                    } else if (availableStaff.length === 1) {
-                        staffField.value = String(availableStaff[0].id);
+                    } else {
+                        staffField.value = String(preloadedStaff[0].id);
+                    }
+                    syncLocationFromStaff();
+                    hydrateServiceOptionsForSelectedStaff();
+                } else {
+                    const desired = staffId ? String(staffId) : '';
+                    if (desired && hasSelectOptionValue(staffField, desired)) {
+                        staffField.value = desired;
+                        syncLocationFromStaff();
                     } else {
                         staffField.value = '';
                     }
-
-                    if (staffField.value) {
-                        syncLocationFromStaff();
-                    }
                     hydrateServiceOptionsForSelectedStaff();
 
-                    appointmentModal.show();
-                    return true;
-                } catch (err) {
-                    console.error('Failed to verify staff availability before opening modal', err);
-                    showPageNotice('Unable to check staff availability for the selected time.', 'danger');
-                    return false;
-                } finally {
-                    isOpeningAppointmentModal = false;
+                    refreshStaffAvailabilityForCurrentSlot({ preferredStaffId: desired, silent: true }).catch(err => {
+                        console.warn('Async staff availability check error:', err);
+                    });
                 }
+
+                appointmentModal.show();
+                return true;
             }
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
@@ -2772,12 +2918,12 @@
                     setText('cmod-client-phone', client.phone);
                     setText('cmod-client-email', client.email);
 
-                    // Appointment
-                    const start = appt.start ? new Date(appt.start) : null;
-                    const end = appt.end ? new Date(appt.end) : null;
+                    // Appointment - parse business-local wall-clock time without timezone shift
+                    const start = appt.start ? parseCalendarDate(appt.start) : null;
+                    const end = appt.end ? parseCalendarDate(appt.end) : null;
                     setText('cmod-appt-date', start ? start.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-');
-                    setText('cmod-appt-start', start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
-                    setText('cmod-appt-end', end ? end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '-');
+                    setText('cmod-appt-start', start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-');
+                    setText('cmod-appt-end', end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-');
                     setText('cmod-appt-duration', appt.duration ? appt.duration + ' minutes' : '-');
                     setText('cmod-appt-location', location.name || '-');
                     setText('cmod-appt-notes', appt.notes || 'No notes');
@@ -2963,7 +3109,6 @@
                         const scheduleContainer = document.createElement('div');
                         scheduleContainer.className = 'staff-schedule-container';
                         scheduleContainer.id = `staff-schedules-${i}`;
-                        scheduleContainer.style.borderTop = '1px solid var(--calendar-border-hourly)';
 
                         headerCell.appendChild(scheduleContainer);
                         header.appendChild(headerCell);
@@ -3042,13 +3187,16 @@
                     if (currentView === 'month' && monthCalendar) {
                         monthCalendar.removeAllEvents();
                         window._calendarEvents.forEach(ev => {
+                            const sc = (ev.serviceColor && String(ev.serviceColor).trim()) || ev.color || ev.backgroundColor || '#3699ff';
                             monthCalendar.addEvent({
                                 id: ev.id,
                                 title: ev.title,
-                                start: ev.start,
-                                end: ev.end,
-                                color: ev.color,
-                                extendedProps: { staff: ev.staff, status: ev.status }
+                                start: ev.start ? toApiDateTime(parseCalendarDate(ev.start)) : null,
+                                end: ev.end ? toApiDateTime(parseCalendarDate(ev.end)) : null,
+                                color: sc,
+                                backgroundColor: sc,
+                                borderColor: sc,
+                                extendedProps: { staff: ev.staff, status: ev.status, serviceColor: ev.serviceColor }
                             });
                         });
                     }
@@ -3159,8 +3307,11 @@
                         el.style.right = '6px';
                         el.style.top = (topPerc * colHeight) + 'px';
                         el.style.height = (heightPerc * colHeight) + 'px';
-                        el.style.background = ev.color || '#3699ff';
-                        el.style.color = '#fff';
+                        const apptColor = (ev.serviceColor && String(ev.serviceColor).trim()) || ev.color || ev.backgroundColor || '#3699ff';
+                        const textColor = getContrastColor(apptColor);
+                        el.style.background = apptColor;
+                        el.style.border = `1px solid ${apptColor}`;
+                        el.style.color = textColor;
                         el.style.padding = '6px 8px';
                         el.style.borderRadius = '6px';
                         el.style.cursor = isCompletedEvent ? 'default' : 'grab';
@@ -3172,9 +3323,13 @@
                         const serviceName = ev.service || '';
                         const staffName = ev.staff || '';
                         const timeStr = `${formatTimeShort(ev.start)} - ${formatTimeShort(ev.end)}`;
+                        const statusLabel = ev.status || 'booked';
 
                         el.innerHTML = `
-                            <div class="fw-bold text-truncate" style="font-size: 12px; line-height: 1.2;">${escapeHtml(clientTitle)}</div>
+                            <div class="d-flex align-items-center justify-content-between mb-1" style="gap: 4px;">
+                                <span class="fw-bold text-truncate" style="font-size: 12px; line-height: 1.2;">${escapeHtml(clientTitle)}</span>
+                                <span class="badge" style="font-size: 9px; padding: 1px 4px; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit;">${escapeHtml(statusLabel)}</span>
+                            </div>
                             ${serviceName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(serviceName)}</div>` : ''}
                             ${staffName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(staffName)}</div>` : ''}
                             <div class="opacity-90" style="font-size: 10px;">${escapeHtml(timeStr)}</div>
@@ -3211,18 +3366,42 @@
                     gridBody.appendChild(notice);
                 }
             }
+            let isSavingAppointment = false;
+
             appointmentForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
+                if (isSavingAppointment) return;
                 if (apptSaveBtn && apptSaveBtn.classList.contains('d-none')) return;
+                if (apptSaveBtn && apptSaveBtn.disabled) return;
+
+                // Immediately cancel background availability refresh or debounce timers
+                if (staffRefreshDebounceTimer) {
+                    clearTimeout(staffRefreshDebounceTimer);
+                    staffRefreshDebounceTimer = null;
+                }
+                if (staffAvailabilityAbortController) {
+                    staffAvailabilityAbortController.abort();
+                    staffAvailabilityAbortController = null;
+                }
 
                 const appointmentId = apptIdField.value;
                 const staffId = staffField.value;
                 const serviceId = serviceField.value;
+                const selectedClientId = clientField.value || null;
                 const start = fromInputDateTime(startField.value);
                 let end = fromInputDateTime(endField.value);
 
                 if (!staffId || !serviceId || !startField.value || !endField.value) {
+                    if (!staffId) {
+                        showPageNotice('Selected staff member is not scheduled for this date and time.');
+                        return;
+                    }
                     showPageNotice('Staff, service, start and end are required.');
+                    return;
+                }
+
+                if (!selectedClientId) {
+                    showPageNotice('Client is required. Select an existing client or add a new client.');
                     return;
                 }
 
@@ -3240,36 +3419,26 @@
                     return;
                 }
 
+                const cancellationReason = document.getElementById('appt-cancellation-reason')?.value?.trim() || null;
+                if (statusField.value === 'cancelled' && !cancellationReason) {
+                    showPageNotice('Cancellation reason is required when canceling an appointment.');
+                    return;
+                }
+
                 const hoursError = validateAppointmentWithinStaffHours(staffId, start, end);
                 if (hoursError) {
                     showPageNotice(hoursError);
                     return;
                 }
 
+                isSavingAppointment = true;
+                if (apptSaveBtn) {
+                    apptSaveBtn.disabled = true;
+                    apptSaveBtn.dataset.originalText = apptSaveBtn.textContent || 'Save';
+                    apptSaveBtn.textContent = 'Saving...';
+                }
+
                 try {
-                    if (apptSaveBtn) {
-                        apptSaveBtn.disabled = true;
-                        apptSaveBtn.dataset.originalText = apptSaveBtn.textContent;
-                        apptSaveBtn.textContent = 'Saving...';
-                    }
-                    const selectedClientId = clientField.value || null;
-
-                    if (!selectedClientId) {
-                        showPageNotice('Client is required. Select an existing client or add a new client.');
-                        return;
-                    }
-
-                    const cancellationReason = document.getElementById('appt-cancellation-reason')?.value?.trim() || null;
-
-                    if (statusField.value === 'cancelled' && !cancellationReason) {
-                        showPageNotice('Cancellation reason is required when canceling an appointment.');
-                        if (apptSaveBtn) {
-                            apptSaveBtn.disabled = false;
-                            apptSaveBtn.textContent = apptSaveBtn.dataset.originalText || 'Save';
-                        }
-                        return;
-                    }
-
                     const payload = {
                         staff_id: staffId,
                         service_id: serviceId,
@@ -3287,7 +3456,12 @@
 
                     const res = await fetch(url, {
                         method: method,
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': getCsrfToken()
+                        },
                         body: JSON.stringify(payload)
                     });
 
@@ -3297,16 +3471,63 @@
                     }
 
                     const resData = await res.json().catch(() => ({}));
+
+                    // Immediately close modal
                     appointmentModal.hide();
-                    await loadDataAndRender();
+
+                    // Immediately render new or updated appointment on calendar
+                    if (resData && resData.appointment) {
+                        const appt = resData.appointment;
+                        if (!appt.serviceColor && serviceId) {
+                            const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(serviceId));
+                            if (svc && svc.color) {
+                                appt.serviceColor = svc.color;
+                                appt.color = svc.color;
+                                appt.backgroundColor = svc.color;
+                                appt.borderColor = svc.color;
+                            }
+                        }
+
+                        window._calendarEvents = window._calendarEvents || [];
+                        const existingIdx = window._calendarEvents.findIndex(ev => String(ev.id) === String(appt.id));
+                        if (existingIdx >= 0) {
+                            window._calendarEvents[existingIdx] = appt;
+                        } else {
+                            window._calendarEvents.push(appt);
+                        }
+
+                        renderAppointments();
+
+                        if (currentView === 'month' && monthCalendar) {
+                            const sc = (appt.serviceColor && String(appt.serviceColor).trim()) || appt.color || appt.backgroundColor || '#3699ff';
+                            const existingMonthEv = monthCalendar.getEventById(String(appt.id));
+                            if (existingMonthEv) existingMonthEv.remove();
+                            monthCalendar.addEvent({
+                                id: appt.id,
+                                title: appt.title,
+                                start: appt.start ? toApiDateTime(parseCalendarDate(appt.start)) : null,
+                                end: appt.end ? toApiDateTime(parseCalendarDate(appt.end)) : null,
+                                color: sc,
+                                backgroundColor: sc,
+                                borderColor: sc,
+                                extendedProps: { staff: appt.staff, status: appt.status, serviceColor: appt.serviceColor }
+                            });
+                        }
+                    }
+
                     showPageNotice('Appointment saved successfully.', 'success');
 
                     if (resData && resData.redirect_url && payload.status === 'completed') {
                         window.location.href = resData.redirect_url;
+                        return;
                     }
+
+                    // Background sync of schedules and appointments without blocking UI
+                    loadDataAndRender().catch(err => console.warn('Background calendar load error:', err));
                 } catch (err) {
                     showPageNotice(err.message || 'Error saving appointment.');
                 } finally {
+                    isSavingAppointment = false;
                     if (apptSaveBtn) {
                         apptSaveBtn.disabled = false;
                         apptSaveBtn.textContent = apptSaveBtn.dataset.originalText || 'Save';
@@ -3330,6 +3551,14 @@
                 syncLocationFromStaff();
                 hydrateServiceOptionsForSelectedStaff();
                 if (serviceField.value && startField.value) applyServiceDurationToEndTime();
+                if (staffField.value && startField.value && endField.value) {
+                    const start = parseCalendarDate(startField.value);
+                    const end = parseCalendarDate(endField.value);
+                    const err = validateAppointmentWithinStaffHours(staffField.value, start, end);
+                    if (err) {
+                        showPageNotice(err);
+                    }
+                }
             });
             ['calendar-filter-location', 'calendar-filter-staff', 'calendar-filter-service', 'calendar-filter-status'].forEach(id => {
                 const el = document.getElementById(id);
@@ -3356,12 +3585,7 @@
                     const now = new Date();
                     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
                     const end = new Date(now.getTime() + 30 * 60000);
-                    try {
-                        window.AppButtonLoading?.set(btnNewAppt, 'Checking...');
-                        await openAppointmentModalForCreate(now, end);
-                    } finally {
-                        window.AppButtonLoading?.reset(btnNewAppt);
-                    }
+                    await checkSlotAvailabilityAndOpen(now, end);
                 });
             }
 
@@ -3418,15 +3642,14 @@
                                     a.innerHTML = `<div><strong>${escapeHtml(c.name)}</strong><br><small class="text-muted">${escapeHtml(c.phone || c.email || '')}</small></div><button class="btn btn-sm btn-outline-primary">Select</button>`;
                                     a.addEventListener('click', async function (ev) {
                                         ev.preventDefault();
-                                        clientField.value = String(c.id);
                                         if (clientSearchModal) clientSearchModal.hide();
                                         if (step1SlotContext) {
-                                            await openAppointmentModalForCreate(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId);
+                                            await checkSlotAvailabilityAndOpen(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId, c.id);
                                         } else {
                                             const now = new Date();
                                             now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
                                             const end = new Date(now.getTime() + 30 * 60000);
-                                            await openAppointmentModalForCreate(now, end);
+                                            await checkSlotAvailabilityAndOpen(now, end, '', c.id);
                                         }
                                     });
                                     step1Results.appendChild(a);
@@ -3518,8 +3741,9 @@
                 if (!apptId) return;
                 const rect = col.getBoundingClientRect();
                 const y = e.clientY - rect.top;
-                const colHeight = rect.height;
-                const minutes = Math.round((y / colHeight) * 24 * 60);
+                const colHeight = rect.height || (24 * 120);
+                const rawMinutes = (y / colHeight) * 24 * 60;
+                const minutes = Math.round(rawMinutes / 15) * 15;
 
                 // fetch current appointment to know duration
                 try {
@@ -3569,16 +3793,16 @@
                 const col = this;
                 const rect = col.getBoundingClientRect();
                 const y = e.clientY - rect.top;
-                const colHeight = rect.height;
-                const minutes = Math.round((y / colHeight) * 24 * 60);
-                const rounded = Math.round(minutes / 15) * 15;
+                const colHeight = rect.height || (24 * 120);
+                const minutes = (y / colHeight) * 24 * 60;
+                const rounded = Math.floor(minutes / 15) * 15;
 
                 const selectedDate = new Date(currentWeekStart);
                 selectedDate.setDate(currentWeekStart.getDate() + parseInt(col.dataset.dayIndex, 10));
                 selectedDate.setHours(0, 0, 0, 0);
                 selectedDate.setMinutes(rounded);
 
-                const durationMinutes = 30;
+                const durationMinutes = 15;
                 const endDate = new Date(selectedDate.getTime() + durationMinutes * 60000);
 
                 let preferredStaffId = '';
@@ -3598,12 +3822,7 @@
                     preferredStaffId = availableStaff.length > 0 ? availableStaff[0].id : '';
                 }
 
-                col.style.cursor = 'wait';
-                try {
-                    await openAppointmentModalForCreate(selectedDate, endDate, preferredStaffId);
-                } finally {
-                    col.style.cursor = '';
-                }
+                await checkSlotAvailabilityAndOpen(selectedDate, endDate, preferredStaffId);
             }
             // Quick status action buttons on details card
             document.querySelectorAll('#card-quick-actions .btn-quick-status').forEach(btn => {

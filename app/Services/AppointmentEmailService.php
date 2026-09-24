@@ -151,6 +151,24 @@ class AppointmentEmailService
                 $clientMail = new $mailableClass($appointment, $business, $previous, $reference, 'client');
                 if ($isAsync) {
                     Mail::to($clientEmail)->queue($clientMail);
+                } elseif (!app()->runningUnitTests() && app()->bound('request') && request()->expectsJson()) {
+                    dispatch(function () use ($clientEmail, $clientMail, $appointment, $type) {
+                        try {
+                            Mail::to($clientEmail)->send($clientMail);
+                            Log::info('Appointment email sent to client after response', [
+                                'appointment_id' => $appointment->id,
+                                'recipient' => $clientEmail,
+                                'mail_type' => $type,
+                            ]);
+                        } catch (\Throwable $exception) {
+                            Log::error('Appointment email to client failed', [
+                                'appointment_id' => $appointment->id,
+                                'recipient' => $clientEmail,
+                                'mail_type' => $type,
+                                'exception' => $exception->getMessage(),
+                            ]);
+                        }
+                    })->afterResponse();
                 } else {
                     Mail::to($clientEmail)->send($clientMail);
                 }
@@ -177,6 +195,24 @@ class AppointmentEmailService
                 $staffMail = new $mailableClass($appointment, $business, $previous, $reference, 'staff');
                 if ($isAsync) {
                     Mail::to($staffEmail)->queue($staffMail);
+                } elseif (!app()->runningUnitTests() && app()->bound('request') && request()->expectsJson()) {
+                    dispatch(function () use ($staffEmail, $staffMail, $appointment, $type) {
+                        try {
+                            Mail::to($staffEmail)->send($staffMail);
+                            Log::info('Appointment email sent to staff after response', [
+                                'appointment_id' => $appointment->id,
+                                'recipient' => $staffEmail,
+                                'mail_type' => $type,
+                            ]);
+                        } catch (\Throwable $exception) {
+                            Log::error('Appointment email to staff failed', [
+                                'appointment_id' => $appointment->id,
+                                'recipient' => $staffEmail,
+                                'mail_type' => $type,
+                                'exception' => $exception->getMessage(),
+                            ]);
+                        }
+                    })->afterResponse();
                 } else {
                     Mail::to($staffEmail)->send($staffMail);
                 }
