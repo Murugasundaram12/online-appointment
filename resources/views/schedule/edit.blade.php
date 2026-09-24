@@ -14,7 +14,7 @@
     <div class="container-fluid px-4 pt-4">
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-4">
-                <form action="{{ route('schedule.update', $staff->id) }}" method="POST">
+                <form action="{{ route('schedule.update', $staff->id) }}" method="POST" novalidate>
                     @csrf
                     @method('PUT')
 

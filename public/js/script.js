@@ -1,4 +1,9 @@
 (function () {
+    // Globally prevent native browser validation tooltips (e.g. "Please fill in this field.")
+    document.addEventListener("invalid", (e) => {
+        e.preventDefault();
+    }, true);
+
     function initApp() {
     const toastContainer = document.querySelector(".app-toast-container");
 
@@ -193,9 +198,340 @@
         }
     });
 
-    document.querySelectorAll("form").forEach((form) => {
+    window.AppFormErrors = {
+        clear(form) {
+            if (!form) return;
+            form.querySelectorAll('.app-field-error').forEach(el => el.remove());
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        },
+
+        getLabelForField(ctrl) {
+            if (!ctrl) return 'This field';
+            let labelText = '';
+
+            // 1. Direct label[for="ctrl.id"]
+            if (ctrl.id) {
+                const label = ctrl.form ? ctrl.form.querySelector(`label[for="${ctrl.id}"]`) : document.querySelector(`label[for="${ctrl.id}"]`);
+                if (label) labelText = label.textContent;
+            }
+
+            // 2. Look for label in parent container
+            if (!labelText) {
+                const container = ctrl.closest('.field-content, .field-group, .form-group, .mb-3, .mb-2, .col-md-6, .col-md-4, .col-md-3, .col-md-12, .col-12, .col');
+                if (container) {
+                    const label = container.querySelector('label');
+                    if (label) labelText = label.textContent;
+                }
+            }
+
+            // 3. Parent label
+            if (!labelText) {
+                const parentLabel = ctrl.closest('label');
+                if (parentLabel) {
+                    const clone = parentLabel.cloneNode(true);
+                    clone.querySelectorAll('input, select, textarea, button').forEach(n => n.remove());
+                    labelText = clone.textContent;
+                }
+            }
+
+            // 4. aria-label or placeholder
+            if (!labelText) {
+                labelText = ctrl.getAttribute('aria-label') || '';
+            }
+
+            if (!labelText) {
+                const ph = ctrl.getAttribute('placeholder') || '';
+                if (ph) {
+                    labelText = ph.replace(/^(Enter|Select|Type|Input)\s+/i, '');
+                }
+            }
+
+            // 5. Fallback to name or id
+            if (!labelText) {
+                const rawName = ctrl.name || ctrl.id || '';
+                if (rawName) {
+                    labelText = rawName.replace(/\[.*\]/g, '').replace(/[_-]/g, ' ');
+                }
+            }
+
+            // Clean up: remove asterisks, colons, extra whitespace
+            labelText = labelText.replace(/[*:]/g, '').replace(/\s+/g, ' ').trim();
+            if (labelText) {
+                const lower = labelText.toLowerCase();
+                const naturalLabels = {
+                    'start time': 'Start time',
+                    'end time': 'End time',
+                    'service name': 'Service name',
+                    'first name': 'First name',
+                    'last name': 'Last name'
+                };
+                if (naturalLabels[lower]) {
+                    labelText = naturalLabels[lower];
+                } else {
+                    labelText = labelText.charAt(0).toUpperCase() + labelText.slice(1);
+                }
+            }
+            return labelText || 'This field';
+        },
+
+        findField(form, fieldName) {
+            if (!form || !fieldName) return null;
+            // 1. Direct name match
+            let el = form.querySelector(`[name="${fieldName}"]`);
+            if (el) return el;
+
+            // 2. Array name match, e.g. services[1][quantity] or split_methods[]
+            el = form.querySelector(`[name="${fieldName}[]"]`);
+            if (el) return el;
+
+            // 3. Dot notation to array bracket: "submitted_data.notes" -> "submitted_data[notes]"
+            if (fieldName.includes('.')) {
+                const parts = fieldName.split('.');
+                const bracketName = parts[0] + parts.slice(1).map(p => `[${p}]`).join('');
+                el = form.querySelector(`[name="${bracketName}"]`);
+                if (el) return el;
+            }
+
+            // 4. Exact ID
+            el = form.querySelector(`#${fieldName}`);
+            if (el) return el;
+
+            // 5. Kebab case ID: "first_name" -> "#first-name"
+            const kebab = fieldName.replace(/_/g, '-');
+            el = form.querySelector(`#${kebab}`);
+            if (el) return el;
+
+            // 6. Appointment modal mapping: "staff_id" -> "#appt-staff", etc.
+            const apptPrefixes = {
+                'staff_id': '#appt-staff',
+                'location_id': '#appt-location',
+                'service_id': '#appt-service',
+                'client_id': '#appt-client',
+                'start_time': '#appt-start',
+                'end_time': '#appt-end',
+                'status': '#appt-status',
+                'cancellation_reason': '#appt-cancellation-reason',
+                'notes': '#appt-notes'
+            };
+            if (apptPrefixes[fieldName]) {
+                el = form.querySelector(apptPrefixes[fieldName]);
+                if (el) return el;
+            }
+
+            // 7. Field aliases
+            const fieldAliases = {
+                'date': ['working_date', 'booking_date', 'appointment_date', 'start_date'],
+                'working_date': ['date', 'booking_date', 'start_date'],
+                'start_date': ['date', 'working_date'],
+                'service_name': ['name'],
+                'name': ['service_name'],
+                'service_category_id': ['category_id', 'category'],
+                'category_id': ['service_category_id'],
+                'appointment_id': ['appointment'],
+                'appointment': ['appointment_id'],
+                'location_id': ['location'],
+                'location': ['location_id'],
+                'staff_id': ['staff'],
+                'staff': ['staff_id']
+            };
+            if (fieldAliases[fieldName]) {
+                for (const alias of fieldAliases[fieldName]) {
+                    const aliasEl = form.querySelector(`[name="${alias}"]`) ||
+                                    form.querySelector(`[name="${alias}[]"]`) ||
+                                    form.querySelector(`#${alias}`) ||
+                                    form.querySelector(`#${alias.replace(/_/g, '-')}`) ||
+                                    (apptPrefixes[alias] ? form.querySelector(apptPrefixes[alias]) : null);
+                    if (aliasEl) return aliasEl;
+                }
+            }
+
+            // 8. Prefix with hyphen, e.g. "new-client-first-name" or "edit-service-name" or "cs-start-time"
+            el = form.querySelector(`[id$="-${kebab}"]`) || form.querySelector(`[id*="${kebab}"]`);
+            if (el) return el;
+
+            return null;
+        },
+
+        show(form, errors = {}) {
+            if (!form || !errors) return [];
+            this.clear(form);
+
+            const unmapped = [];
+            let count = 0;
+            let firstInvalidInput = null;
+
+            for (const [field, messages] of Object.entries(errors)) {
+                const message = Array.isArray(messages) ? messages[0] : messages;
+                if (!message) continue;
+
+                const input = this.findField(form, field);
+                if (!input) {
+                    unmapped.push(message);
+                    continue;
+                }
+
+                if (!firstInvalidInput) {
+                    firstInvalidInput = input;
+                }
+
+                input.classList.add('is-invalid');
+
+                // Determine target element to insert before (above)
+                let target = input;
+                if (input.closest('.input-group')) {
+                    target = input.closest('.input-group');
+                } else if (input.closest('.ts-wrapper')) {
+                    target = input.closest('.ts-wrapper');
+                } else if (input.tomselect && input.tomselect.wrapper) {
+                    target = input.tomselect.wrapper;
+                } else if (input.nextElementSibling && input.nextElementSibling.classList.contains('ts-wrapper')) {
+                    target = input.nextElementSibling;
+                }
+
+                // Check if error already exists directly above
+                const prev = target.previousElementSibling;
+                if (prev && (prev.classList.contains('app-field-error') || prev.classList.contains('invalid-feedback')) && prev.getAttribute('data-error-field') === field) {
+                    prev.textContent = message;
+                    prev.classList.add('d-block');
+                } else {
+                    const errorEl = document.createElement('div');
+                    errorEl.className = 'invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium';
+                    errorEl.setAttribute('role', 'alert');
+                    errorEl.setAttribute('data-error-field', field);
+                    errorEl.textContent = message;
+                    target.parentNode.insertBefore(errorEl, target);
+                }
+                count++;
+            }
+            this.attachAutoClear(form);
+
+            if (firstInvalidInput && typeof firstInvalidInput.focus === 'function') {
+                try {
+                    firstInvalidInput.focus({ preventScroll: false });
+                } catch (err) {}
+            }
+
+            unmapped.mappedCount = count;
+            return unmapped;
+        },
+
+        validate(form) {
+            if (!form) return true;
+            const errors = {};
+            let hasErrors = false;
+
+            const controls = form.querySelectorAll('input, select, textarea');
+            controls.forEach((ctrl) => {
+                if (ctrl.disabled || ctrl.type === 'hidden' || ctrl.type === 'submit' || ctrl.type === 'button' || ctrl.type === 'reset') {
+                    return;
+                }
+
+                // Skip controls in hidden panels/tabs
+                if (ctrl.closest('.d-none') || ctrl.closest('[hidden]')) {
+                    return;
+                }
+
+                const fieldName = ctrl.name || ctrl.id;
+                if (!fieldName || errors[fieldName]) return;
+
+                const label = this.getLabelForField(ctrl);
+                const val = (ctrl.value || '').trim();
+
+                // 1. Required check
+                if (ctrl.hasAttribute('required') || ctrl.required) {
+                    if (ctrl.type === 'checkbox') {
+                        if (!ctrl.checked) {
+                            errors[fieldName] = `${label} is required.`;
+                            hasErrors = true;
+                            return;
+                        }
+                    } else if (ctrl.type === 'radio') {
+                        const checkedRadio = form.querySelector(`input[type="radio"][name="${ctrl.name}"]:checked`);
+                        if (!checkedRadio) {
+                            errors[fieldName] = `${label} is required.`;
+                            hasErrors = true;
+                            return;
+                        }
+                    } else if (!val) {
+                        errors[fieldName] = `${label} is required.`;
+                        hasErrors = true;
+                        return;
+                    }
+                }
+
+                // 2. Email format check if filled
+                if (ctrl.type === 'email' && val) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(val)) {
+                        errors[fieldName] = `${label} must be a valid email address.`;
+                        hasErrors = true;
+                        return;
+                    }
+                }
+
+                // 3. Time comparison check: end_time must be after start_time if both given
+                if (ctrl.name === 'end_time' && val) {
+                    const startCtrl = form.querySelector('[name="start_time"]') || form.querySelector('#start_time') || form.querySelector('#cs-start-time');
+                    if (startCtrl && startCtrl.value && val <= startCtrl.value) {
+                        errors[fieldName] = 'End time must be after start time.';
+                        hasErrors = true;
+                        return;
+                    }
+                }
+            });
+
+            if (hasErrors) {
+                this.show(form, errors);
+                return false;
+            }
+
+            this.clear(form);
+            return true;
+        },
+
+        attachAutoClear(form) {
+            if (!form || form.dataset.errorClearBound === '1') return;
+            form.dataset.errorClearBound = '1';
+
+            const clearForElement = (el) => {
+                if (!el) return;
+                el.classList.remove('is-invalid');
+                let target = el.closest('.input-group') || el.closest('.ts-wrapper') || (el.nextElementSibling && el.nextElementSibling.classList.contains('ts-wrapper') ? el.nextElementSibling : el);
+                let prev = target.previousElementSibling;
+                if (prev && (prev.classList.contains('app-field-error') || prev.classList.contains('invalid-feedback'))) {
+                    prev.remove();
+                }
+                const fieldName = el.name || el.id;
+                if (fieldName) {
+                    form.querySelectorAll(`[data-error-field="${fieldName}"]`).forEach(err => err.remove());
+                }
+            };
+
+            form.addEventListener('input', (e) => clearForElement(e.target), true);
+            form.addEventListener('change', (e) => clearForElement(e.target), true);
+        }
+    };
+
+    function bindFormSubmit(form) {
+        if (!form || form.dataset.submitBound === "1") return;
+        form.dataset.submitBound = "1";
+
+        form.setAttribute("novalidate", "");
+        form.noValidate = true;
+
+        window.AppFormErrors?.attachAutoClear(form);
+
         form.addEventListener("submit", (event) => {
             if (form.dataset.appManaged === "true") return;
+
+            // Run client-side validation for non-GET forms
+            if (form.method.toLowerCase() !== "get" && form.dataset.noClientValidate !== "true") {
+                if (window.AppFormErrors && !window.AppFormErrors.validate(form)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    return;
+                }
+            }
 
             if (form.dataset.confirm && form.dataset.confirmed !== "1") {
                 event.preventDefault();
@@ -222,7 +558,9 @@
                 window.AppButtonLoading.set(submitter, submitter.dataset.loadingText || "Saving...");
             }
         });
-    });
+    }
+
+    document.querySelectorAll("form").forEach(bindFormSubmit);
 
     const ctxTrend = document.getElementById("bookingTrendChart");
     if (ctxTrend && window.Chart) {
@@ -385,6 +723,12 @@
     document.addEventListener('shown.bs.modal', (e) => {
         if (e.target) {
             e.target.querySelectorAll('.js-phone-input, input[name="phone"], input[name="alternate_phone"], input[name="emergency_phone"]').forEach(applyPhoneFormatting);
+        }
+    });
+
+    document.addEventListener('shown.bs.modal', (e) => {
+        if (e.target) {
+            e.target.querySelectorAll('form').forEach(bindFormSubmit);
         }
     });
     }

@@ -21,9 +21,6 @@
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
-        @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
-        @endif
 
         <div class="row g-3 mb-4">
             @foreach([
@@ -85,17 +82,22 @@
                                 <span id="payment-status-badge" class="badge bg-secondary">Pending</span>
                             </div>
                             <div id="payment-validation-msg" class="small text-danger d-none fw-semibold">
-                                <i class="bx bx-error-circle me-1"></i>Paid amount cannot exceed the remaining balance.
+                                <i class="bx bx-error-circle me-1"></i>Payment amount cannot be greater than the remaining invoice balance.
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3" id="payment-record-form">
+                <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3" id="payment-record-form" novalidate>
                     @csrf
                     <div class="col-md-3">
                         <label class="form-label">Invoice <span class="required-mark">*</span></label>
-                        <select name="invoice_id" id="payment-invoice" class="form-select" required>
+                        @error('invoice_id')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                        <select name="invoice_id" id="payment-invoice" class="form-select @error('invoice_id') is-invalid @enderror" required>
                             <option value="">Select invoice</option>
                             @foreach($invoices as $invoice)
                                 @php
@@ -117,21 +119,37 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Method <span class="required-mark">*</span></label>
-                        <select name="payment_method" id="pmt-method-select" class="form-select" required>
+                        @error('payment_method')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                        <select name="payment_method" id="pmt-method-select" class="form-select @error('payment_method') is-invalid @enderror" required>
+                            <option value="" selected>Select Payment Method</option>
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
-                            <option value="e_transfer">E-Transfer</option>
-                            <option value="both">Both / Split Payment</option>
                             <option value="insurance">Insurance</option>
+                            <option value="e_transfer">E-Transfer</option>
+                            <option value="both">Split Payment</option>
                         </select>
                     </div>
                     <div class="col-md-2" id="pmt-amount-wrapper">
-                        <label class="form-label" id="pmt-amount-label">Cash Amount <span class="required-mark">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control" value="{{ $selectedInvoice ? number_format(max((float) $selectedInvoice->total_amount - (float) $selectedInvoice->paid_amount, 0), 2, '.', '') : old('amount') }}" placeholder="0.00" required>
+                        <label class="form-label" id="pmt-amount-label">Amount <span class="required-mark">*</span></label>
+                        @error('amount')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control @error('amount') is-invalid @enderror" value="{{ old('amount', '0') }}" placeholder="0.00" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Date <span class="required-mark">*</span></label>
-                        <input type="date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
+                        @error('payment_date')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                        <input type="date" name="payment_date" class="form-control @error('payment_date') is-invalid @enderror" value="{{ old('payment_date', now()->toDateString()) }}" required>
                     </div>
                     <div class="col-md-3 d-flex align-items-end gap-2">
                         <button type="submit" id="pmt-submit-btn" class="btn btn-primary flex-grow-1">Add payment</button>
@@ -172,19 +190,39 @@
                             <div class="row g-2">
                                 <div id="pmt-cash-amount-col" class="col-md-6 col-lg-3">
                                     <label class="form-label small" for="split-cash-amount">Cash Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0" name="cash_amount" id="split-cash-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
+                                    @error('cash_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="number" step="0.01" min="0" name="cash_amount" id="split-cash-amount" class="form-control form-control-sm split-amt-input @error('cash_amount') is-invalid @enderror" placeholder="0.00">
                                 </div>
                                 <div id="pmt-card-amount-col" class="col-md-6 col-lg-3">
                                     <label class="form-label small" for="split-card-amount">Card Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0" name="card_amount" id="split-card-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
+                                    @error('card_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="number" step="0.01" min="0" name="card_amount" id="split-card-amount" class="form-control form-control-sm split-amt-input @error('card_amount') is-invalid @enderror" placeholder="0.00">
                                 </div>
                                 <div id="pmt-etransfer-amount-col" class="col-md-6 col-lg-3 d-none">
                                     <label class="form-label small" for="split-etransfer-amount">E-Transfer Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0" name="e_transfer_amount" id="split-etransfer-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
+                                    @error('e_transfer_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="number" step="0.01" min="0" name="e_transfer_amount" id="split-etransfer-amount" class="form-control form-control-sm split-amt-input @error('e_transfer_amount') is-invalid @enderror" placeholder="0.00">
                                 </div>
                                 <div id="pmt-insurance-amount-col" class="col-md-6 col-lg-3 d-none">
                                     <label class="form-label small" for="split-insurance-amount">Insurance Amount <span class="required-mark">*</span></label>
-                                    <input type="number" step="0.01" min="0" name="insurance_amount" id="split-insurance-amount" class="form-control form-control-sm split-amt-input" placeholder="0.00">
+                                    @error('insurance_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="number" step="0.01" min="0" name="insurance_amount" id="split-insurance-amount" class="form-control form-control-sm split-amt-input @error('insurance_amount') is-invalid @enderror" placeholder="0.00">
                                 </div>
                             </div>
                         </div>
@@ -197,7 +235,12 @@
                             <div class="row g-2">
                                 <div class="col-md-3">
                                     <label class="form-label small" for="card_brand_input">Card Brand <span class="required-mark">*</span></label>
-                                    <select name="card_brand" id="card_brand_input" class="form-select form-select-sm">
+                                    @error('card_brand')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select name="card_brand" id="card_brand_input" class="form-select form-select-sm @error('card_brand') is-invalid @enderror">
                                         <option value="">Select Brand</option>
                                         <option value="Visa">Visa</option>
                                         <option value="Mastercard">Mastercard</option>
@@ -209,16 +252,31 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small" for="cardholder_name_input">Cardholder Name</label>
-                                    <input type="text" name="cardholder_name" id="cardholder_name_input" class="form-control form-control-sm" placeholder="e.g. John Smith">
+                                    @error('cardholder_name')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="cardholder_name" id="cardholder_name_input" class="form-control form-control-sm @error('cardholder_name') is-invalid @enderror" placeholder="e.g. John Smith">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small" for="card_last_four_input">Last 4 Digits</label>
-                                    <input type="text" name="card_last_four" id="card_last_four_input" maxlength="4" class="form-control form-control-sm" placeholder="1234">
+                                    @error('card_last_four')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="card_last_four" id="card_last_four_input" maxlength="4" class="form-control form-control-sm @error('card_last_four') is-invalid @enderror" placeholder="1234">
                                     <div class="invalid-feedback small" id="card-last-four-feedback">Card last 4 digits must be exactly 4 numeric digits.</div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small" for="transaction_reference_input">Transaction Reference</label>
-                                    <input type="text" name="transaction_reference" id="transaction_reference_input" class="form-control form-control-sm" placeholder="TXN-2026-00123">
+                                    @error('transaction_reference')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="transaction_reference" id="transaction_reference_input" class="form-control form-control-sm @error('transaction_reference') is-invalid @enderror" placeholder="TXN-2026-00123">
                                 </div>
                             </div>
                         </div>
@@ -231,15 +289,30 @@
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label class="form-label small">Reference Number</label>
-                                    <input type="text" name="e_transfer_reference" class="form-control form-control-sm" placeholder="e.g. ETR-839291">
+                                    @error('e_transfer_reference')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="e_transfer_reference" class="form-control form-control-sm @error('e_transfer_reference') is-invalid @enderror" placeholder="e.g. ETR-839291">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small">Sender Name</label>
-                                    <input type="text" name="sender_name" class="form-control form-control-sm" placeholder="e.g. Sarah Connor">
+                                    @error('sender_name')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="sender_name" class="form-control form-control-sm @error('sender_name') is-invalid @enderror" placeholder="e.g. Sarah Connor">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small">Transfer Date</label>
-                                    <input type="date" name="transfer_date" class="form-control form-control-sm" value="{{ now()->toDateString() }}">
+                                    @error('transfer_date')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="date" name="transfer_date" class="form-control form-control-sm @error('transfer_date') is-invalid @enderror" value="{{ now()->toDateString() }}">
                                 </div>
                             </div>
                         </div>
@@ -252,7 +325,12 @@
                             <div class="row g-2 mb-2" id="client-saved-insurance-row">
                                 <div class="col-12">
                                     <label class="form-label small">Select Client's Saved Insurance</label>
-                                    <select name="insurance_information_id" id="pmt-saved-insurance-select" class="form-select form-select-sm">
+                                    @error('insurance_information_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select name="insurance_information_id" id="pmt-saved-insurance-select" class="form-select form-select-sm @error('insurance_information_id') is-invalid @enderror">
                                         <option value="">-- Choose saved policy or enter details --</option>
                                     </select>
                                 </div>
@@ -260,7 +338,12 @@
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label class="form-label small">Insurance Company</label>
-                                    <select name="insurance_company_id" id="pmt-insurance-company-id" class="form-select form-select-sm">
+                                    @error('insurance_company_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select name="insurance_company_id" id="pmt-insurance-company-id" class="form-select form-select-sm @error('insurance_company_id') is-invalid @enderror">
                                         <option value="">Select Company</option>
                                         @foreach($insuranceCompanies as $comp)
                                             <option value="{{ $comp->id }}">{{ $comp->name }}</option>
@@ -269,19 +352,39 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small">Policy ID</label>
-                                    <input type="text" name="policy_id" id="pmt-policy-id" class="form-control form-control-sm" placeholder="Enter policy ID">
+                                    @error('policy_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="policy_id" id="pmt-policy-id" class="form-control form-control-sm @error('policy_id') is-invalid @enderror" placeholder="Enter policy ID">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small">Member ID / Contract No.</label>
-                                    <input type="text" name="member_id_or_contract_number" id="pmt-member-id" class="form-control form-control-sm" placeholder="Enter member ID or contract no.">
+                                    @error('member_id_or_contract_number')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="member_id_or_contract_number" id="pmt-member-id" class="form-control form-control-sm @error('member_id_or_contract_number') is-invalid @enderror" placeholder="Enter member ID or contract no.">
                                 </div>
                                 <div class="col-md-4 mt-2">
                                     <label class="form-label small">Claim / Reference Number</label>
-                                    <input type="text" name="claim_reference" class="form-control form-control-sm" placeholder="CLM-88391">
+                                    @error('claim_reference')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="text" name="claim_reference" class="form-control form-control-sm @error('claim_reference') is-invalid @enderror" placeholder="CLM-88391">
                                 </div>
                                 <div class="col-md-4 mt-2">
                                     <label class="form-label small">Amount Submitted</label>
-                                    <input type="number" step="0.01" name="amount_submitted" class="form-control form-control-sm" placeholder="0.00">
+                                    @error('amount_submitted')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="number" step="0.01" name="amount_submitted" class="form-control form-control-sm @error('amount_submitted') is-invalid @enderror" placeholder="0.00">
                                 </div>
                             </div>
                         </div>
@@ -289,7 +392,12 @@
 
                     <div class="col-md-12">
                         <label class="form-label small">Notes / Reference</label>
-                        <input name="notes" class="form-control form-control-sm" placeholder="Optional payment note">
+                        @error('notes')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                        <input name="notes" class="form-control form-control-sm @error('notes') is-invalid @enderror" placeholder="Optional payment note">
                     </div>
                 </form>
             </div>
@@ -445,7 +553,11 @@
                         if (amount) {
                             amount.removeAttribute('readonly');
                             amount.classList.remove('bg-light', 'is-invalid');
-                            amount.value = '';
+                            amount.value = '0';
+                        }
+                        if (pmtMethod) {
+                            pmtMethod.value = '';
+                            pmtMethod.classList.remove('is-invalid');
                         }
                         [cashInput, cardInput, etransferInput, insuranceInput, cardBrandInput, cardLastFourInput, cardholderNameInput, transactionReferenceInput].forEach(inp => {
                             if (inp) {
@@ -480,7 +592,7 @@
                 }
 
                 function toggleMethodBlocks() {
-                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    const val = pmtMethod ? pmtMethod.value : '';
                     const isBoth = val === 'both';
 
                     if (splitBlock) splitBlock.classList.toggle('d-none', !isBoth);
@@ -511,6 +623,11 @@
                             amount.setAttribute('readonly', 'readonly');
                             amount.classList.add('bg-light');
                             amount.placeholder = '0.00';
+                        } else {
+                            amountLabel.innerHTML = 'Amount <span class="required-mark">*</span>';
+                            amount.removeAttribute('readonly');
+                            amount.classList.remove('bg-light');
+                            amount.placeholder = '0.00';
                         }
                     }
 
@@ -528,7 +645,7 @@
                 }
 
                 function toggleMetadataBlocks() {
-                    const val = (pmtMethod ? pmtMethod.value : 'cash').toLowerCase();
+                    const val = (pmtMethod ? pmtMethod.value : '').toLowerCase();
                     const isBoth = val === 'both';
 
                     const cardVal = parseFloat(cardInput?.value || 0) || 0;
@@ -593,7 +710,7 @@
                 }
 
                 function calculateTotalEntered() {
-                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    const val = pmtMethod ? pmtMethod.value : '';
                     if (val === 'both') {
                         const c = (chkCash && chkCash.checked) ? (parseFloat(cashInput?.value || 0) || 0) : 0;
                         const cd = (chkCard && chkCard.checked) ? (parseFloat(cardInput?.value || 0) || 0) : 0;
@@ -601,7 +718,7 @@
                         const ins = (chkInsurance && chkInsurance.checked) ? (parseFloat(insuranceInput?.value || 0) || 0) : 0;
                         const total = c + cd + et + ins;
                         if (amount) {
-                            amount.value = total > 0 ? total.toFixed(2) : '';
+                            amount.value = total > 0 ? total.toFixed(2) : '0';
                         }
                         return total;
                     } else {
@@ -613,14 +730,14 @@
                     if (window.AppToast && typeof window.AppToast.show === 'function') {
                         window.AppToast.show({
                             type: 'danger',
-                            title: 'Payment Error',
-                            message: 'Paid amount cannot exceed the remaining balance.'
+                            title: 'Error',
+                            message: 'Payment amount cannot be greater than the remaining invoice balance.'
                         });
                     }
                 }
 
                 function setInputInvalidClass(invalid) {
-                    const val = pmtMethod ? pmtMethod.value : 'cash';
+                    const val = pmtMethod ? pmtMethod.value : '';
                     if (val === 'both') {
                         [cashInput, cardInput, etransferInput, insuranceInput].forEach(inp => {
                             if (inp) {
@@ -658,7 +775,7 @@
 
                         if (statusBadge) {
                             statusBadge.className = 'badge bg-danger';
-                            statusBadge.textContent = 'Overpayment';
+                            statusBadge.textContent = 'Error';
                         }
                     } else {
                         // Valid range (Lower or Equal)
@@ -708,6 +825,9 @@
                 });
 
                 pmtMethod?.addEventListener('change', () => {
+                    if (pmtMethod.value) {
+                        pmtMethod.classList.remove('is-invalid');
+                    }
                     toggleMethodBlocks();
                 });
 
@@ -868,7 +988,7 @@
                     clearInsuranceFields();
                     if (!opt || !opt.value) {
                         if (banner) banner.classList.add('d-none');
-                        if (amount) { amount.value = ''; }
+                        if (amount) { amount.value = '0'; }
                         if (cashInput) cashInput.value = '';
                         if (cardInput) cardInput.value = '';
                         if (etransferInput) etransferInput.value = '';
@@ -878,19 +998,11 @@
                         return;
                     }
 
-                    const balance = opt.dataset.balance;
-                    const val = pmtMethod ? pmtMethod.value : 'cash';
-                    if (balance) {
-                        if (val === 'both') {
-                            if (cashInput) cashInput.value = '';
-                            if (cardInput) cardInput.value = '';
-                            if (etransferInput) etransferInput.value = '';
-                            if (insuranceInput) insuranceInput.value = '';
-                            if (amount) amount.value = '';
-                        } else {
-                            if (amount) amount.value = balance;
-                        }
-                    }
+                    if (amount) { amount.value = '0'; }
+                    if (cashInput) cashInput.value = '';
+                    if (cardInput) cardInput.value = '';
+                    if (etransferInput) etransferInput.value = '';
+                    if (insuranceInput) insuranceInput.value = '';
 
                     if (numEl) numEl.textContent = opt.dataset.number || '-';
                     if (clientEl) clientEl.textContent = opt.dataset.client || '-';
@@ -903,10 +1015,25 @@
                 });
 
                 form?.addEventListener('submit', (e) => {
+                    const val = pmtMethod ? pmtMethod.value : '';
+                    if (!val) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (pmtMethod) pmtMethod.classList.add('is-invalid');
+                        pmtMethod?.focus();
+                        if (window.AppToast && typeof window.AppToast.show === 'function') {
+                            window.AppToast.show({
+                                type: 'danger',
+                                title: 'Error',
+                                message: 'Please select a payment method.'
+                            });
+                        }
+                        return false;
+                    }
+
                     const balance = getRemainingBalance();
                     const total = calculateTotalEntered();
                     const EPS = 0.005;
-                    const val = pmtMethod ? pmtMethod.value : 'cash';
                     const isBoth = val === 'both';
                     const isCardSelectedInSplit = isBoth && chkCard && chkCard.checked;
                     const isInsuranceSelectedInSplit = isBoth && chkInsurance && chkInsurance.checked;
@@ -917,12 +1044,22 @@
                         e.preventDefault();
                         e.stopPropagation();
                         showOverpaymentToast();
+                        setInputInvalidClass(true);
                         if (submitBtn) submitBtn.disabled = true;
                         return false;
                     }
 
                     if (total <= 0) {
                         e.preventDefault();
+                        e.stopPropagation();
+                        if (amount) amount.classList.add('is-invalid');
+                        if (window.AppToast && typeof window.AppToast.show === 'function') {
+                            window.AppToast.show({
+                                type: 'danger',
+                                title: 'Error',
+                                message: 'Please enter a valid payment amount.'
+                            });
+                        }
                         return false;
                     }
 

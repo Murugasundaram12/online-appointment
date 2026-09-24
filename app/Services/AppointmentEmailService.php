@@ -113,6 +113,42 @@ class AppointmentEmailService
         ];
     }
 
+    public function sendDirectly(Appointment $appointment, string $type): array
+    {
+        $mailableClass = match ($type) {
+            'confirmed' => AppointmentConfirmedMail::class,
+            'completed' => AppointmentCompletedMail::class,
+            'cancelled' => AppointmentCancelledMail::class,
+            'no_show' => AppointmentNoShowMail::class,
+            'updated' => AppointmentUpdatedMail::class,
+            default => AppointmentBookedMail::class,
+        };
+
+        return $this->sendRaw($appointment, $mailableClass, $type);
+    }
+
+    protected function dispatchInBackground(Appointment $appointment, string $type): bool
+    {
+        try {
+            $php = PHP_BINARY;
+            $artisan = base_path('artisan');
+            $id = (int) $appointment->id;
+            $typeArg = escapeshellarg($type);
+
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                pclose(popen("start /B \"\" \"{$php}\" \"{$artisan}\" appointment:send-emails {$id} {$typeArg} > NUL 2>&1", "r"));
+            } else {
+                exec("\"{$php}\" \"{$artisan}\" appointment:send-emails {$id} {$typeArg} > /dev/null 2>&1 &");
+            }
+
+            Log::info("Dispatched background email process for appointment #{$id} ({$type})");
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning("Failed to dispatch background email process for appointment #{$appointment->id}: " . $e->getMessage());
+            return false;
+        }
+    }
+
     private function send(Appointment $appointment, string $mailableClass, string $type, ?Appointment $previous = null): array
     {
         $appointment->loadMissing(['client', 'staff', 'service', 'location']);
@@ -138,6 +174,43 @@ class AppointmentEmailService
             return ['attempted' => false, 'sent' => false, 'message' => 'No valid recipient email available.'];
         }
 
+        $isAsync = config('queue.default') !== 'sync';
+
+        // When running in tests or when async queue is enabled, process directly
+        if (app()->runningUnitTests() || $isAsync) {
+            return $this->sendRaw($appointment, $mailableClass, $type, $previous);
+        }
+
+        // For web requests under sync queue: dispatch non-blocking background CLI process
+        $dispatched = $this->dispatchInBackground($appointment, $type);
+        if ($dispatched) {
+            return [
+                'attempted' => true,
+                'sent' => true,
+                'message' => 'Notification email scheduled in background.',
+            ];
+        }
+
+        return $this->sendRaw($appointment, $mailableClass, $type, $previous);
+    }
+
+    private function sendRaw(Appointment $appointment, string $mailableClass, string $type, ?Appointment $previous = null): array
+    {
+        $appointment->loadMissing(['client', 'staff', 'service', 'location']);
+        $client = $appointment->client;
+        $staff = $appointment->staff;
+
+        $clientEmail = ($client && $client->email && !Validator::make(['email' => $client->email], ['email' => 'email'])->fails())
+            ? $client->email
+            : null;
+        $staffEmail = ($staff && $staff->email && !Validator::make(['email' => $staff->email], ['email' => 'email'])->fails())
+            ? $staff->email
+            : null;
+
+        if (!$clientEmail && !$staffEmail) {
+            return ['attempted' => false, 'sent' => false, 'message' => 'No valid recipient email available.'];
+        }
+
         $business = $this->businessContext($appointment);
         $reference = $this->publicReference($appointment);
         $isAsync = config('queue.default') !== 'sync';
@@ -151,24 +224,6 @@ class AppointmentEmailService
                 $clientMail = new $mailableClass($appointment, $business, $previous, $reference, 'client');
                 if ($isAsync) {
                     Mail::to($clientEmail)->queue($clientMail);
-                } elseif (!app()->runningUnitTests() && app()->bound('request') && request()->expectsJson()) {
-                    dispatch(function () use ($clientEmail, $clientMail, $appointment, $type) {
-                        try {
-                            Mail::to($clientEmail)->send($clientMail);
-                            Log::info('Appointment email sent to client after response', [
-                                'appointment_id' => $appointment->id,
-                                'recipient' => $clientEmail,
-                                'mail_type' => $type,
-                            ]);
-                        } catch (\Throwable $exception) {
-                            Log::error('Appointment email to client failed', [
-                                'appointment_id' => $appointment->id,
-                                'recipient' => $clientEmail,
-                                'mail_type' => $type,
-                                'exception' => $exception->getMessage(),
-                            ]);
-                        }
-                    })->afterResponse();
                 } else {
                     Mail::to($clientEmail)->send($clientMail);
                 }
@@ -195,24 +250,6 @@ class AppointmentEmailService
                 $staffMail = new $mailableClass($appointment, $business, $previous, $reference, 'staff');
                 if ($isAsync) {
                     Mail::to($staffEmail)->queue($staffMail);
-                } elseif (!app()->runningUnitTests() && app()->bound('request') && request()->expectsJson()) {
-                    dispatch(function () use ($staffEmail, $staffMail, $appointment, $type) {
-                        try {
-                            Mail::to($staffEmail)->send($staffMail);
-                            Log::info('Appointment email sent to staff after response', [
-                                'appointment_id' => $appointment->id,
-                                'recipient' => $staffEmail,
-                                'mail_type' => $type,
-                            ]);
-                        } catch (\Throwable $exception) {
-                            Log::error('Appointment email to staff failed', [
-                                'appointment_id' => $appointment->id,
-                                'recipient' => $staffEmail,
-                                'mail_type' => $type,
-                                'exception' => $exception->getMessage(),
-                            ]);
-                        }
-                    })->afterResponse();
                 } else {
                     Mail::to($staffEmail)->send($staffMail);
                 }

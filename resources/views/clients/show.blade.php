@@ -519,7 +519,7 @@
 
                     <!-- TAB 8: NOTES -->
                     <div class="tab-pane fade" id="tab-notes" role="tabpanel">
-                        <form action="{{ route('clients.update', $client->id) }}" method="POST">
+                        <form action="{{ route('clients.update', $client->id) }}" method="POST" novalidate>
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="first_name" value="{{ $client->first_name }}">
@@ -528,7 +528,8 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-dark">Client Notes & Medical History</label>
-                                <textarea name="notes" class="form-control" rows="5" placeholder="Enter clinical notes, patient preferences, or allergy details...">{{ old('notes', $client->notes) }}</textarea>
+                                @error('notes')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+                                <textarea name="notes" class="form-control @error('notes') is-invalid @enderror" rows="5" placeholder="Enter clinical notes, patient preferences, or allergy details...">{{ old('notes', $client->notes) }}</textarea>
                             </div>
                             <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Save Notes</button>
                         </form>
@@ -591,7 +592,7 @@
         <div class="modal fade" id="editInsuranceModal{{ $info->id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('insurance-information.update', $info->id) }}" method="POST">
+                    <form action="{{ route('insurance-information.update', $info->id) }}" method="POST" novalidate>
                         @csrf
                         @method('PUT')
                         <div class="modal-header">
@@ -601,7 +602,12 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
-                                <select name="insurance_company_id" class="form-select" required>
+                                @error('insurance_company_id')
+                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                                <select name="insurance_company_id" class="form-select @error('insurance_company_id') is-invalid @enderror" required>
                                     @foreach($insuranceCompanies as $comp)
                                         <option value="{{ $comp->id }}" @selected($info->insurance_company_id == $comp->id)>{{ $comp->name }}</option>
                                     @endforeach
@@ -609,11 +615,21 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Policy ID</label>
-                                <input type="text" name="policy_id" class="form-control" value="{{ old('policy_id', $info->policy_id) }}" placeholder="POL-123456">
+                                @error('policy_id')
+                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                                <input type="text" name="policy_id" class="form-control @error('policy_id') is-invalid @enderror" value="{{ old('policy_id', $info->policy_id) }}" placeholder="POL-123456">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Member ID / Contract Number</label>
-                                <input type="text" name="member_id_or_contract_number" class="form-control" value="{{ old('member_id_or_contract_number', $info->member_id_or_contract_number) }}" placeholder="MEM-987654">
+                                @error('member_id_or_contract_number')
+                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                                <input type="text" name="member_id_or_contract_number" class="form-control @error('member_id_or_contract_number') is-invalid @enderror" value="{{ old('member_id_or_contract_number', $info->member_id_or_contract_number) }}" placeholder="MEM-987654">
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -630,7 +646,7 @@
     <div class="modal fade" id="addInsuranceModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form action="{{ route('insurance-information.store') }}" method="POST">
+                <form action="{{ route('insurance-information.store') }}" method="POST" novalidate>
                     @csrf
                     <input type="hidden" name="client_id" value="{{ $client->id }}">
                     <div class="modal-header">
@@ -640,7 +656,12 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
-                            <select name="insurance_company_id" class="form-select" required>
+                            @error('insurance_company_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="insurance_company_id" class="form-select @error('insurance_company_id') is-invalid @enderror" required>
                                 <option value="">Select Company</option>
                                 @foreach($insuranceCompanies as $comp)
                                     <option value="{{ $comp->id }}">{{ $comp->name }}</option>
@@ -649,11 +670,21 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Policy ID</label>
-                            <input type="text" name="policy_id" class="form-control" placeholder="e.g. POL-123456">
+                            @error('policy_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="text" name="policy_id" class="form-control @error('policy_id') is-invalid @enderror" value="{{ old('policy_id') }}" placeholder="e.g. POL-123456">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Member ID / Contract Number</label>
-                            <input type="text" name="member_id_or_contract_number" class="form-control" placeholder="e.g. MEM-987654">
+                            @error('member_id_or_contract_number')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="text" name="member_id_or_contract_number" class="form-control @error('member_id_or_contract_number') is-invalid @enderror" value="{{ old('member_id_or_contract_number') }}" placeholder="e.g. MEM-987654">
                         </div>
                     </div>
                     <div class="modal-footer">

@@ -14,13 +14,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-        @if($errors->any())
-            <div class="alert app-alert app-alert-danger alert-danger alert-dismissible fade show" role="alert" data-app-alert-type="danger" data-app-alert-title="Error">
-                <i class="bx bx-error-circle" aria-hidden="true"></i>
-                <div>{{ $errors->first() }}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
 
         <div class="row g-3 mb-4">
             @foreach($plans as $plan)
@@ -67,7 +60,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <h3 class="fs-6 fw-bold">Activate or change plan</h3>
-                        <form method="POST" action="{{ route('subscription.activate') }}" class="row g-3"
+                        <form method="POST" action="{{ route('subscription.activate') }}" class="row g-3" novalidate
                             data-confirm="This will activate or change the current subscription plan."
                             data-confirm-title="Activate subscription?"
                             data-confirm-subtitle="Review billing details before continuing."
@@ -78,7 +71,8 @@
                             @csrf
                             <div class="col-md-4">
                                 <label class="form-label">Subscription plan <span class="required-mark">*</span></label>
-                                <select class="form-select" name="subscription_plan_id" required>
+                                <x-field-error field="subscription_plan_id" />
+                                <select class="form-select @error('subscription_plan_id') is-invalid @enderror" name="subscription_plan_id" required>
                                     @foreach($plans as $plan)
                                         <option value="{{ $plan->id }}">{{ $plan->name }} - ${{ number_format($plan->price, 2) }}/{{ $plan->billing_cycle }}</option>
                                     @endforeach
@@ -86,15 +80,18 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Start date <span class="required-mark">*</span></label>
-                                <input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required>
+                                <x-field-error field="start_date" />
+                                <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date', now()->toDateString()) }}" required>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">End date</label>
-                                <input type="date" name="end_date" class="form-control" value="{{ now()->addMonth()->toDateString() }}">
+                                <x-field-error field="end_date" />
+                                <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date', now()->addMonth()->toDateString()) }}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Payment <span class="required-mark">*</span></label>
-                                <select class="form-select" name="payment_status"><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select>
+                                <x-field-error field="payment_status" />
+                                <select class="form-select @error('payment_status') is-invalid @enderror" name="payment_status"><option value="paid" {{ old('payment_status') === 'paid' ? 'selected' : '' }}>Paid</option><option value="unpaid" {{ old('payment_status') === 'unpaid' ? 'selected' : '' }}>Unpaid</option></select>
                             </div>
                             <div class="col-12"><button class="btn btn-primary px-4">Activate</button></div>
                         </form>

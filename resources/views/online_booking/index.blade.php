@@ -33,9 +33,6 @@
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body p-4 p-lg-5">
-                        @if($errors->any())
-                            <div class="alert alert-danger">{{ $errors->first() }}</div>
-                        @endif
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h2 class="fw-bold mb-1">Book appointment</h2>
@@ -49,13 +46,18 @@
                             @endforeach
                         </div>
 
-                        <form method="POST" action="{{ route('online-booking.store') }}" id="bookingForm">
+                        <form method="POST" action="{{ route('online-booking.store') }}" id="bookingForm" novalidate>
                             @csrf
                             <div id="bookingError" class="alert alert-warning d-none"></div>
                             <div class="row g-3" id="bookingFields">
                                 <div class="col-md-6">
                                     <label class="form-label">Location</label>
-                                    <select class="form-select" name="location_id" id="location_id">
+                                    @error('location_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select class="form-select @error('location_id') is-invalid @enderror" name="location_id" id="location_id">
                                         <option value="">Any location</option>
                                         @foreach($locations as $location)
                                             <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -64,7 +66,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Service <span class="required-mark">*</span></label>
-                                    <select class="form-select" name="service_id" id="service_id" required>
+                                    @error('service_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select class="form-select @error('service_id') is-invalid @enderror" name="service_id" id="service_id" required>
                                         <option value="">Select service</option>
                                         @foreach($services as $service)
                                             <option value="{{ $service->id }}" data-category="{{ $service->category?->name ?? '' }}" data-duration="{{ $service->duration_minutes }}" data-price="{{ $service->price }}">{{ $service->name }} - ${{ number_format($service->price, 2) }}</option>
@@ -73,7 +80,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Staff <span class="required-mark">*</span></label>
-                                    <select class="form-select" name="staff_id" id="staff_id">
+                                    @error('staff_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select class="form-select @error('staff_id') is-invalid @enderror" name="staff_id" id="staff_id">
                                         <option value="">Any available staff</option>
                                         @foreach($staff as $member)
                                             <option value="{{ $member->id }}" data-category="{{ $member->category ?? '' }}" data-location="{{ $member->location_id ?? '' }}">{{ $member->name }}</option>
@@ -82,10 +94,20 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Date <span class="required-mark">*</span></label>
-                                    <input type="date" class="form-control" id="booking_date" required>
+                                    @error('booking_date')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="date" class="form-control @error('booking_date') is-invalid @enderror" id="booking_date" required>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Available time <span class="required-mark">*</span></label>
+                                    @error('start_time')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <div id="slotButtons" class="d-flex flex-wrap gap-2 p-3 bg-light rounded-3">
                                         <span class="text-muted small">Select a service and date to view available slots.</span>
                                     </div>
@@ -94,19 +116,39 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Name <span class="required-mark">*</span></label>
-                                    <input class="form-control" name="client_name" value="{{ old('client_name') }}" required>
+                                    @error('client_name')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input class="form-control @error('client_name') is-invalid @enderror" name="client_name" value="{{ old('client_name') }}" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Email</label>
-                                    <input type="email" class="form-control" name="client_email" value="{{ old('client_email') }}">
+                                    @error('client_email')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input type="email" class="form-control @error('client_email') is-invalid @enderror" name="client_email" value="{{ old('client_email') }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Phone</label>
-                                    <input class="form-control" name="client_phone" value="{{ old('client_phone') }}">
+                                    @error('client_phone')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <input class="form-control @error('client_phone') is-invalid @enderror" name="client_phone" value="{{ old('client_phone') }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Notes</label>
-                                    <textarea class="form-control" name="notes" rows="3">{{ old('notes') }}</textarea>
+                                    @error('notes')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <textarea class="form-control @error('notes') is-invalid @enderror" name="notes" rows="3">{{ old('notes') }}</textarea>
                                 </div>
                                 <div class="col-12 d-flex justify-content-end">
                                     <button type="button" class="btn btn-primary btn-lg px-4" id="reviewBtn">Continue to review</button>
@@ -342,7 +384,7 @@
 
         reviewBtn.addEventListener('click', function () {
             clearBookingError();
-            if (!bookingForm.reportValidity()) return;
+            if (window.AppFormErrors && !window.AppFormErrors.validate(bookingForm)) return;
             if (!buildReview()) return;
             bookingFields.classList.add('d-none');
             reviewPanel.classList.remove('d-none');

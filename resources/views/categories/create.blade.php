@@ -13,18 +13,26 @@
     <div class="container-fluid px-4 pt-4">
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-4">
-                <form action="{{ route('categories.store') }}" method="POST">
+                <form action="{{ route('categories.store') }}" method="POST" novalidate>
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Category Name <span class="required-mark">*</span></label>
+                            @error('name')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Massage Therapy, Physiotherapy" required>
-                            @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
+                            @error('description')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="3" placeholder="Enter category description">{{ old('description') }}</textarea>
-                            @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-primary px-4">Save Category</button>

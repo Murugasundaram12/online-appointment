@@ -83,14 +83,14 @@ class CalendarController extends Controller
 
         $monthAppointments = $monthAppointmentsQuery->get();
 
-        $monthEvents = $monthAppointments->map(function ($appointment) use ($statusColorMap) {
+        $monthEvents = $monthAppointments->map(function ($appointment) {
             $staffName = $appointment->staff ? $appointment->staff->name : 'N/A';
             $clientName = $appointment->client ? $appointment->client->name : 'Unassigned';
             $serviceName = $appointment->service ? $appointment->service->name : '';
             $status = $appointment->status ?? 'booked';
             $eventColor = $appointment->service && !empty($appointment->service->color)
                 ? $appointment->service->color
-                : ($statusColorMap[$status] ?? '#3699ff');
+                : '#3699ff';
 
             return [
                 'id' => $appointment->id,
@@ -278,18 +278,9 @@ class CalendarController extends Controller
         $appointments = $appointmentsQuery->get();
 
         $events = $appointments->map(function ($appointment) {
-            $statusColorMap = [
-                'pending'   => '#f59e0b',
-                'booked'    => '#3699ff',
-                'confirmed' => '#6366f1',
-                'completed' => '#1bc5bd',
-                'cancelled' => '#f64e60',
-                'no_show'   => '#8b5cf6',
-            ];
-
             $eventColor = $appointment->service && !empty($appointment->service->color)
                 ? $appointment->service->color
-                : ($statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff');
+                : '#3699ff';
 
             return [
                 'id' => $appointment->id,
@@ -607,9 +598,11 @@ class CalendarController extends Controller
             'start_time'          => 'nullable|date',
             'end_time'            => 'nullable|date|after:start_time',
             'status'              => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
-            'cancellation_reason' => 'nullable|string',
+            'cancellation_reason' => [Rule::requiredIf(fn () => $request->input('status') === 'cancelled'), 'nullable', 'string'],
             'client_id'           => 'sometimes|exists:clients,id',
             'notes'               => 'nullable|string'
+        ], [
+            'cancellation_reason.required' => 'Cancellation reason is required when canceling an appointment.',
         ]);
 
         // Status transition guard
@@ -1328,7 +1321,7 @@ class CalendarController extends Controller
 
         $eventColor = $appointment->service && !empty($appointment->service->color)
             ? $appointment->service->color
-            : ($statusColorMap[$appointment->status ?? 'booked'] ?? '#3699ff');
+            : '#3699ff';
 
         return [
             'id' => $appointment->id,

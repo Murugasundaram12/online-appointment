@@ -9,9 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Service Categories</h1>
                 <p class="text-muted mb-0">Manage service category groups and classifications.</p>
             </div>
-            <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
-                <i class="bx bx-plus me-1"></i>Add Category
-            </a>
+            <!-- <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
+                    <i class="bx bx-plus me-1"></i>Add Category
+                </a> -->
         </div>
 
         @if(session('success'))
@@ -22,10 +22,10 @@
         @endif
 
         <!-- Toolbar -->
-        <x-list-toolbar :paginator="$categories" searchAction="{{ route('categories.index') }}" searchPlaceholder="Search categories">
+        <x-list-toolbar :paginator="$categories" searchAction="{{ route('categories.index') }}"
+            searchPlaceholder="Search categories">
             <x-slot name="filters">
-                <x-list-toolbar-filters
-                    :showClear="request()->has('search') && request('search') !== ''"
+                <x-list-toolbar-filters :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('categories.index', ['per_page' => request('per_page', $categories->perPage())])"
                     clearLabel="Clear search" />
             </x-slot>
@@ -53,15 +53,20 @@
                                 <tr>
                                     <td class="ps-4 py-3 fw-semibold text-dark">{{ $category->name }}</td>
                                     <td class="text-muted small">{{ $category->description ?: '-' }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ $category->services_count }} services</span></td>
+                                    <td><span class="badge bg-light text-dark border">{{ $category->services_count }}
+                                            services</span></td>
                                     <td class="pe-4 text-end">
-                                        <a href="{{ route('categories.show', $category) }}" class="btn btn-link text-muted p-0 me-2" title="View">
+                                        <a href="{{ route('categories.show', $category) }}"
+                                            class="btn btn-link text-muted p-0 me-2" title="View">
                                             <i class="bx bx-show"></i>
                                         </a>
-                                        <a href="{{ route('categories.edit', $category->id) }}" class="btn btn-link text-muted p-0 me-2" title="Edit">
+                                        <a href="{{ route('categories.edit', $category->id) }}"
+                                            class="btn btn-link text-muted p-0 me-2" title="Edit">
                                             <i class="bx bx-pencil"></i>
                                         </a>
-                                        <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                        <form action="{{ route('categories.destroy', $category->id) }}" method="POST"
+                                            class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to delete this category?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-muted p-0" title="Delete">

@@ -109,20 +109,27 @@
                     <h2 class="fw-bold mb-1">Sign in</h2>
                     <p class="text-muted mb-0">Use your staff credentials to continue.</p>
                 </div>
-                @if($errors->any())
-                    <div class="alert alert-danger">{{ $errors->first() }}</div>
-                @endif
-                <form method="POST" action="{{ route('login.store') }}" id="loginForm">
+                <form method="POST" action="{{ route('login.store') }}" id="loginForm" novalidate>
                     @csrf
                     <div class="mb-3">
                         <label class="form-label" for="email">Email <span class="required-mark">*</span></label>
+                        @error('email')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
                         <input type="email" id="email" name="email" value="{{ old('email') }}"
-                            class="form-control form-control-lg" required autofocus autocomplete="email">
+                            class="form-control form-control-lg @error('email') is-invalid @enderror" required autofocus autocomplete="email">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="password">Password <span class="required-mark">*</span></label>
+                        @error('password')
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
+                        @enderror
                         <div class="input-group">
-                            <input type="password" id="password" name="password" class="form-control form-control-lg"
+                            <input type="password" id="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror"
                                 required autocomplete="current-password">
                             <button class="btn btn-white js-toggle-password-btn" type="button" id="togglePassword"
                                 data-target="#password" aria-label="Show password"><i class='bx bx-show'></i></button>

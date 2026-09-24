@@ -79,7 +79,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'appointment_id' => ['nullable', 'exists:appointments,id'],
+            'appointment_id' => ['required', 'exists:appointments,id'],
             'client_id' => 'required|exists:clients,id',
             'staff_id' => 'required|exists:staff,id',
             'invoice_number' => ['nullable', 'string', 'max:255', Rule::unique('invoices', 'invoice_number')],
@@ -89,6 +89,8 @@ class InvoiceController extends Controller
             'issued_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:issued_date',
         ], [
+            'appointment_id.required' => 'The appointment field is required.',
+            'appointment_id.exists' => 'The selected appointment is invalid.',
             'appointment_id.unique' => 'An invoice already exists for the selected appointment.',
             'invoice_number.unique' => 'This invoice number is already used by another invoice.',
         ]);

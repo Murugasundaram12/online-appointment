@@ -9,9 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Insurance Companies</h1>
                 <p class="text-muted mb-0">Manage insurance provider companies and organizations.</p>
             </div>
-            <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
-                <i class="bx bx-plus me-1"></i>Add Insurance Company
-            </a>
+            <!-- <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
+                    <i class="bx bx-plus me-1"></i>Add Insurance Company
+                </a> -->
         </div>
 
         @if(session('success'))
@@ -28,12 +28,11 @@
         @endif
 
         <!-- Toolbar -->
-        <x-list-toolbar :paginator="$insuranceCompanies" searchAction="{{ route('insurance-companies.index') }}" searchPlaceholder="Search insurance companies">
+        <x-list-toolbar :paginator="$insuranceCompanies" searchAction="{{ route('insurance-companies.index') }}"
+            searchPlaceholder="Search insurance companies">
             <x-slot name="filters">
-                <x-list-toolbar-filters
-                    :showClear="request()->has('search') && request('search') !== ''"
-                    :clearUrl="route('insurance-companies.index', ['per_page' => request('per_page', $insuranceCompanies->perPage())])"
-                    clearLabel="Clear search" />
+                <x-list-toolbar-filters :showClear="request()->has('search') && request('search') !== ''"
+                    :clearUrl="route('insurance-companies.index', ['per_page' => request('per_page', $insuranceCompanies->perPage())])" clearLabel="Clear search" />
             </x-slot>
             <x-slot name="actions">
                 <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
@@ -57,12 +56,17 @@
                             @forelse($insuranceCompanies as $company)
                                 <tr>
                                     <td class="ps-4 py-3 fw-semibold text-dark">{{ $company->name }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ $company->insurance_informations_count }} records</span></td>
+                                    <td><span
+                                            class="badge bg-light text-dark border">{{ $company->insurance_informations_count }}
+                                            records</span></td>
                                     <td class="pe-4 text-end">
-                                        <a href="{{ route('insurance-companies.edit', $company->id) }}" class="btn btn-link text-muted p-0 me-2" title="Edit">
+                                        <a href="{{ route('insurance-companies.edit', $company->id) }}"
+                                            class="btn btn-link text-muted p-0 me-2" title="Edit">
                                             <i class="bx bx-pencil"></i>
                                         </a>
-                                        <form action="{{ route('insurance-companies.destroy', $company->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this insurance company?');">
+                                        <form action="{{ route('insurance-companies.destroy', $company->id) }}" method="POST"
+                                            class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to delete this insurance company?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-link text-muted p-0" title="Delete">

@@ -22,6 +22,7 @@ class StoreScheduleRequest extends FormRequest
     {
         $rules = [
             'staff_id' => 'required|exists:staff,id',
+            'location_id' => 'nullable|exists:locations,id',
             'recurrence_type' => 'required|in:one_time,daily,weekly,monthly,yearly',
             'is_working' => 'nullable|boolean',
             'start_time' => 'required_unless:is_working,0|nullable|date_format:H:i',
@@ -52,8 +53,14 @@ class StoreScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'staff_id.required' => 'Staff is required.',
+            'location_id.required' => 'Location is required.',
+            'location_id.exists' => 'The selected location is invalid.',
+            'working_date.required_if' => 'Date is required.',
             'working_date.after_or_equal' => 'Staff schedules cannot be created for past dates.',
             'start_date.after_or_equal' => 'Schedule start date cannot be in the past.',
+            'start_time.required_unless' => 'Start time is required.',
+            'end_time.required_unless' => 'End time is required.',
             'end_time.after' => 'End time must be after start time.',
             'end_date.after_or_equal' => 'End date must be on or after start date.',
             'weekly_days.required_if' => 'Please select at least one day for weekly recurrence.',

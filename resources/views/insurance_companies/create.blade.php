@@ -13,14 +13,16 @@
     <div class="container-fluid px-4 pt-4">
         <div class="card shadow-sm border-0 rounded" style="max-width: 600px;">
             <div class="card-body p-4">
-                <form action="{{ route('insurance-companies.store') }}" method="POST">
+                <form action="{{ route('insurance-companies.store') }}" method="POST" novalidate>
                     @csrf
                     <div class="mb-3">
                         <label for="name" class="form-label">Company Name <span class="required-mark">*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Sun Life, Manulife, Canada Life" required autofocus>
                         @error('name')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                {{ $message }}
+                            </div>
                         @enderror
+                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Sun Life, Manulife, Canada Life" required autofocus>
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary px-4">Save Company</button>

@@ -11,31 +11,33 @@
 <div class="row g-3">
     <div class="col-md-6">
         <label for="{{ $fieldId('first_name') }}" class="form-label">First Name <span class="required-mark">*</span></label>
+        @error('first_name')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
         <input type="text" class="form-control @error('first_name') is-invalid @enderror" id="{{ $fieldId('first_name') }}" name="first_name" value="{{ $value('first_name') }}" placeholder="Enter first name" required>
-        @error('first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('last_name') }}" class="form-label">Last Name <span class="required-mark">*</span></label>
+        @error('last_name')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
         <input type="text" class="form-control @error('last_name') is-invalid @enderror" id="{{ $fieldId('last_name') }}" name="last_name" value="{{ $value('last_name') }}" placeholder="Enter last name" required>
-        @error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('email') }}" class="form-label">Email Address</label>
+        @error('email')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
         <input type="email" class="form-control @error('email') is-invalid @enderror" id="{{ $fieldId('email') }}" name="email" value="{{ $value('email') }}" placeholder="Enter email address">
-        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('phone') }}" class="form-label">Phone</label>
+        @error('phone')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
         <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" pattern="(?:\+1\s?)?\(?[2-9][0-9]{2}\)?[\s.-]?[0-9]{3}[\s.-]?[0-9]{4}" class="form-control js-phone-input @error('phone') is-invalid @enderror" id="{{ $fieldId('phone') }}" name="phone" value="{{ $value('phone') }}" placeholder="(xxx) xxx-xxxx">
-        @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('alternate_phone') }}" class="form-label">Alternate Phone</label>
-        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input" id="{{ $fieldId('alternate_phone') }}" name="alternate_phone" value="{{ $value('alternate_phone') }}" placeholder="(xxx) xxx-xxxx">
+        @error('alternate_phone')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input @error('alternate_phone') is-invalid @enderror" id="{{ $fieldId('alternate_phone') }}" name="alternate_phone" value="{{ $value('alternate_phone') }}" placeholder="(xxx) xxx-xxxx">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('gender') }}" class="form-label">Gender</label>
-        <select class="form-select" id="{{ $fieldId('gender') }}" name="gender">
+        @error('gender')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <select class="form-select @error('gender') is-invalid @enderror" id="{{ $fieldId('gender') }}" name="gender">
             <option value="">Select gender</option>
             @foreach(['male' => 'Male', 'female' => 'Female', 'other' => 'Other'] as $option => $label)
                 <option value="{{ $option }}" @selected($value('gender') === $option)>{{ $label }}</option>
@@ -44,7 +46,8 @@
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('dob') }}" class="form-label">Date of Birth</label>
-        <input type="date" class="form-control js-client-dob-input" id="{{ $fieldId('dob') }}" name="dob" value="{{ $dateValue('dob') }}" data-target-age="{{ $fieldId('calculated_age') }}" placeholder="Select date of birth">
+        @error('dob')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="date" class="form-control js-client-dob-input @error('dob') is-invalid @enderror" id="{{ $fieldId('dob') }}" name="dob" value="{{ $dateValue('dob') }}" data-target-age="{{ $fieldId('calculated_age') }}" placeholder="Select date of birth">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('calculated_age') }}" class="form-label">Age (Years)</label>
@@ -52,43 +55,53 @@
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('client_since') }}" class="form-label">Client Since</label>
-        <input type="date" class="form-control" id="{{ $fieldId('client_since') }}" name="client_since" value="{{ $dateValue('client_since', now()->toDateString()) }}" placeholder="Select client since date">
+        @error('client_since')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="date" class="form-control @error('client_since') is-invalid @enderror" id="{{ $fieldId('client_since') }}" name="client_since" value="{{ $dateValue('client_since', now()->toDateString()) }}" placeholder="Select client since date">
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('address_line1') }}" class="form-label">Address Line 1</label>
-        <input type="text" class="form-control" id="{{ $fieldId('address_line1') }}" name="address_line1" value="{{ $value('address_line1') }}" placeholder="Enter address">
+        @error('address_line1')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('address_line1') is-invalid @enderror" id="{{ $fieldId('address_line1') }}" name="address_line1" value="{{ $value('address_line1') }}" placeholder="Enter address">
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('address_line2') }}" class="form-label">Address Line 2</label>
-        <input type="text" class="form-control" id="{{ $fieldId('address_line2') }}" name="address_line2" value="{{ $value('address_line2') }}" placeholder="Enter apartment, suite, etc.">
+        @error('address_line2')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('address_line2') is-invalid @enderror" id="{{ $fieldId('address_line2') }}" name="address_line2" value="{{ $value('address_line2') }}" placeholder="Enter apartment, suite, etc.">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('city') }}" class="form-label">City</label>
-        <input type="text" class="form-control" id="{{ $fieldId('city') }}" name="city" value="{{ $value('city') }}" placeholder="Enter city">
+        @error('city')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('city') is-invalid @enderror" id="{{ $fieldId('city') }}" name="city" value="{{ $value('city') }}" placeholder="Enter city">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('state') }}" class="form-label">Province</label>
-        <input type="text" class="form-control" id="{{ $fieldId('state') }}" name="state" value="{{ $value('state') }}" placeholder="Enter province">
+        @error('state')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('state') is-invalid @enderror" id="{{ $fieldId('state') }}" name="state" value="{{ $value('state') }}" placeholder="Enter province">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('country') }}" class="form-label">Country</label>
-        <input type="text" class="form-control" id="{{ $fieldId('country') }}" name="country" value="{{ $value('country') }}" placeholder="Enter country">
+        @error('country')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('country') is-invalid @enderror" id="{{ $fieldId('country') }}" name="country" value="{{ $value('country') }}" placeholder="Enter country">
     </div>
     <div class="col-md-3">
         <label for="{{ $fieldId('postal_code') }}" class="form-label">Postal Code</label>
-        <input type="text" class="form-control" id="{{ $fieldId('postal_code') }}" name="postal_code" value="{{ $value('postal_code') }}" placeholder="Enter postal code">
+        @error('postal_code')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('postal_code') is-invalid @enderror" id="{{ $fieldId('postal_code') }}" name="postal_code" value="{{ $value('postal_code') }}" placeholder="Enter postal code">
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('emergency_contact') }}" class="form-label">Emergency Contact</label>
-        <input type="text" class="form-control" id="{{ $fieldId('emergency_contact') }}" name="emergency_contact" value="{{ $value('emergency_contact') }}" placeholder="Enter emergency contact name">
+        @error('emergency_contact')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="text" class="form-control @error('emergency_contact') is-invalid @enderror" id="{{ $fieldId('emergency_contact') }}" name="emergency_contact" value="{{ $value('emergency_contact') }}" placeholder="Enter emergency contact name">
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('emergency_phone') }}" class="form-label">Emergency Phone</label>
-        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input" id="{{ $fieldId('emergency_phone') }}" name="emergency_phone" value="{{ $value('emergency_phone') }}" placeholder="(xxx) xxx-xxxx">
+        @error('emergency_phone')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <input type="tel" inputmode="tel" autocomplete="tel" maxlength="14" class="form-control js-phone-input @error('emergency_phone') is-invalid @enderror" id="{{ $fieldId('emergency_phone') }}" name="emergency_phone" value="{{ $value('emergency_phone') }}" placeholder="(xxx) xxx-xxxx">
     </div>
     <div class="col-12">
         <label for="{{ $fieldId('notes') }}" class="form-label">Notes</label>
-        <textarea class="form-control" id="{{ $fieldId('notes') }}" name="notes" rows="3" placeholder="Enter notes">{{ $value('notes') }}</textarea>
+        @error('notes')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+        <textarea class="form-control @error('notes') is-invalid @enderror" id="{{ $fieldId('notes') }}" name="notes" rows="3" placeholder="Enter notes">{{ $value('notes') }}</textarea>
     </div>
     <div class="col-12">
         <div class="form-check">

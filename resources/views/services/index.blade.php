@@ -118,7 +118,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="add-service-form" action="{{ route('services.store') }}" method="POST">
+                    <form id="add-service-form" action="{{ route('services.store') }}" method="POST" novalidate>
                         @csrf
                         <div class="row">
                             <div class="col-md-12">
@@ -126,8 +126,13 @@
                                     <div class="field-icon"><i class='bx bx-layer-plus'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Service name <span class="required-mark">*</span></label>
-                                        <input type="text" class="form-control" name="name"
-                                            placeholder="e.g. Massagetherapy - 60 Mins">
+                                        @error('name')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="add-service-name" name="name"
+                                            placeholder="e.g. Massagetherapy - 60 Mins" value="{{ old('name') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -139,15 +144,17 @@
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Category <span class="required-mark">*</span></label>
+                                        @error('service_category_id')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
                                         <select class="form-select @error('service_category_id') is-invalid @enderror" name="service_category_id" required>
                                             <option value="" selected>Select Category</option>
                                             @foreach($categories as $category)
                                                 <option value="{{ $category->id }}" {{ old('service_category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('service_category_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>
@@ -156,7 +163,12 @@
                                     <div class="field-icon"><i class='bx bx-list-check'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Service type</label>
-                                        <select class="form-select" name="type">
+                                        @error('type')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <select class="form-select @error('type') is-invalid @enderror" name="type">
                                             <option value="in_person" selected>In-person</option>
                                             <option value="online">Online</option>
                                         </select>
@@ -171,8 +183,13 @@
                                     <div class="field-icon"><i class='bx bx-dollar-circle'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Price (CA$) <span class="required-mark">*</span></label>
-                                        <input type="number" step="0.01" min="0" class="form-control" name="price"
-                                            placeholder="0.00" required>
+                                        @error('price')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="number" step="0.01" min="0" class="form-control @error('price') is-invalid @enderror" name="price"
+                                            placeholder="0.00" value="{{ old('price') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -181,7 +198,12 @@
                                     <div class="field-icon"><i class='bx bx-time-five'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Duration <span class="required-mark">*</span></label>
-                                        <select class="form-select" name="duration_minutes" required>
+                                        @error('duration_minutes')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <select class="form-select @error('duration_minutes') is-invalid @enderror" name="duration_minutes" required>
                                             <option value="30">30 mins</option>
                                             <option value="45">45 mins</option>
                                             <option value="60" selected>1 hr</option>
@@ -199,7 +221,12 @@
                                     <div class="field-icon"><i class='bx bx-palette'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Service Color</label>
-                                        <input type="color" class="form-control form-control-color w-100" name="color" value="#3699ff" title="Choose service color">
+                                        @error('color')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="color" class="form-control form-control-color w-100 @error('color') is-invalid @enderror" name="color" value="{{ old('color', '#3699ff') }}" title="Choose service color">
                                     </div>
                                 </div>
                             </div>
@@ -211,8 +238,13 @@
                                     <div class="field-icon"><i class='bx bx-detail'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Description</label>
-                                        <textarea class="form-control" name="description" rows="3"
-                                            placeholder="Describe the service..."></textarea>
+                                        @error('description')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3"
+                                            placeholder="Describe the service...">{{ old('description') }}</textarea>
                                     </div>
                                 </div>
                             </div>
@@ -239,7 +271,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="edit-service-form" action="#" method="POST">
+                    <form id="edit-service-form" action="#" method="POST" novalidate>
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -249,7 +281,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Service name <span class="required-mark">*</span></label>
                                         <input type="text" class="form-control" id="edit-service-name" name="name"
-                                            placeholder="e.g. Massagetherapy - 60 Mins">
+                                            placeholder="e.g. Massagetherapy - 60 Mins" required>
                                     </div>
                                 </div>
                             </div>
@@ -375,6 +407,14 @@
                 document.getElementById('edit-service-color').value = btn.dataset.color || '#3699ff';
             });
         });
+
+        @if($errors->any() && !old('_method'))
+            const addServiceModalEl = document.getElementById('addServiceModal');
+            if (addServiceModalEl && window.bootstrap) {
+                const addModal = new bootstrap.Modal(addServiceModalEl);
+                addModal.show();
+            }
+        @endif
     });
 </script>
 @endpush

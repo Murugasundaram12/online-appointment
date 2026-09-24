@@ -270,6 +270,7 @@ class AppointmentStatusWorkflowTest extends TestCase
 
         $res = $this->actingAs($this->adminStaff, 'staff')->putJson("/calendar/appointments/{$appt->id}", [
             'status' => 'cancelled',
+            'cancellation_reason' => 'Client emergency',
         ]);
 
         $res->assertStatus(200);

@@ -135,7 +135,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="add-staff-form" action="{{ route('staff.store') }}" method="POST">
+                    <form id="add-staff-form" action="{{ route('staff.store') }}" method="POST" novalidate>
                         @csrf
                         <div class="row">
                             <div class="col-md-12">
@@ -143,8 +143,13 @@
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Staff name <span class="required-mark">*</span></label>
-                                        <input type="text" class="form-control" name="name" placeholder="Enter staff name"
-                                            required>
+                                        @error('name')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" placeholder="Enter staff name"
+                                            value="{{ old('name') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -157,7 +162,12 @@
                                     <div class="field-icon"><i class='bx bx-id-card'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Registration Number</label>
-                                        <input type="text" class="form-control" name="registration_number" placeholder="e.g. RMT-123456">
+                                        @error('registration_number')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="text" class="form-control @error('registration_number') is-invalid @enderror" name="registration_number" value="{{ old('registration_number') }}" placeholder="e.g. RMT-123456">
                                     </div>
                                 </div>
                             </div>
@@ -166,7 +176,12 @@
                                     <div class="field-icon"><i class='bx bx-briefcase'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Designation</label>
-                                        <input type="text" class="form-control" name="designation" placeholder="e.g. Senior Practitioner">
+                                        @error('designation')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="text" class="form-control @error('designation') is-invalid @enderror" name="designation" value="{{ old('designation') }}" placeholder="e.g. Senior Practitioner">
                                     </div>
                                 </div>
                             </div>
@@ -178,7 +193,12 @@
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Category</label>
-                                        <select class="form-select" name="category">
+                                        @error('category')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <select class="form-select @error('category') is-invalid @enderror" name="category">
                                             <option value="" selected>Select Category</option>
                                             @foreach($serviceCategories ?? [] as $cat)
                                                 <option value="{{ $cat->name }}" {{ old('category') == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
@@ -195,10 +215,15 @@
                                     <div class="field-icon"><i class='bx bx-map'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Location</label>
-                                        <select class="form-select" name="location_id">
+                                        @error('location_id')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <select class="form-select @error('location_id') is-invalid @enderror" name="location_id">
                                             <option value="">No location assigned</option>
                                             @foreach($locations as $location)
-                                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -212,8 +237,13 @@
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Email address <span class="required-mark">*</span></label>
-                                        <input type="email" class="form-control" name="email"
-                                            placeholder="Enter email address" required>
+                                        @error('email')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
+                                            value="{{ old('email') }}" placeholder="Enter email address" required>
                                     </div>
                                 </div>
                             </div>
@@ -225,8 +255,13 @@
                                     <div class="field-icon"><i class='bx bx-lock-alt'></i></div>
                                     <div class="field-content">
                                          <label class="form-label" for="addStaffPassword">Password</label>
+                                         @error('password')
+                                             <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                 {{ $message }}
+                                             </div>
+                                         @enderror
                                          <div class="input-group">
-                                             <input type="password" class="form-control" id="addStaffPassword" name="password"
+                                             <input type="password" class="form-control @error('password') is-invalid @enderror" id="addStaffPassword" name="password"
                                                  placeholder="Enter password (optional)" autocomplete="new-password">
                                              <button class="btn btn-outline-secondary js-toggle-password-btn" type="button"
                                                  id="toggleAddStaffPassword" data-target="#addStaffPassword"
@@ -243,8 +278,13 @@
                                     <div class="field-icon"><i class='bx bx-money'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Payroll settings</label>
-                                        <input type="number" step="0.01" min="0" name="salary" class="form-control"
-                                            placeholder="Commission / Hourly rate details">
+                                        @error('salary')
+                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <input type="number" step="0.01" min="0" name="salary" class="form-control @error('salary') is-invalid @enderror"
+                                            value="{{ old('salary') }}" placeholder="Commission / Hourly rate details">
                                     </div>
                                 </div>
                             </div>
@@ -272,7 +312,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="edit-staff-form" action="#" method="POST">
+                    <form id="edit-staff-form" action="#" method="POST" novalidate>
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -537,6 +577,14 @@
                     if (editIcon) editIcon.className = 'bx bx-show';
                 });
             }
+
+            @if($errors->any() && !old('_method'))
+                const addStaffModalEl = document.getElementById('addStaffModal');
+                if (addStaffModalEl && window.bootstrap) {
+                    const addModal = new bootstrap.Modal(addStaffModalEl);
+                    addModal.show();
+                }
+            @endif
         });
     </script>
 @endpush

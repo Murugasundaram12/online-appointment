@@ -171,11 +171,13 @@ class ScheduleController extends Controller
     {
         $staffId = $request->query('staff_id');
         $staff = Staff::all();
-        $selectedStaff = $staffId ? Staff::find($staffId) : $staff->first();
+        $locations = Location::where('is_active', true)->orderBy('name')->get();
+        $selectedStaff = $staffId ? Staff::find($staffId) : null;
+        $selectedLocationId = $selectedStaff?->location_id ?? null;
         $editing = null;
         $schedule = null;
 
-        return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule'));
+        return view('schedule.create', compact('staff', 'locations', 'selectedStaff', 'selectedLocationId', 'editing', 'schedule'));
     }
 // Creates staff schedule entries
     public function store(StoreScheduleRequest $request)
@@ -384,9 +386,11 @@ class ScheduleController extends Controller
                 $editing = $this->resolveScheduleGroup($schedule)->sortBy('working_date')->first() ?? $schedule;
             }
             $staff = Staff::all();
+            $locations = Location::where('is_active', true)->orderBy('name')->get();
             $selectedStaff = Staff::find($schedule->staff_id);
+            $selectedLocationId = $selectedStaff?->location_id ?? null;
 
-            return view('schedule.create', compact('staff', 'selectedStaff', 'editing', 'schedule', 'editScope'));
+            return view('schedule.create', compact('staff', 'locations', 'selectedStaff', 'selectedLocationId', 'editing', 'schedule', 'editScope'));
         }
 
         // Legacy fallback: weekly day-template editor keyed by staff id.

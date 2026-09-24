@@ -63,7 +63,7 @@
                         <h2 class="fs-6 fw-bold mb-1">Auto-generate Payroll</h2>
                         <p class="text-muted mb-0">Create pending payroll records for active staff with configured salary. Existing staff-period records are skipped.</p>
                     </div>
-                    <form id="generatePayrollForm" class="row g-2 align-items-end" data-confirm="This will generate payroll for eligible active staff and skip duplicates." data-confirm-title="Generate payroll?" data-confirm-text="Generate" data-confirm-class="btn-primary">
+                    <form id="generatePayrollForm" class="row g-2 align-items-end" data-confirm="This will generate payroll for eligible active staff and skip duplicates." data-confirm-title="Generate payroll?" data-confirm-text="Generate" data-confirm-class="btn-primary" novalidate>
                         @csrf
                         <div class="col-auto">
                             <label class="form-label">Start <span class="required-mark">*</span></label>
@@ -204,8 +204,10 @@
     <script>
         const generateForm = document.getElementById('generatePayrollForm');
         if (generateForm) {
+            window.AppFormErrors?.attachAutoClear(generateForm);
             generateForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
+                window.AppFormErrors?.clear(generateForm);
                 const button = generateForm.querySelector('button');
                 button.disabled = true;
                 button.textContent = 'Generating...';
@@ -219,6 +221,10 @@
                         body: new FormData(generateForm),
                     });
                     const data = await response.json();
+                    if (response.status === 422 && data.errors) {
+                        window.AppFormErrors?.show(generateForm, data.errors);
+                        return;
+                    }
                     if (!response.ok || !data.success) {
                         throw new Error(data.message || 'Payroll generation failed.');
                     }

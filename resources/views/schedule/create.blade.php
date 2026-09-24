@@ -74,8 +74,8 @@ if (!function_exists('ordinalSuffix')) {
 @section('content')
     @php
         $editing = $editing ?? null;
-        $editStartTime = $editing ? substr((string) $editing->start_time, 0, 5) : '10:00';
-        $editEndTime = $editing ? substr((string) $editing->end_time, 0, 5) : '17:00';
+        $editStartTime = $editing ? substr((string) $editing->start_time, 0, 5) : '';
+        $editEndTime = $editing ? substr((string) $editing->end_time, 0, 5) : '';
         $editRecurrenceDays = $editing ? $editing->recurrence_days : null;
         $editHasAssocDays = is_array($editRecurrenceDays) && array_key_exists('weekly_days', $editRecurrenceDays);
         $editWeeklyDays = [];
@@ -116,19 +116,8 @@ if (!function_exists('ordinalSuffix')) {
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
-                @if($errors->any())
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong class="d-block mb-1"><i class="bx bx-error me-1"></i> Please correct the following errors:</strong>
-                        <ul class="mb-0 ps-3">
-                            @foreach($errors->all() as $err)
-                                <li>{{ $err }}</li>
-                            @endforeach
-                        </ul>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
 
-                <form action="{{ route('schedule.store') }}" method="POST" id="scheduleForm">
+                <form action="{{ route('schedule.store') }}" method="POST" id="scheduleForm" novalidate>
                     @csrf
                     <input type="hidden" name="schedule_id" value="{{ old('schedule_id', $schedule?->id) }}">
 
@@ -157,36 +146,76 @@ if (!function_exists('ordinalSuffix')) {
                     <h5 class="mb-3 schedule-section-title"><i class="bx bx-user me-2 text-primary"></i>Staff & Time Details</h5>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label small fw-semibold text-muted">Staff Member <span class="required-mark">*</span></label>
-                            <select name="staff_id" id="staff_id" class="form-select" required>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold text-muted" for="staff_id">Staff <span class="required-mark">*</span></label>
+                            @error('staff_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="staff_id" id="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
+                                <option value="">Select Staff</option>
                                 @foreach($staff as $st)
-                                    <option value="{{ $st->id }}" {{ old('staff_id', $editing?->staff_id ?? $selectedStaff->id ?? '') == $st->id ? 'selected' : '' }}>
+                                    <option value="{{ $st->id }}"
+                                        data-location-id="{{ $st->location_id }}"
+                                        {{ old('staff_id', $editing?->staff_id ?? ($selectedStaff?->id ?? '')) == $st->id ? 'selected' : '' }}>
                                         {{ $st->name }} ({{ $st->category ?? 'General' }})
                                     </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-4">
-                            <label class="form-label small fw-semibold text-muted">Recurrence Type <span class="required-mark">*</span></label>
-                            <select name="recurrence_type" id="recurrence_type" class="form-select" required>
-                                <option value="one_time" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'one_time' ? 'selected' : '' }}>One Time</option>
-                                <option value="daily" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'daily' ? 'selected' : '' }}>Daily</option>
-                                <option value="weekly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'weekly' ? 'selected' : '' }}>Weekly (e.g. Every Sunday)</option>
-                                <option value="monthly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'monthly' ? 'selected' : '' }}>Monthly (e.g. Every 15th)</option>
-                                <option value="yearly" {{ old('recurrence_type', $editing?->recurrence_type ?? 'weekly') == 'yearly' ? 'selected' : '' }}>Yearly (e.g. Every Jan 10)</option>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold text-muted" for="location_id">Location <span class="required-mark">*</span></label>
+                            @error('location_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="location_id" id="location_id" class="form-select @error('location_id') is-invalid @enderror" required>
+                                <option value="">Select Location</option>
+                                @foreach($locations ?? [] as $loc)
+                                    <option value="{{ $loc->id }}" {{ old('location_id', $selectedLocationId ?? ($selectedStaff?->location_id ?? '')) == $loc->id ? 'selected' : '' }}>
+                                        {{ $loc->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-2">
+                            <label class="form-label small fw-semibold text-muted" for="recurrence_type">Recurrence Type <span class="required-mark">*</span></label>
+                            @error('recurrence_type')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="recurrence_type" id="recurrence_type" class="form-select @error('recurrence_type') is-invalid @enderror" required>
+                                <option value="one_time" {{ old('recurrence_type', $editing?->recurrence_type ?? 'one_time') == 'one_time' ? 'selected' : '' }}>One Time</option>
+                                <option value="daily" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'daily' ? 'selected' : '' }}>Daily</option>
+                                <option value="weekly" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'weekly' ? 'selected' : '' }}>Weekly (e.g. Every Sunday)</option>
+                                <option value="monthly" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'monthly' ? 'selected' : '' }}>Monthly (e.g. Every 15th)</option>
+                                <option value="yearly" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'yearly' ? 'selected' : '' }}>Yearly (e.g. Every Jan 10)</option>
                             </select>
                         </div>
 
                         <div class="col-6 col-md-2">
-                            <label class="form-label small fw-semibold text-muted">Start Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="start_time" value="{{ old('start_time', $editStartTime) }}" required>
+                            <label class="form-label small fw-semibold text-muted" for="start_time">Start Time <span class="required-mark">*</span></label>
+                            @error('start_time')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="time" class="form-control @error('start_time') is-invalid @enderror" id="start_time" name="start_time" value="{{ old('start_time', $editStartTime) }}" required placeholder="Select start time">
                         </div>
 
                         <div class="col-6 col-md-2">
-                            <label class="form-label small fw-semibold text-muted">End Time <span class="required-mark">*</span></label>
-                            <input type="time" class="form-control" name="end_time" value="{{ old('end_time', $editEndTime) }}" required>
+                            <label class="form-label small fw-semibold text-muted" for="end_time">End Time <span class="required-mark">*</span></label>
+                            @error('end_time')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="time" class="form-control @error('end_time') is-invalid @enderror" id="end_time" name="end_time" value="{{ old('end_time', $editEndTime) }}" required placeholder="Select end time">
                         </div>
                         <div class="col-12 col-md-4 d-flex align-items-end">
                             <div class="form-check form-switch mb-2">
@@ -200,11 +229,21 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-4">
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">Break Start</label>
-                            <input type="time" class="form-control" name="break_start" value="{{ old('break_start', $editBreakStart) }}">
+                            @error('break_start')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="time" class="form-control @error('break_start') is-invalid @enderror" name="break_start" value="{{ old('break_start', $editBreakStart) }}">
                         </div>
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">Break End</label>
-                            <input type="time" class="form-control" name="break_end" value="{{ old('break_end', $editBreakEnd) }}">
+                            @error('break_end')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="time" class="form-control @error('break_end') is-invalid @enderror" name="break_end" value="{{ old('break_end', $editBreakEnd) }}">
                         </div>
                         <div class="col-12 col-md-8 d-flex align-items-end">
                             <span class="form-text mb-2">Optional: staff is unavailable during this break (e.g. 12:00 – 13:00).</span>
@@ -218,8 +257,13 @@ if (!function_exists('ordinalSuffix')) {
                     <!-- One Time Working Date -->
                     <div class="row g-3 mb-4 recurrence-panel" id="panel-one_time">
                         <div class="col-12 col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Working Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="working_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('working_date', $editing && $editing->working_date ? $editing->working_date->format('Y-m-d') : date('Y-m-d')) }}">
+                            <label class="form-label small fw-semibold text-muted" for="working_date">Date <span class="required-mark">*</span></label>
+                            @error('working_date')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="date" class="form-control @error('working_date') is-invalid @enderror" name="working_date" id="working_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('working_date', $editing && $editing->working_date ? $editing->working_date->format('Y-m-d') : '') }}" placeholder="Select date" required>
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
                     </div>
@@ -227,12 +271,22 @@ if (!function_exists('ordinalSuffix')) {
                     <!-- Date Range for Recurring -->
                     <div class="row g-3 mb-3 recurrence-panel d-none" id="panel-date-range">
                         <div class="col-12 col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Start Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="start_date" id="start_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('start_date', $editing && $editing->start_date ? $editing->start_date->format('Y-m-d') : date('Y-m-d')) }}">
+                            <label class="form-label small fw-semibold text-muted" for="start_date">Start Date <span class="required-mark">*</span></label>
+                            @error('start_date')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="date" class="form-control @error('start_date') is-invalid @enderror" name="start_date" id="start_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('start_date', $editing && $editing->start_date ? $editing->start_date->format('Y-m-d') : '') }}" required>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label small fw-semibold text-muted">End Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="end_date" id="end_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('end_date', $editing && $editing->end_date ? $editing->end_date->format('Y-m-d') : date('Y-m-d', strtotime('+3 months'))) }}">
+                            <label class="form-label small fw-semibold text-muted" for="end_date">End Date <span class="required-mark">*</span></label>
+                            @error('end_date')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="date" class="form-control @error('end_date') is-invalid @enderror" name="end_date" id="end_date" {{ !$editing ? 'min=' . date('Y-m-d') : '' }} value="{{ old('end_date', $editing && $editing->end_date ? $editing->end_date->format('Y-m-d') : '') }}" required>
                         </div>
                     </div>
 
@@ -240,6 +294,11 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-4 recurrence-panel d-none" id="panel-weekly">
                         <div class="col-12">
                             <label class="form-label small fw-semibold text-muted d-block mb-2">Select Weekdays <span class="required-mark">*</span></label>
+                            @error('weekly_days')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             <div class="weekday-checkbox-group">
                                 @php
                                     $weekdays = [
@@ -269,7 +328,12 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-4 recurrence-panel d-none" id="panel-monthly">
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
-                            <select name="monthly_day" class="form-select">
+                            @error('monthly_day')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="monthly_day" class="form-select @error('monthly_day') is-invalid @enderror">
                                 @for($d = 1; $d <= 31; $d++)
                                     <option value="{{ $d }}" {{ old('monthly_day', $editMonthlyDay ?? 15) == $d ? 'selected' : '' }}>
                                         Every month on the {{ $d }}{{ ordinalSuffix($d) }}
@@ -283,7 +347,12 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3 mb-4 recurrence-panel d-none" id="panel-yearly">
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Month <span class="required-mark">*</span></label>
-                            <select name="yearly_month" class="form-select">
+                            @error('yearly_month')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="yearly_month" class="form-select @error('yearly_month') is-invalid @enderror">
                                 @php
                                     $months = [
                                         1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
@@ -298,7 +367,12 @@ if (!function_exists('ordinalSuffix')) {
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
-                            <select name="yearly_day" class="form-select">
+                            @error('yearly_day')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select name="yearly_day" class="form-select @error('yearly_day') is-invalid @enderror">
                                 @for($d = 1; $d <= 31; $d++)
                                     <option value="{{ $d }}" {{ old('yearly_day', $editYearlyDay ?? 10) == $d ? 'selected' : '' }}>
                                         {{ $d }}{{ ordinalSuffix($d) }}
@@ -385,6 +459,20 @@ if (!function_exists('ordinalSuffix')) {
                 updateDayOff();
             }
             updatePanels();
+
+            // Link Staff and Location selects
+            const staffSelect = document.getElementById('staff_id');
+            const locationSelect = document.getElementById('location_id');
+            if (staffSelect && locationSelect) {
+                staffSelect.addEventListener('change', function () {
+                    const opt = staffSelect.selectedOptions[0];
+                    const locId = opt ? opt.dataset.locationId : '';
+                    if (locId && !locationSelect.value) {
+                        locationSelect.value = locId;
+                        locationSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }
         });
     </script>
 @endpush

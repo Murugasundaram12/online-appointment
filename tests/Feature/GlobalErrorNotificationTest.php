@@ -51,7 +51,7 @@ class GlobalErrorNotificationTest extends TestCase
         $followUp->assertSee('You cannot delete your own account while you are logged in.');
     }
 
-    public function test_validation_error_renders_in_global_error_notification(): void
+    public function test_validation_error_renders_above_field_and_not_in_global_notification(): void
     {
         $response = $this->actingAs($this->staff, 'staff')
             ->from(route('staff.index'))
@@ -65,8 +65,8 @@ class GlobalErrorNotificationTest extends TestCase
 
         $followUp = $this->actingAs($this->staff, 'staff')->get(route('staff.index'));
         $followUp->assertStatus(200);
-        $followUp->assertSee('data-app-alert-type="danger"', false);
-        $followUp->assertSee('data-app-alert-title="Error"', false);
+        // Field errors are rendered above inputs, not as duplicate global alerts
+        $followUp->assertDontSee('data-app-alert-type="danger"', false);
     }
 
     public function test_authorization_403_renders_with_global_error_notification(): void
@@ -91,7 +91,7 @@ class GlobalErrorNotificationTest extends TestCase
         $response->assertSee('Access Denied');
     }
 
-    public function test_authentication_error_renders_global_error_notification_on_login(): void
+    public function test_authentication_error_renders_field_error_above_email_on_login(): void
     {
         $response = $this->from(route('login'))->post(route('login.store'), [
             'email' => 'nonexistent@example.com',
@@ -103,9 +103,12 @@ class GlobalErrorNotificationTest extends TestCase
 
         $followUp = $this->get(route('login'));
         $followUp->assertStatus(200);
-        $followUp->assertSee('app-toast-container');
-        $followUp->assertSee('data-app-alert-type="danger"', false);
-        $followUp->assertSee('data-app-alert-title="Error"', false);
-        $followUp->assertSee('Invalid credentials or inactive account.');
+        $html = $followUp->getContent();
+        $emailPos = strpos($html, 'id="email"');
+        $errorPos = strpos($html, 'Invalid credentials or inactive account.');
+        $this->assertNotFalse($emailPos);
+        $this->assertNotFalse($errorPos);
+        $this->assertTrue($errorPos < $emailPos, 'Authentication error must appear before email input');
+        $followUp->assertDontSee('data-app-alert-type="danger"', false);
     }
 }

@@ -53,17 +53,4 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-
-    @if(isset($errors) && $errors->any())
-        @foreach($errors->all() as $error)
-            <div class="alert app-alert app-alert-danger alert-danger alert-dismissible fade show" role="alert"
-                 data-app-alert-type="danger"
-                 data-app-alert-title="Error"
-                 data-app-alert-message="{{ $error }}">
-                <i class="bx bx-error-circle" aria-hidden="true"></i>
-                <div class="app-alert-message">{{ $error }}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endforeach
-    @endif
 </div>

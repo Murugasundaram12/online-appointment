@@ -13,7 +13,7 @@
     <div class="container-fluid px-4 pt-4">
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-4">
-                <form action="{{ route('clients.store') }}" method="POST">
+                <form action="{{ route('clients.store') }}" method="POST" novalidate>
                     @csrf
                     @include('clients.partials.form-fields')
                     <div class="row">

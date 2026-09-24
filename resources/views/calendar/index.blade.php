@@ -7,9 +7,9 @@
     <style>
         :root {
             --calendar-border: #eef2f7;
-            --calendar-border-subtle: #dbe2ea;
-            --calendar-border-hourly: #b0bac9;
-            --calendar-border-strong: #b0bac9;
+            --calendar-border-subtle: rgba(63, 66, 84, 0.45);
+            --calendar-border-hourly: #3f4254;
+            --calendar-border-strong: #3f4254;
             --calendar-header-bg: #fff;
             --calendar-active-text: #3699ff;
             --calendar-inactive-text: #a1a5b7;
@@ -31,7 +31,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid var(--calendar-border-hourly);
+            border-bottom: 1px solid #ebedf3;
             height: 60px;
         }
 
@@ -120,7 +120,7 @@
             grid-template-columns: 80px repeat(7, minmax(130px, 1fr));
             min-width: min-content;
             width: 100%;
-            border-bottom: 1px solid var(--calendar-border-hourly);
+            border-bottom: 2px solid var(--calendar-border-hourly);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -130,7 +130,7 @@
         .header-cell {
             padding: 0.75rem 0.5rem 0.5rem;
             text-align: center;
-            border-right: 1px solid var(--calendar-border-strong);
+            border-right: 1px solid #3f4254;
             border-bottom: none;
             min-width: 0;
             overflow: hidden;
@@ -177,7 +177,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-right: 1px solid var(--calendar-border-strong);
+            border-right: 1px solid #3f4254;
             border-bottom: none;
             background: #fff;
         }
@@ -193,7 +193,7 @@
         }
 
         .time-col {
-            border-right: 1px solid var(--calendar-border-strong);
+            border-right: 1px solid #3f4254;
             background: #fff;
         }
 
@@ -233,7 +233,7 @@
 
         .time-slot.time-slot-hour,
         .time-slot.time-slot-hour-end {
-            border-bottom: 1px solid var(--calendar-border-hourly);
+            border-bottom: 2px solid var(--calendar-border-hourly);
         }
 
         .time-label {
@@ -257,8 +257,8 @@
         .grid-cell {
             height: 100%;
             min-height: 2880px;
-            border-right: 1px solid var(--calendar-border-strong);
-            border-bottom: 1px solid var(--calendar-border-hourly);
+            border-right: 1px solid #3f4254;
+            border-bottom: 2px solid var(--calendar-border-hourly);
             position: relative;
             background-image: repeating-linear-gradient(to bottom,
                     transparent 0,
@@ -274,8 +274,8 @@
                     var(--calendar-border-subtle) 89px,
                     var(--calendar-border-subtle) 90px,
                     transparent 90px,
-                    transparent 119px,
-                    var(--calendar-border-hourly) 119px,
+                    transparent 118px,
+                    var(--calendar-border-hourly) 118px,
                     var(--calendar-border-hourly) 120px);
             background-size: 100% 120px;
         }
@@ -353,10 +353,14 @@
             display: none;
         }
 
-        .calendar-appointment-time {
-            font-size: 15px;
+        .calendar-appointment-time,
+        .appointment-time {
+            font-size: 0.72rem;
             font-weight: 600;
             line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .calendar-appointment-meta {
@@ -364,6 +368,46 @@
             font-weight: 600;
             line-height: 1.25;
             margin-top: 2px;
+        }
+
+        .calendar-appointment {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .calendar-appointment.is-short {
+            padding: 2.5px 6px !important;
+        }
+
+        .calendar-appointment.is-short .calendar-appointment-client {
+            font-size: 11px !important;
+            line-height: 1.15 !important;
+        }
+
+        .calendar-appointment.is-short .calendar-appointment-status {
+            font-size: 8.5px !important;
+            padding: 1px 3px !important;
+        }
+
+        .calendar-appointment.is-short .calendar-appointment-service {
+            font-size: 10px !important;
+            line-height: 1.15 !important;
+        }
+
+        .calendar-appointment.is-short .calendar-appointment-staff {
+            font-size: 9.5px !important;
+            line-height: 1.15 !important;
+        }
+
+        .calendar-appointment.is-short .appointment-time {
+            font-size: 0.70rem !important;
+            line-height: 1.15 !important;
+        }
+
+        .calendar-appointment.is-extra-short .calendar-appointment-service,
+        .calendar-appointment.is-extra-short .calendar-appointment-staff {
+            display: none !important;
         }
 
         /* Appointment modal */
@@ -1074,7 +1118,7 @@
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
-                <form id="appointment-form" data-app-managed="true">
+                <form id="appointment-form" data-app-managed="true" novalidate>
                     <div class="modal-header">
                         <div class="modal-heading">
                             <div class="modal-icon" aria-hidden="true"><i class="bx bx-calendar-plus"></i></div>
@@ -1091,18 +1135,18 @@
                         <div id="appointment-form-fields" class="appointment-form-grid">
                             <div class="mb-2">
                                 <label class="form-label">Location</label>
-                                <select id="appt-location" class="form-select"></select>
+                                <select id="appt-location" name="location_id" class="form-select"></select>
                                 <div id="appt-location-help" class="form-text text-muted"></div>
                             </div>
 
                             <div class="mb-2">
                                 <label class="form-label">Staff <span class="required-mark">*</span></label>
-                                <select id="appt-staff" class="form-select" required></select>
+                                <select id="appt-staff" name="staff_id" class="form-select" required></select>
                             </div>
 
                             <div class="mb-2">
                                 <label class="form-label">Service <span class="required-mark">*</span></label>
-                                <select id="appt-service" class="form-select" required></select>
+                                <select id="appt-service" name="service_id" class="form-select" required></select>
                                 <div id="service-cost-duration-info" class="mt-1 small text-muted d-none">
                                     Cost: <strong id="selected-service-cost" class="text-dark">$0.00</strong> &bull;
                                     Duration: <strong id="selected-service-duration" class="text-dark">0 min</strong>
@@ -1116,7 +1160,7 @@
                                     <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
                                 </div> -->
                                 <div class="d-flex gap-2">
-                                    <select id="appt-client" class="form-select"></select>
+                                    <select id="appt-client" name="client_id" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
                                         New</button>
                                 </div>
@@ -1155,17 +1199,17 @@
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
                                     <label class="form-label">Start <span class="required-mark">*</span></label>
-                                    <input type="datetime-local" id="appt-start" class="form-control" required />
+                                    <input type="datetime-local" id="appt-start" name="start_time" class="form-control" required />
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">End <span class="required-mark">*</span></label>
-                                    <input type="datetime-local" id="appt-end" class="form-control" required />
+                                    <input type="datetime-local" id="appt-end" name="end_time" class="form-control" required />
                                 </div>
                             </div>
 
                             <div class="mb-2">
                                 <label class="form-label">Status <span class="required-mark">*</span></label>
-                                <select id="appt-status" class="form-select" required>
+                                <select id="appt-status" name="status" class="form-select" required>
                                     <option value="booked">Booked</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Canceled</option>
@@ -1174,13 +1218,13 @@
                             </div>
 
                             <div class="mb-2 d-none" id="cancellation-reason-wrapper">
-                                <label class="form-label text-danger fw-semibold">Cancellation Reason <span class="required-mark">*</span></label>
-                                <textarea id="appt-cancellation-reason" class="form-control border-danger" rows="2" placeholder="Enter reason for cancellation..."></textarea>
+                                <label class="form-label">Cancellation Reason <span class="required-mark">*</span></label>
+                                <textarea id="appt-cancellation-reason" name="cancellation_reason" class="form-control" rows="2" placeholder="Enter reason for cancellation..."></textarea>
                             </div>
 
                             <div class="mb-2">
                                 <label class="form-label">Notes</label>
-                                <textarea id="appt-notes" class="form-control" rows="2"></textarea>
+                                <textarea id="appt-notes" name="notes" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
 
@@ -1300,7 +1344,7 @@
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <form id="new-client-form" data-app-managed="true">
+                <form id="new-client-form" data-app-managed="true" novalidate>
                     <div class="modal-header">
                         <div class="modal-heading">
                             <div class="modal-icon modal-icon-info" aria-hidden="true"><i class="bx bx-user-plus"></i></div>
@@ -1404,6 +1448,26 @@
                 return (yiq >= 150) ? '#181c32' : '#ffffff';
             }
 
+            function getAppointmentServiceColor(ev) {
+                if (ev && ev.serviceColor && String(ev.serviceColor).trim()) {
+                    return String(ev.serviceColor).trim();
+                }
+                const serviceId = ev ? (ev.serviceId || ev.service_id) : null;
+                if (serviceId && window.CALENDAR_DATA && Array.isArray(window.CALENDAR_DATA.services)) {
+                    const svc = window.CALENDAR_DATA.services.find(s => String(s.id) === String(serviceId));
+                    if (svc && svc.color && String(svc.color).trim()) {
+                        return String(svc.color).trim();
+                    }
+                }
+                if (ev && ev.color && String(ev.color).trim() && ev.color !== '#f64e60') {
+                    return String(ev.color).trim();
+                }
+                if (ev && ev.backgroundColor && String(ev.backgroundColor).trim() && ev.backgroundColor !== '#f64e60') {
+                    return String(ev.backgroundColor).trim();
+                }
+                return '#3699ff';
+            }
+
             function ensureMonthCalendar() {
                 if (monthCalendar || !monthCalendarRoot) return monthCalendar;
                 if (typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
@@ -1424,7 +1488,7 @@
                     showNonCurrentDates: true,
                     dayMaxEventRows: 4,
                     events: events.map(e => {
-                        const sc = (e.serviceColor && String(e.serviceColor).trim()) || e.color || e.backgroundColor || '#3699ff';
+                        const sc = getAppointmentServiceColor(e);
                         return {
                             id: e.id,
                             title: e.title,
@@ -1433,15 +1497,17 @@
                             color: sc,
                             backgroundColor: sc,
                             borderColor: sc,
-                            extendedProps: { staff: e.staff, status: e.status, serviceColor: e.serviceColor }
+                            extendedProps: { staff: e.staff, status: e.status, serviceColor: sc, serviceId: e.serviceId || e.service_id }
                         };
                     }),
                     eventClassNames: () => ['fc-staff-appointment'],
                     eventDidMount: function (info) {
-                        const eventColor = (info.event.extendedProps?.serviceColor && String(info.event.extendedProps.serviceColor).trim())
-                            || info.event.backgroundColor
-                            || info.event.borderColor
-                            || '#3699ff';
+                        const extProps = info.event.extendedProps || {};
+                        const eventColor = getAppointmentServiceColor({
+                            serviceColor: extProps.serviceColor,
+                            serviceId: extProps.serviceId,
+                            color: info.event.backgroundColor || info.event.borderColor
+                        });
                         const textColor = getContrastColor(eventColor);
                         info.el.style.backgroundColor = eventColor;
                         info.el.style.borderColor = eventColor;
@@ -1569,6 +1635,22 @@
             const modalEl = document.getElementById('appointmentModal');
             const appointmentModal = new bootstrap.Modal(modalEl);
             const appointmentForm = document.getElementById('appointment-form');
+            if (appointmentForm && window.AppFormErrors) {
+                window.AppFormErrors.attachAutoClear(appointmentForm);
+            }
+            if (newClientForm && window.AppFormErrors) {
+                window.AppFormErrors.attachAutoClear(newClientForm);
+            }
+            if (modalEl && appointmentForm) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    window.AppFormErrors?.clear(appointmentForm);
+                });
+            }
+            if (newClientModalEl && newClientForm) {
+                newClientModalEl.addEventListener('hidden.bs.modal', function () {
+                    window.AppFormErrors?.clear(newClientForm);
+                });
+            }
             const modalTitle = document.getElementById('appointment-modal-title');
             const apptIdField = document.getElementById('appointment-id');
             const appointmentFormFields = document.getElementById('appointment-form-fields');
@@ -1933,9 +2015,27 @@
                 return stepMap[currentView] ?? 7;
             }
 
+            function formatAppointmentTime(dateInput) {
+                const d = dateInput instanceof Date ? dateInput : parseCalendarDate(dateInput);
+                if (!d || Number.isNaN(d.getTime())) return '';
+                const h = d.getHours();
+                const m = pad2(d.getMinutes());
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const displayHour = pad2(h % 12 || 12);
+                return `${displayHour}:${m} ${ampm}`;
+            }
+
+            function formatAppointmentTimeRange(startInput, endInput) {
+                const startStr = formatAppointmentTime(startInput);
+                const endStr = formatAppointmentTime(endInput);
+                if (startStr && endStr) {
+                    return `${startStr} \u2013 ${endStr}`;
+                }
+                return startStr || endStr || '';
+            }
+
             function formatTimeShort(dateStr) {
-                const d = parseCalendarDate(dateStr);
-                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                return formatAppointmentTime(dateStr);
             }
 
             function updateTimezoneLabel() {
@@ -2651,6 +2751,11 @@
                     wrapper.classList.remove('d-none');
                 } else {
                     wrapper.classList.add('d-none');
+                    reasonInput.classList.remove('is-invalid');
+                    const prev = reasonInput.previousElementSibling;
+                    if (prev && prev.classList.contains('app-field-error')) {
+                        prev.remove();
+                    }
                 }
             }
             if (statusField) {
@@ -2730,6 +2835,7 @@
                 const startVal = startDate instanceof Date ? toInputDateTime(startDate) : String(startDate);
                 const endVal = endDate instanceof Date ? toInputDateTime(endDate) : String(endDate);
 
+                window.AppFormErrors?.clear(appointmentForm);
                 hideAppointmentDetailsCard();
                 modalTitle.textContent = 'New Appointment';
                 setAppointmentReadOnlyMode(false);
@@ -2789,6 +2895,7 @@
 
             async function openAppointmentModalForEdit(appointmentId, clickEvent = null) {
                 try {
+                    window.AppFormErrors?.clear(appointmentForm);
                     hideAppointmentDetailsCard();
                     setAppointmentReadOnlyMode(false);
                     if (apptSaveBtn) {
@@ -3187,7 +3294,7 @@
                     if (currentView === 'month' && monthCalendar) {
                         monthCalendar.removeAllEvents();
                         window._calendarEvents.forEach(ev => {
-                            const sc = (ev.serviceColor && String(ev.serviceColor).trim()) || ev.color || ev.backgroundColor || '#3699ff';
+                            const sc = getAppointmentServiceColor(ev);
                             monthCalendar.addEvent({
                                 id: ev.id,
                                 title: ev.title,
@@ -3196,7 +3303,7 @@
                                 color: sc,
                                 backgroundColor: sc,
                                 borderColor: sc,
-                                extendedProps: { staff: ev.staff, status: ev.status, serviceColor: ev.serviceColor }
+                                extendedProps: { staff: ev.staff, status: ev.status, serviceColor: sc, serviceId: ev.serviceId || ev.service_id }
                             });
                         });
                     }
@@ -3297,8 +3404,11 @@
                         const topPerc = minutesFromMidnight / (24 * 60);
                         const heightPerc = Math.max(durationMinutes / (24 * 60), 0.02);
 
+                        const isShortAppointment = durationMinutes <= 35;
+                        const isExtraShortAppointment = durationMinutes < 25;
+
                         const el = document.createElement('div');
-                        el.className = 'calendar-appointment';
+                        el.className = `calendar-appointment${isShortAppointment ? ' is-short' : ''}${isExtraShortAppointment ? ' is-extra-short' : ''}`;
                         const isCompletedEvent = (ev.status || '').toLowerCase() === 'completed';
                         el.draggable = !isCompletedEvent;
                         el.dataset.appointmentId = ev.id;
@@ -3307,32 +3417,35 @@
                         el.style.right = '6px';
                         el.style.top = (topPerc * colHeight) + 'px';
                         el.style.height = (heightPerc * colHeight) + 'px';
-                        const apptColor = (ev.serviceColor && String(ev.serviceColor).trim()) || ev.color || ev.backgroundColor || '#3699ff';
+                        const apptColor = getAppointmentServiceColor(ev);
                         const textColor = getContrastColor(apptColor);
                         el.style.background = apptColor;
                         el.style.border = `1px solid ${apptColor}`;
                         el.style.color = textColor;
-                        el.style.padding = '6px 8px';
+                        el.style.padding = isShortAppointment ? '2.5px 6px' : '5px 8px';
                         el.style.borderRadius = '6px';
                         el.style.cursor = isCompletedEvent ? 'default' : 'grab';
                         el.style.overflow = 'hidden';
-                        el.style.fontSize = '12px';
+                        el.style.fontSize = isShortAppointment ? '11px' : '12px';
                         el.style.boxSizing = 'border-box';
+                        el.style.display = 'flex';
+                        el.style.flexDirection = 'column';
+                        el.style.justifyContent = 'flex-start';
 
                         const clientTitle = ev.title || ev.clientName || 'Unassigned';
                         const serviceName = ev.service || '';
                         const staffName = ev.staff || '';
-                        const timeStr = `${formatTimeShort(ev.start)} - ${formatTimeShort(ev.end)}`;
+                        const timeStr = formatAppointmentTimeRange(startIso, endIso);
                         const statusLabel = ev.status || 'booked';
 
                         el.innerHTML = `
-                            <div class="d-flex align-items-center justify-content-between mb-1" style="gap: 4px;">
-                                <span class="fw-bold text-truncate" style="font-size: 12px; line-height: 1.2;">${escapeHtml(clientTitle)}</span>
-                                <span class="badge" style="font-size: 9px; padding: 1px 4px; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit;">${escapeHtml(statusLabel)}</span>
+                            <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
                             </div>
-                            ${serviceName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(serviceName)}</div>` : ''}
-                            ${staffName ? `<div class="text-truncate opacity-90" style="font-size: 11px;">${escapeHtml(staffName)}</div>` : ''}
-                            <div class="opacity-90" style="font-size: 10px;">${escapeHtml(timeStr)}</div>
+                            ${serviceName ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                            ${staffName ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                            <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
                         `;
 
                         el.addEventListener('dragstart', handleDragStart);
@@ -3370,6 +3483,7 @@
 
             appointmentForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
+                window.AppFormErrors?.clear(appointmentForm);
                 if (isSavingAppointment) return;
                 if (apptSaveBtn && apptSaveBtn.classList.contains('d-none')) return;
                 if (apptSaveBtn && apptSaveBtn.disabled) return;
@@ -3391,17 +3505,24 @@
                 const start = fromInputDateTime(startField.value);
                 let end = fromInputDateTime(endField.value);
 
-                if (!staffId || !serviceId || !startField.value || !endField.value) {
-                    if (!staffId) {
-                        showPageNotice('Selected staff member is not scheduled for this date and time.');
-                        return;
-                    }
-                    showPageNotice('Staff, service, start and end are required.');
-                    return;
+                const cancellationReason = document.getElementById('appt-cancellation-reason')?.value?.trim() || '';
+
+                const apptClientErrors = {};
+                if (!staffId) apptClientErrors['staff_id'] = 'Staff is required.';
+                if (!serviceId) apptClientErrors['service_id'] = 'Service is required.';
+                if (!selectedClientId) apptClientErrors['client_id'] = 'Client is required.';
+                if (!startField.value) apptClientErrors['start_time'] = 'Start time is required.';
+                if (!endField.value) apptClientErrors['end_time'] = 'End time is required.';
+                if (statusField.value === 'cancelled' && !cancellationReason) {
+                    apptClientErrors['cancellation_reason'] = 'Cancellation reason is required when canceling an appointment.';
                 }
 
-                if (!selectedClientId) {
-                    showPageNotice('Client is required. Select an existing client or add a new client.');
+                if (Object.keys(apptClientErrors).length > 0) {
+                    if (window.AppFormErrors) {
+                        window.AppFormErrors.show(appointmentForm, apptClientErrors);
+                    } else {
+                        showPageNotice('Please fill in all required appointment fields.');
+                    }
                     return;
                 }
 
@@ -3416,12 +3537,6 @@
 
                 if (end <= start) {
                     showPageNotice('End time must be after start time.');
-                    return;
-                }
-
-                const cancellationReason = document.getElementById('appt-cancellation-reason')?.value?.trim() || null;
-                if (statusField.value === 'cancelled' && !cancellationReason) {
-                    showPageNotice('Cancellation reason is required when canceling an appointment.');
                     return;
                 }
 
@@ -3466,27 +3581,34 @@
                     });
 
                     if (!res.ok) {
+                        if (res.status === 422) {
+                            const errorJson = await res.json().catch(() => ({}));
+                            if (window.AppFormErrors && errorJson.errors) {
+                                const unmapped = window.AppFormErrors.show(appointmentForm, errorJson.errors);
+                                if (unmapped.length > 0) {
+                                    showPageNotice(unmapped.join(' '));
+                                }
+                                return;
+                            }
+                        }
                         const msg = await getErrorMessage(res, 'Save failed');
                         throw new Error(msg);
                     }
 
                     const resData = await res.json().catch(() => ({}));
 
-                    // Immediately close modal
+                    // Clear any previous validation errors and close modal
+                    window.AppFormErrors?.clear(appointmentForm);
                     appointmentModal.hide();
 
                     // Immediately render new or updated appointment on calendar
                     if (resData && resData.appointment) {
                         const appt = resData.appointment;
-                        if (!appt.serviceColor && serviceId) {
-                            const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(serviceId));
-                            if (svc && svc.color) {
-                                appt.serviceColor = svc.color;
-                                appt.color = svc.color;
-                                appt.backgroundColor = svc.color;
-                                appt.borderColor = svc.color;
-                            }
-                        }
+                        const svcColor = getAppointmentServiceColor(appt) || (serviceId ? getAppointmentServiceColor({ serviceId }) : '#3699ff');
+                        appt.serviceColor = svcColor;
+                        appt.color = svcColor;
+                        appt.backgroundColor = svcColor;
+                        appt.borderColor = svcColor;
 
                         window._calendarEvents = window._calendarEvents || [];
                         const existingIdx = window._calendarEvents.findIndex(ev => String(ev.id) === String(appt.id));
@@ -3499,7 +3621,7 @@
                         renderAppointments();
 
                         if (currentView === 'month' && monthCalendar) {
-                            const sc = (appt.serviceColor && String(appt.serviceColor).trim()) || appt.color || appt.backgroundColor || '#3699ff';
+                            const sc = svcColor;
                             const existingMonthEv = monthCalendar.getEventById(String(appt.id));
                             if (existingMonthEv) existingMonthEv.remove();
                             monthCalendar.addEvent({
@@ -3510,7 +3632,7 @@
                                 color: sc,
                                 backgroundColor: sc,
                                 borderColor: sc,
-                                extendedProps: { staff: appt.staff, status: appt.status, serviceColor: appt.serviceColor }
+                                extendedProps: { staff: appt.staff, status: appt.status, serviceColor: sc, serviceId: appt.serviceId || appt.service_id }
                             });
                         }
                     }
@@ -3667,7 +3789,8 @@
 
             newClientForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                if (!newClientForm.reportValidity()) return;
+                window.AppFormErrors?.clear(newClientForm);
+                if (window.AppFormErrors && !window.AppFormErrors.validate(newClientForm)) return;
                 const payload = Object.fromEntries(new FormData(newClientForm).entries());
 
                 try {
@@ -3685,6 +3808,16 @@
                     });
 
                     if (!createClientRes.ok) {
+                        if (createClientRes.status === 422) {
+                            const errorJson = await createClientRes.json().catch(() => ({}));
+                            if (window.AppFormErrors && errorJson.errors) {
+                                const unmapped = window.AppFormErrors.show(newClientForm, errorJson.errors);
+                                if (unmapped.length > 0) {
+                                    showPageNotice(unmapped.join(' '));
+                                }
+                                return;
+                            }
+                        }
                         const msg = await getErrorMessage(createClientRes, 'Unable to create client');
                         throw new Error(msg);
                     }
@@ -3830,6 +3963,19 @@
                     const apptId = appointmentDetailsCard ? appointmentDetailsCard.dataset.appointmentId : null;
                     const newStatus = this.dataset.status;
                     if (!apptId || !newStatus) return;
+
+                    if (newStatus === 'cancelled') {
+                        hideAppointmentDetailsCard();
+                        openAppointmentModalForEdit(apptId).then(() => {
+                            if (statusField) {
+                                statusField.value = 'cancelled';
+                                toggleCancellationReasonField();
+                                const reasonInput = document.getElementById('appt-cancellation-reason');
+                                if (reasonInput) reasonInput.focus();
+                            }
+                        });
+                        return;
+                    }
 
                     this.disabled = true;
                     try {

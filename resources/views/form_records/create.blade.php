@@ -7,17 +7,19 @@
         <h2 class="fs-4 m-0 fw-bold">Create form record</h2>
     </nav>
     <div class="container-fluid px-4 pt-4">
-        @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
-        @endif
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-4">
-                <form method="POST" action="{{ route('form-records.store') }}">
+                <form method="POST" action="{{ route('form-records.store') }}" novalidate>
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Form <span class="required-mark">*</span></label>
-                            <select class="form-select" name="form_id" required>
+                            @error('form_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select class="form-select @error('form_id') is-invalid @enderror" name="form_id" required>
                                 @foreach($forms as $form)
                                     <option value="{{ $form->id }}">{{ $form->name }}</option>
                                 @endforeach
@@ -25,7 +27,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Client <span class="required-mark">*</span></label>
-                            <select class="form-select" name="client_id" required>
+                            @error('client_id')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <select class="form-select @error('client_id') is-invalid @enderror" name="client_id" required>
                                 @foreach($clients as $client)
                                     <option value="{{ $client->id }}">{{ $client->name }}</option>
                                 @endforeach
@@ -33,7 +40,17 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Notes</label>
-                            <textarea class="form-control" name="submitted_data[notes]" rows="4">{{ old('submitted_data.notes') }}</textarea>
+                            @error('submitted_data.notes')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            @error('submitted_data')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <textarea class="form-control @error('submitted_data.notes') is-invalid @enderror" name="submitted_data[notes]" rows="4">{{ old('submitted_data.notes') }}</textarea>
                         </div>
                         <div class="col-12">
                             <button class="btn btn-primary px-4">Save record</button>

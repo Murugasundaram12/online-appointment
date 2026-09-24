@@ -13,33 +13,58 @@
     <div class="container-fluid px-4 pt-4">
         <div class="card shadow-sm border-0 rounded">
             <div class="card-body p-4">
-                <form action="{{ route('packages.update', $package->id) }}" method="POST">
+                <form action="{{ route('packages.update', $package->id) }}" method="POST" novalidate>
                     @csrf
                     @method('PUT')
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Package Name <span class="required-mark">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $package->name) }}"
+                            @error('name')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $package->name) }}"
                                 required>
                         </div>
                         <div class="col-md-6">
                             <label for="price" class="form-label">Price <span class="required-mark">*</span></label>
-                            <input type="number" step="0.01" class="form-control" id="price" name="price"
+                            @error('price')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" id="price" name="price"
                                 value="{{ old('price', $package->price) }}" required>
                         </div>
                         <div class="col-md-6">
                             <label for="validity_days" class="form-label">Validity (Days)</label>
-                            <input type="number" class="form-control" id="validity_days" name="validity_days"
+                            @error('validity_days')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="number" class="form-control @error('validity_days') is-invalid @enderror" id="validity_days" name="validity_days"
                                 value="{{ old('validity_days', $package->validity_days) }}">
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description"
+                            @error('description')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
                                 rows="3">{{ old('description', $package->description) }}</textarea>
                         </div>
 
                         <div class="col-12">
                             <label class="form-label">Included Services</label>
+                            @error('services')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                                 @php($selectedServices = $package->services->keyBy('id'))
                                 @forelse($services as $service)
@@ -56,6 +81,11 @@
                         </div>
 
                         <div class="col-12">
+                            @error('is_active')
+                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $package->is_active) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">

@@ -131,7 +131,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addClientForm" method="POST" action="{{ route('clients.store') }}">
+                    <form id="addClientForm" method="POST" action="{{ route('clients.store') }}" novalidate>
                         @csrf
                         @include('clients.partials.form-fields', ['idPrefix' => 'add-client-', 'client' => null])
                     </form>
@@ -152,7 +152,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editClientForm" method="POST" action="#">
+                    <form id="editClientForm" method="POST" action="#" novalidate>
                         @csrf
                         @method('PUT')
                         @include('clients.partials.form-fields', ['idPrefix' => 'edit-client-'])
@@ -214,8 +214,15 @@
 
                     const vipEl = document.getElementById('edit-client-is-vip');
                     if (vipEl) vipEl.checked = (btn.dataset.isVip === '1');
-                });
             });
+
+            @if($errors->any() && !old('_method'))
+                const addClientModalEl = document.getElementById('addClientModal');
+                if (addClientModalEl && window.bootstrap) {
+                    const addModal = new bootstrap.Modal(addClientModalEl);
+                    addModal.show();
+                }
+            @endif
         });
     </script>
 @endpush

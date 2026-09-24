@@ -502,7 +502,7 @@ if (!function_exists('ordinalSuffix')) {
             <div class="card-body">
                 <h6 class="fw-bold mb-1"><i class="bx bx-calendar-x me-1 text-danger"></i>Business Holidays (Closed Dates)</h6>
                 <p class="text-muted small mb-3">On these dates the clinic is closed: no staff is available and no appointments can be booked.</p>
-                <form action="{{ route('schedule.holidays.store') }}" method="POST" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <form action="{{ route('schedule.holidays.store') }}" method="POST" class="d-flex flex-wrap align-items-center gap-2 mb-3" novalidate>
                     @csrf
                     <input type="date" name="date" class="form-control form-control-sm w-auto" min="{{ date('Y-m-d') }}" required>
                     <button type="submit" class="btn btn-sm btn-primary">Add Holiday</button>
@@ -527,7 +527,7 @@ if (!function_exists('ordinalSuffix')) {
     <div class="modal fade app-modal" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <form class="modal-content" id="create-schedule-form" action="{{ route('schedule.store') }}" method="POST">
+            <form class="modal-content" id="create-schedule-form" action="{{ route('schedule.store') }}" method="POST" novalidate>
                 @csrf
                 <div class="modal-header">
                     <div class="modal-heading">
@@ -562,11 +562,11 @@ if (!function_exists('ordinalSuffix')) {
                             </select>
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small text-muted">Start Time <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted" for="cs-start-time">Start Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-start-time" name="start_time" required>
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small text-muted">End Time <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted" for="cs-end-time">End Time <span class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-end-time" name="end_time" required>
                         </div>
                         <div class="col-6 col-md-2">
@@ -590,8 +590,8 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3">
                         <!-- One Time Working Date -->
                         <div class="col-12 col-md-6 recurrence-panel" id="panel-one_time">
-                            <label class="form-label small text-muted">Working Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="cs-working-date" min="{{ date('Y-m-d') }}">
+                            <label class="form-label small text-muted" for="cs-working-date">Date <span class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="working_date" id="cs-working-date" min="{{ date('Y-m-d') }}" required>
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
 
@@ -996,6 +996,15 @@ if (!function_exists('ordinalSuffix')) {
                             location.reload();
                             return;
                         }
+                        if (res.status === 422) {
+                            return res.json().then(data => {
+                                if (btn) { btn.disabled = false; btn.textContent = originalText; }
+                                if (window.AppFormErrors && data.errors) {
+                                    window.AppFormErrors.show(createForm, data.errors);
+                                }
+                                return null;
+                            });
+                        }
                         return res.json().catch(() => ({}));
                     })
                     .then(data => {
@@ -1020,20 +1029,12 @@ if (!function_exists('ordinalSuffix')) {
             renderScheduleGrid();
 
             if (createForm) {
+                window.AppFormErrors?.attachAutoClear(createForm);
                 createForm.addEventListener('submit', function (e) {
                     e.preventDefault();
-                    const staffId = csStaffId?.value;
-                    const startTime = csStartTime?.value;
-                    const endTime = csEndTime?.value;
-                    const isDayOff = csDayOff ? csDayOff.checked : false;
-
-                    if (!staffId || (!isDayOff && !startTime) || (!isDayOff && !endTime)) return;
-
-                    if (!isDayOff && endTime <= startTime) {
-                        window.AppToast?.show({ type: 'danger', title: 'Schedule error', message: 'End time must be after start time.' });
+                    if (window.AppFormErrors && !window.AppFormErrors.validate(createForm)) {
                         return;
                     }
-
                     createSchedule();
                 });
             }

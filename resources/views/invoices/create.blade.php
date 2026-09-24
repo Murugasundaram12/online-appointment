@@ -26,13 +26,18 @@
                             </div>
                         </div>
 
-                        <form action="{{ route('invoices.store') }}" method="POST" id="invoice-create-form">
+                        <form action="{{ route('invoices.store') }}" method="POST" id="invoice-create-form" novalidate>
                             @csrf
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label for="appointment_id" class="form-label">Appointment</label>
-                                    <select id="appointment_id" name="appointment_id" class="form-select @error('appointment_id') is-invalid @enderror">
-                                        <option value="">No appointment link</option>
+                                    <label for="appointment_id" class="form-label">Appointment <span class="required-mark">*</span></label>
+                                    @error('appointment_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <select id="appointment_id" name="appointment_id" class="form-select @error('appointment_id') is-invalid @enderror" required>
+                                        <option value="">Select Appointment</option>
                                         @foreach($appointments as $appointment)
                                             <option value="{{ $appointment->id }}"
                                                 data-client-id="{{ $appointment->client_id }}"
@@ -46,12 +51,16 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('appointment_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     <div class="form-text">Appointments that already have invoices are hidden.</div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="client_id" class="form-label">Patient / Client <span class="required-mark">*</span></label>
+                                    @error('client_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="client_id" name="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
                                         <option value="">Select patient</option>
                                         @foreach($clients as $client)
@@ -60,11 +69,15 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('client_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="staff_id" class="form-label">Practitioner Name <span class="required-mark">*</span></label>
+                                    @error('staff_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
                                         <option value="">Select staff</option>
                                         @foreach($staff as $member)
@@ -73,22 +86,30 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('staff_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="total_amount" class="form-label">Total Amount <span class="required-mark">*</span></label>
+                                    @error('total_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <div class="input-group">
                                         <span class="input-group-text">{{ $currency }}</span>
                                         <input type="number" step="0.01" min="0.01" id="total_amount" name="total_amount"
                                             value="{{ old('total_amount') }}"
                                             class="form-control @error('total_amount') is-invalid @enderror" required>
-                                        @error('total_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="status" class="form-label">Status</label>
+                                    @error('status')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="status" name="status" class="form-select @error('status') is-invalid @enderror">
                                         @foreach(['outstanding', 'partially_paid', 'paid', 'void'] as $status)
                                             <option value="{{ $status }}" {{ old('status', 'outstanding') === $status ? 'selected' : '' }}>
@@ -96,21 +117,28 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="issued_date" class="form-label">Issued Date <span class="required-mark">*</span></label>
+                                    @error('issued_date')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="date" id="issued_date" name="issued_date" value="{{ old('issued_date', now()->toDateString()) }}"
                                         class="form-control @error('issued_date') is-invalid @enderror" required>
-                                    @error('issued_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="due_date" class="form-label">Due Date</label>
+                                    @error('due_date')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="date" id="due_date" name="due_date" value="{{ old('due_date') }}"
                                         class="form-control @error('due_date') is-invalid @enderror">
-                                    @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                             </div>
 
@@ -138,7 +166,7 @@
                     <div class="card-body p-4">
                         <div class="text-muted small text-uppercase fw-bold mb-2">Selected service</div>
                         <div id="selected-service-name" class="fw-bold">No appointment selected</div>
-                        <div class="text-muted small mt-2">You can still create a manual invoice without linking an appointment.</div>
+                        <div class="text-muted small mt-2">Select an appointment to generate an invoice.</div>
                     </div>
                 </div>
             </div>

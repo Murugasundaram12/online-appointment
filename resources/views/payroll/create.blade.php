@@ -12,7 +12,7 @@
             <a href="{{ route('payroll.index') }}" class="btn btn-light border">Back</a>
         </div>
 
-        <form action="{{ route('payroll.store') }}" method="POST" id="payrollForm">
+        <form action="{{ route('payroll.store') }}" method="POST" id="payrollForm" novalidate>
             @csrf
             <div class="row g-4">
                 <div class="col-lg-8">
@@ -22,65 +22,110 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="staff_id" class="form-label">Staff <span class="required-mark">*</span></label>
+                                    @error('staff_id')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
                                         <option value="">Select staff</option>
                                         @foreach($staff as $member)
                                             <option value="{{ $member->id }}" data-salary="{{ $member->salary ?? 0 }}" {{ old('staff_id') == $member->id ? 'selected' : '' }}>{{ $member->name }}</option>
                                         @endforeach
                                     </select>
-                                    @error('staff_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-3">
                                     <label for="period_start" class="form-label">Period Start <span class="required-mark">*</span></label>
+                                    @error('period_start')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="date" id="period_start" name="period_start" value="{{ old('period_start') }}" class="form-control @error('period_start') is-invalid @enderror" required>
-                                    @error('period_start')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-3">
                                     <label for="period_end" class="form-label">Period End <span class="required-mark">*</span></label>
+                                    @error('period_end')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="date" id="period_end" name="period_end" value="{{ old('period_end') }}" class="form-control @error('period_end') is-invalid @enderror" required>
-                                    @error('period_end')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="salary_amount" class="form-label">Basic Salary <span class="required-mark">*</span></label>
+                                    @error('salary_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="number" step="0.01" min="0" id="salary_amount" name="salary_amount" value="{{ old('salary_amount', 0) }}" class="form-control payroll-money @error('salary_amount') is-invalid @enderror" required>
-                                    @error('salary_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="commission_amount" class="form-label">Commission</label>
+                                    @error('commission_amount')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="number" step="0.01" min="0" id="commission_amount" name="commission_amount" value="{{ old('commission_amount', 0) }}" class="form-control payroll-money @error('commission_amount') is-invalid @enderror">
-                                    @error('commission_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="bonus" class="form-label">Bonus</label>
+                                    @error('bonus')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="number" step="0.01" min="0" id="bonus" name="bonus" value="{{ old('bonus', 0) }}" class="form-control payroll-money @error('bonus') is-invalid @enderror">
-                                    @error('bonus')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="deductions" class="form-label">Deductions</label>
+                                    @error('deductions')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="number" step="0.01" min="0" id="deductions" name="deductions" value="{{ old('deductions', 0) }}" class="form-control payroll-money @error('deductions') is-invalid @enderror">
-                                    @error('deductions')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="total_hours" class="form-label">Worked Hours</label>
+                                    @error('total_hours')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="number" step="0.5" min="0" id="total_hours" name="total_hours" value="{{ old('total_hours', 0) }}" class="form-control @error('total_hours') is-invalid @enderror">
-                                    @error('total_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label for="payment_date" class="form-label">Payment Date <span class="required-mark" id="payment_date_mark">*</span></label>
+                                    @error('payment_date')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <input type="date" id="payment_date" name="payment_date" value="{{ old('payment_date') }}" class="form-control @error('payment_date') is-invalid @enderror">
-                                    @error('payment_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label for="payment_type" class="form-label">Payment Method <span class="required-mark">*</span></label>
+                                    @error('payment_type')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="payment_type" name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" required>
                                         @foreach(['cash' => 'Cash', 'check' => 'Check', 'transfer' => 'Bank Transfer', 'mobile_money' => 'Mobile Money'] as $value => $label)
                                             <option value="{{ $value }}" {{ old('payment_type', 'transfer') === $value ? 'selected' : '' }}>{{ $label }}</option>
                                         @endforeach
                                     </select>
-                                    @error('payment_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
+                                    @error('status')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
                                         <option value="pending" {{ old('status', 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
                                         <option value="processing" {{ old('status') === 'processing' ? 'selected' : '' }}>Processing</option>
@@ -88,12 +133,15 @@
                                         <option value="paid" {{ old('status') === 'paid' ? 'selected' : '' }}>Paid (Direct)</option>
                                         <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                                     </select>
-                                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-12">
                                     <label for="notes" class="form-label">Notes</label>
+                                    @error('notes')
+                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                     <textarea id="notes" name="notes" rows="3" class="form-control @error('notes') is-invalid @enderror">{{ old('notes') }}</textarea>
-                                    @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
