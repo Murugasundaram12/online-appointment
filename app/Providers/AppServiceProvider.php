@@ -38,15 +38,18 @@ class AppServiceProvider extends ServiceProvider
         }
 
         try {
+            $defaultTz = config('app.timezone') ?: 'America/Toronto';
             if (Schema::hasTable('business_settings')) {
                 $timezone = \App\Models\BusinessSetting::where('key', 'timezone')->value('value');
                 if ($timezone && in_array($timezone, timezone_identifiers_list(), true)) {
-                    config(['app.timezone' => $timezone]);
-                    date_default_timezone_set($timezone);
+                    $defaultTz = $timezone;
                 }
             }
+            config(['app.timezone' => $defaultTz]);
+            date_default_timezone_set($defaultTz);
         } catch (\Throwable $e) {
             // Keep public pages and Artisan available if the database is temporarily unreachable.
+            date_default_timezone_set(config('app.timezone', 'America/Toronto'));
         }
     }
 }

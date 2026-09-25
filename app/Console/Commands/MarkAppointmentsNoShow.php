@@ -16,14 +16,26 @@ class MarkAppointmentsNoShow extends Command
 
     public function handle(): int
     {
+        $timezone = $this->getBusinessTimezone();
+        $now = now()->setTimezone($timezone);
+
+        $this->info("Evaluation time ({$timezone}): {$now->toDateTimeString()}");
         $this->info('Automatic transition to No Show is disabled. Appointments retain their booked/confirmed/pending statuses.');
-        Log::info('Automatic appointments:mark-no-show command invoked but disabled by system policy.');
+        Log::info('Automatic appointments:mark-no-show command invoked but disabled by system policy.', [
+            'timezone' => $timezone,
+            'evaluated_at' => $now->toDateTimeString(),
+        ]);
         return Command::SUCCESS;
     }
 
-    private function getBusinessTimezone(): string
+    public function getBusinessTimezone(): string
     {
         $settings = BusinessSetting::pluck('value', 'key');
-        return $settings->get('timezone') ?? config('app.timezone');
+        $settingTz = $settings->get('timezone');
+        if (!empty($settingTz) && in_array($settingTz, timezone_identifiers_list(), true)) {
+            return $settingTz;
+        }
+
+        return config('app.timezone') ?: 'America/Toronto';
     }
 }

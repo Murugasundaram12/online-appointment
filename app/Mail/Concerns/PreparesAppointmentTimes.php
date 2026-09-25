@@ -14,7 +14,7 @@ trait PreparesAppointmentTimes
 
     protected function prepareAppointmentTimes(): void
     {
-        $tz = $this->business['timezone'] ?? $this->appointment->location?->timezone ?? null;
+        $tz = $this->business['timezone'] ?? $this->appointment->location?->timezone ?? config('app.timezone', 'America/Toronto');
 
         if ($this->appointment->start_time) {
             $this->appointmentStart = $tz

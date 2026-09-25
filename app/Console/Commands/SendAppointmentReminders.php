@@ -174,37 +174,11 @@ class SendAppointmentReminders extends Command
     {
         $settings = BusinessSetting::pluck('value', 'key');
         $settingTimezone = $settings->get('timezone');
-        if (!empty($settingTimezone)) {
+        if (!empty($settingTimezone) && in_array($settingTimezone, timezone_identifiers_list(), true)) {
             return $settingTimezone;
         }
 
-        $appTimezone = config('app.timezone');
-        if (!empty($appTimezone) && strtoupper($appTimezone) !== 'UTC') {
-            return $appTimezone;
-        }
-
-        try {
-            $dbDiff = DB::selectOne("SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP()) as diff")?->diff;
-            if ($dbDiff) {
-                $diffStr = (string) $dbDiff;
-                $isNeg = str_starts_with($diffStr, '-');
-                $clean = ltrim($diffStr, '-+');
-                $parts = explode(':', $clean);
-                $h = (int) ($parts[0] ?? 0);
-                $m = (int) ($parts[1] ?? 0);
-                return sprintf('%s%02d:%02d', $isNeg ? '-' : '+', $h, $m);
-            }
-        } catch (\Throwable $e) {
-            // Fallback to PHP system/config timezone if DB query fails
-        }
-
-        $systemOffsetSeconds = (int) date('Z');
-        $isNeg = $systemOffsetSeconds < 0;
-        $abs = abs($systemOffsetSeconds);
-        $hours = floor($abs / 3600);
-        $minutes = floor(($abs % 3600) / 60);
-
-        return sprintf('%s%02d:%02d', $isNeg ? '-' : '+', $hours, $minutes);
+        return config('app.timezone') ?: 'America/Toronto';
     }
 
     private function getBusinessContext(Appointment $appointment): array

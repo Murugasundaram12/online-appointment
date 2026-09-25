@@ -12,8 +12,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('appointments:send-reminders')->everyFifteenMinutes();
-        // Automatic no-show status transition disabled per requirement
+        $tz = config('app.timezone', 'America/Toronto');
+
+        $schedule->command('appointments:send-reminders')
+            ->everyFifteenMinutes()
+            ->timezone($tz);
+
+        $schedule->command('appointments:mark-no-show')
+            ->everyFifteenMinutes()
+            ->timezone($tz);
+    }
+
+    /**
+     * Get the timezone that should be used by default for scheduled events.
+     */
+    protected function scheduleTimezone(): \DateTimeZone|string|null
+    {
+        return config('app.timezone', 'America/Toronto');
     }
 
     /**

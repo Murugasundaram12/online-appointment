@@ -978,7 +978,7 @@ class CalendarController extends Controller
          *
          * We treat incoming strings as app-local time deterministically.
          */
-        $appTz = config('app.timezone', 'UTC');
+        $appTz = config('app.timezone', 'America/Toronto');
         try {
             $startTime = Carbon::createFromFormat('Y-m-d\TH:i:s', (string) $startTime, $appTz);
         } catch (\Throwable $e) {
@@ -1200,7 +1200,7 @@ class CalendarController extends Controller
 
     private function validateAppointmentDuration($startTime, $endTime, Service $service): array
     {
-        $appTz = config('app.timezone', 'UTC');
+        $appTz = config('app.timezone', 'America/Toronto');
         $start = Carbon::parse((string) $startTime, $appTz);
         $end = Carbon::parse((string) $endTime, $appTz);
 

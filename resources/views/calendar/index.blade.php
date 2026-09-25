@@ -1386,8 +1386,38 @@
                 return suffix ? `${calendarBaseUrl}/${suffix}` : calendarBaseUrl;
             }
 
-            // Initialize week start (Monday)
-            let currentWeekStart = new Date();
+            // Toronto timezone helper (America/Toronto)
+            function getTorontoNow() {
+                try {
+                    const dtf = new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'America/Toronto',
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        second: 'numeric',
+                        hour12: false
+                    });
+                    const parts = dtf.formatToParts(new Date());
+                    const m = {};
+                    parts.forEach(p => { m[p.type] = p.value; });
+                    const h = parseInt(m.hour, 10) === 24 ? 0 : parseInt(m.hour, 10);
+                    return new Date(
+                        parseInt(m.year, 10),
+                        parseInt(m.month, 10) - 1,
+                        parseInt(m.day, 10),
+                        h,
+                        parseInt(m.minute, 10),
+                        parseInt(m.second, 10)
+                    );
+                } catch (_) {
+                    return new Date();
+                }
+            }
+
+            // Initialize week start (Monday) using Toronto local time
+            let currentWeekStart = getTorontoNow();
             const day = currentWeekStart.getDay();
             const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1);
             currentWeekStart.setDate(diff);
@@ -1476,6 +1506,7 @@
                     initialView: 'dayGridMonth',
                     initialDate: initialMonth,
                     timeZone: 'local',
+                    now: () => toApiDateTime(getTorontoNow()),
                     height: 'auto',
                     headerToolbar: false,
                     fixedWeekCount: false,
@@ -1624,6 +1655,61 @@
                 line.className = 'hour-highlight-line';
                 line.style.top = `${top}px`;
                 gridBody.appendChild(line);
+            }
+
+            function renderCurrentTimeIndicator() {
+                document.querySelectorAll('.current-time-indicator').forEach(el => el.remove());
+                if (!gridBody || currentView === 'month') return;
+
+                const torontoNow = getTorontoNow();
+                const todayKey = toLocalDate(torontoNow);
+                const colHeight = gridBody.clientHeight || (24 * 120);
+                const minutesFromMidnight = torontoNow.getHours() * 60 + torontoNow.getMinutes();
+                const top = (minutesFromMidnight / (24 * 60)) * colHeight;
+
+                const cols = Array.from(gridBody.querySelectorAll('.day-column'));
+                if (!cols.length) return;
+
+                let targetCols = [];
+                if (currentView === 'day') {
+                    if (toLocalDate(currentWeekStart) === todayKey) {
+                        targetCols = cols;
+                    }
+                } else {
+                    for (let i = 0; i < visibleDays; i++) {
+                        const dayDate = new Date(currentWeekStart);
+                        dayDate.setDate(currentWeekStart.getDate() + i);
+                        if (toLocalDate(dayDate) === todayKey && cols[i]) {
+                            targetCols.push(cols[i]);
+                            break;
+                        }
+                    }
+                }
+
+                targetCols.forEach(col => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'current-time-indicator';
+                    indicator.style.position = 'absolute';
+                    indicator.style.left = '0';
+                    indicator.style.right = '0';
+                    indicator.style.top = `${top}px`;
+                    indicator.style.height = '2px';
+                    indicator.style.backgroundColor = '#f64e60';
+                    indicator.style.zIndex = '60';
+                    indicator.style.pointerEvents = 'none';
+
+                    const dot = document.createElement('div');
+                    dot.style.position = 'absolute';
+                    dot.style.left = '-4px';
+                    dot.style.top = '-4px';
+                    dot.style.width = '10px';
+                    dot.style.height = '10px';
+                    dot.style.borderRadius = '50%';
+                    dot.style.backgroundColor = '#f64e60';
+                    indicator.appendChild(dot);
+
+                    col.appendChild(indicator);
+                });
             }
 
             const modalEl = document.getElementById('appointmentModal');
@@ -2059,11 +2145,19 @@
                 const timezoneText = document.querySelector('.timezone-cell span');
                 if (!timezoneText) return;
 
-                const offset = -new Date().getTimezoneOffset();
-                const sign = offset >= 0 ? '+' : '-';
-                const hh = pad2(Math.floor(Math.abs(offset) / 60));
-                const mm = pad2(Math.abs(offset) % 60);
-                timezoneText.textContent = `GMT${sign}${hh}:${mm}`;
+                try {
+                    const now = new Date();
+                    const torontoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+                    const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+                    const diffMinutes = Math.round((torontoDate - utcDate) / 60000);
+                    const sign = diffMinutes >= 0 ? '+' : '-';
+                    const abs = Math.abs(diffMinutes);
+                    const hh = pad2(Math.floor(abs / 60));
+                    const mm = pad2(abs % 60);
+                    timezoneText.textContent = `GMT${sign}${hh}:${mm}`;
+                } catch (_) {
+                    timezoneText.textContent = 'GMT-04:00';
+                }
             }
 
             // Format time to 12-hour format with AM/PM
@@ -2106,7 +2200,7 @@
 
             function isPastDate(dateObj) {
                 if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return false;
-                const today = new Date();
+                const today = getTorontoNow();
                 today.setHours(0, 0, 0, 0);
                 const checkDate = new Date(dateObj);
                 checkDate.setHours(0, 0, 0, 0);
@@ -3187,7 +3281,7 @@
                         scheduledStaff.forEach(staff => {
                             const headerCell = document.createElement('div');
                             headerCell.className = 'header-cell';
-                            if (isSameDay(currentWeekStart, new Date())) headerCell.classList.add('active-day');
+                            if (isSameDay(currentWeekStart, getTorontoNow())) headerCell.classList.add('active-day');
                             headerCell.innerHTML = `<span class="day-label">${escapeHtml(staff.category || 'Staff')}</span><span class="day-number" style="font-size: 1.1rem; font-weight: 600;">${escapeHtml(staff.name)}</span>`;
                             const segments = getEffectiveSegments(staff, currentWeekStart);
                             const hoursHtml = (segments || [])
@@ -3230,7 +3324,7 @@
 
                         const headerCell = document.createElement('div');
                         headerCell.className = 'header-cell';
-                        if (isSameDay(date, new Date())) headerCell.classList.add('active-day');
+                        if (isSameDay(date, getTorontoNow())) headerCell.classList.add('active-day');
 
                         const dayLabel = days[i];
                         headerCell.innerHTML = `<span class="day-label">${dayLabel}</span><span class="day-number">${date.getDate()}</span>`;
@@ -3334,6 +3428,7 @@
                     renderStaffSchedules(); // keep header info if you want
                     renderAppointments();
                     render10amHourHighlight();
+                    renderCurrentTimeIndicator();
                 } catch (err) {
                     console.error('Error loading calendar data', err);
                     showPageNotice(err.message || 'Unable to load calendar data.');
@@ -3732,7 +3827,7 @@
             const btnNewAppt = document.getElementById('btn-new-appointment');
             if (btnNewAppt) {
                 btnNewAppt.addEventListener('click', async function () {
-                    const now = new Date();
+                    const now = getTorontoNow();
                     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
                     const end = new Date(now.getTime() + 30 * 60000);
                     await checkSlotAvailabilityAndOpen(now, end);
@@ -3796,7 +3891,7 @@
                                         if (step1SlotContext) {
                                             await checkSlotAvailabilityAndOpen(step1SlotContext.start, step1SlotContext.end, step1SlotContext.staffId, c.id);
                                         } else {
-                                            const now = new Date();
+                                            const now = getTorontoNow();
                                             now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
                                             const end = new Date(now.getTime() + 30 * 60000);
                                             await checkSlotAvailabilityAndOpen(now, end, '', c.id);
@@ -4132,7 +4227,7 @@
                 loadDataAndRender();
             });
             document.getElementById('btn-today').addEventListener('click', () => {
-                const now = new Date();
+                const now = getTorontoNow();
                 if (currentView === 'month') {
                     const url = copyFiltersToUrl(new URL(window.location.href));
                     url.searchParams.set('view', 'month');
@@ -4185,7 +4280,7 @@
                 showTimeGridView();
 
                 if (view === 'day') {
-                    const now = new Date();
+                    const now = getTorontoNow();
                     currentWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
                 } else {
                     const anchor = new Date(currentWeekStart);
