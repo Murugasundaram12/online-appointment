@@ -15,7 +15,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Form <span class="required-mark">*</span></label>
                             @error('form_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -28,7 +28,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Client <span class="required-mark">*</span></label>
                             @error('client_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -41,12 +41,12 @@
                         <div class="col-12">
                             <label class="form-label">Notes</label>
                             @error('submitted_data.notes')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
                             @error('submitted_data')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror

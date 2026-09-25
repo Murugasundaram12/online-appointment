@@ -19,7 +19,7 @@
                         <div class="col-md-6">
                             <label for="name" class="form-label">Package Name <span class="required-mark">*</span></label>
                             @error('name')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -28,7 +28,7 @@
                         <div class="col-md-6">
                             <label for="price" class="form-label">Price <span class="required-mark">*</span></label>
                             @error('price')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -37,7 +37,7 @@
                         <div class="col-md-6">
                             <label for="validity_days" class="form-label">Validity (Days)</label>
                             @error('validity_days')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -46,7 +46,7 @@
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
                             @error('description')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -56,7 +56,7 @@
                         <div class="col-12">
                             <label class="form-label">Included Services</label>
                             @error('services')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -75,7 +75,7 @@
 
                         <div class="col-12">
                             @error('is_active')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror

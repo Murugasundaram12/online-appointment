@@ -203,6 +203,7 @@
             if (!form) return;
             form.querySelectorAll('.app-field-error').forEach(el => el.remove());
             form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.ts-wrapper.is-invalid, .select2-container.is-invalid, .select2.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         },
 
         getLabelForField(ctrl) {
@@ -217,7 +218,7 @@
 
             // 2. Look for label in parent container
             if (!labelText) {
-                const container = ctrl.closest('.field-content, .field-group, .form-group, .mb-3, .mb-2, .col-md-6, .col-md-4, .col-md-3, .col-md-12, .col-12, .col');
+                const container = ctrl.closest('.field-content, .field-group, .form-group, .mb-3, .mb-2, .col-md-6, .col-md-4, .col-md-3, .col-md-2, .col-md-12, .col-12, .col');
                 if (container) {
                     const label = container.querySelector('label');
                     if (label) labelText = label.textContent;
@@ -263,7 +264,17 @@
                     'end time': 'End time',
                     'service name': 'Service name',
                     'first name': 'First name',
-                    'last name': 'Last name'
+                    'last name': 'Last name',
+                    'payment method': 'Payment method',
+                    'method': 'Payment method',
+                    'invoice': 'Invoice',
+                    'recurrence type': 'Recurrence type',
+                    'location': 'Location',
+                    'staff': 'Staff',
+                    'date': 'Date',
+                    'start date': 'Start date',
+                    'end date': 'End date',
+                    'amount': 'Amount'
                 };
                 if (naturalLabels[lower]) {
                     labelText = naturalLabels[lower];
@@ -276,9 +287,56 @@
 
         findField(form, fieldName) {
             if (!form || !fieldName) return null;
+
+            // Special field group targets
+            if (fieldName === 'weekly_days' || fieldName === 'weekly_days[]') {
+                const group = form.querySelector('.weekday-checkbox-group') || form.querySelector('#panel-weekly');
+                if (group) return group;
+            }
+            if (fieldName === 'split_methods' || fieldName === 'split_methods[]') {
+                const group = form.querySelector('#split-chk-cash')?.closest('.d-flex') || form.querySelector('#split-selection-warning')?.parentElement;
+                if (group) return group;
+            }
+            if (fieldName === 'invoice_id') {
+                const el = form.querySelector('#payment-invoice') || form.querySelector('[name="invoice_id"]');
+                if (el) return el;
+            }
+            if (fieldName === 'payment_method') {
+                const el = form.querySelector('#pmt-method-select') || form.querySelector('[name="payment_method"]');
+                if (el) return el;
+            }
+            if (fieldName === 'payment_date') {
+                const el = form.querySelector('#payment-date') || form.querySelector('[name="payment_date"]');
+                if (el) return el;
+            }
+            if (fieldName === 'amount') {
+                const el = form.querySelector('#payment-amount') || form.querySelector('[name="amount"]');
+                if (el) return el;
+            }
+            if (fieldName === 'staff_id') {
+                const el = form.querySelector('#staff_id') || form.querySelector('[name="staff_id"]') || form.querySelector('#cs-staff-name');
+                if (el) return el;
+            }
+            if (fieldName === 'location_id') {
+                const el = form.querySelector('#location_id') || form.querySelector('[name="location_id"]') || form.querySelector('#cs-recurrence-type');
+                if (el) return el;
+            }
+            if (fieldName === 'working_date') {
+                const el = form.querySelector('#working_date') || form.querySelector('#cs-working-date') || form.querySelector('[name="working_date"]');
+                if (el) return el;
+            }
+            if (fieldName === 'start_date') {
+                const el = form.querySelector('#start_date') || form.querySelector('#cs-start-date') || form.querySelector('[name="start_date"]');
+                if (el) return el;
+            }
+            if (fieldName === 'end_date') {
+                const el = form.querySelector('#end_date') || form.querySelector('#cs-end-date') || form.querySelector('[name="end_date"]');
+                if (el) return el;
+            }
+
             // 1. Direct name match
             let el = form.querySelector(`[name="${fieldName}"]`);
-            if (el) return el;
+            if (el && el.type !== 'hidden') return el;
 
             // 2. Array name match, e.g. services[1][quantity] or split_methods[]
             el = form.querySelector(`[name="${fieldName}[]"]`);
@@ -341,12 +399,16 @@
                                     form.querySelector(`#${alias}`) ||
                                     form.querySelector(`#${alias.replace(/_/g, '-')}`) ||
                                     (apptPrefixes[alias] ? form.querySelector(apptPrefixes[alias]) : null);
-                    if (aliasEl) return aliasEl;
+                    if (aliasEl && aliasEl.type !== 'hidden') return aliasEl;
                 }
             }
 
             // 8. Prefix with hyphen, e.g. "new-client-first-name" or "edit-service-name" or "cs-start-time"
             el = form.querySelector(`[id$="-${kebab}"]`) || form.querySelector(`[id*="${kebab}"]`);
+            if (el && el.type !== 'hidden') return el;
+
+            // Hidden fallback
+            el = form.querySelector(`[name="${fieldName}"]`);
             if (el) return el;
 
             return null;
@@ -370,7 +432,7 @@
                     continue;
                 }
 
-                if (!firstInvalidInput) {
+                if (!firstInvalidInput && typeof input.focus === 'function' && input.type !== 'hidden') {
                     firstInvalidInput = input;
                 }
 
@@ -378,7 +440,13 @@
 
                 // Determine target element to insert before (above)
                 let target = input;
-                if (input.closest('.input-group')) {
+                if (input.classList.contains('weekday-checkbox-group') || input.id === 'panel-weekly') {
+                    target = input;
+                    form.querySelectorAll('input[name="weekly_days[]"]').forEach(cb => cb.classList.add('is-invalid'));
+                } else if (input.classList.contains('split-method-chk') || input.querySelector?.('.split-method-chk')) {
+                    target = input;
+                    form.querySelectorAll('.split-method-chk').forEach(cb => cb.classList.add('is-invalid'));
+                } else if (input.closest('.input-group')) {
                     target = input.closest('.input-group');
                 } else if (input.closest('.ts-wrapper')) {
                     target = input.closest('.ts-wrapper');
@@ -386,6 +454,17 @@
                     target = input.tomselect.wrapper;
                 } else if (input.nextElementSibling && input.nextElementSibling.classList.contains('ts-wrapper')) {
                     target = input.nextElementSibling;
+                } else if (input.closest('.select2-container')) {
+                    target = input.closest('.select2-container');
+                } else if (input.nextElementSibling && (input.nextElementSibling.classList.contains('select2') || input.nextElementSibling.classList.contains('select2-container'))) {
+                    target = input.nextElementSibling;
+                }
+
+                if (target !== input) {
+                    target.classList.add('is-invalid');
+                }
+                if (input.tomselect && input.tomselect.wrapper) {
+                    input.tomselect.wrapper.classList.add('is-invalid');
                 }
 
                 // Check if error already exists directly above
@@ -417,8 +496,29 @@
 
         validate(form) {
             if (!form) return true;
+            this.clear(form);
             const errors = {};
             let hasErrors = false;
+
+            // 1. Weekly schedule days check
+            const recurrenceSelect = form.querySelector('[name="recurrence_type"]') || form.querySelector('#recurrence_type') || form.querySelector('#cs-recurrence-type');
+            if (recurrenceSelect && recurrenceSelect.value === 'weekly') {
+                const weeklyChecked = form.querySelectorAll('input[name="weekly_days[]"]:checked, .cs-weekly-day:checked');
+                if (weeklyChecked.length === 0) {
+                    errors['weekly_days'] = 'Please select at least one day for weekly recurrence.';
+                    hasErrors = true;
+                }
+            }
+
+            // 2. Payment split methods check
+            const pmtMethod = form.querySelector('#pmt-method-select') || form.querySelector('[name="payment_method"]');
+            if (pmtMethod && pmtMethod.value === 'both') {
+                const splitChecked = form.querySelectorAll('.split-method-chk:checked');
+                if (splitChecked.length < 2) {
+                    errors['split_methods'] = 'Please select at least two payment methods for Split Payment.';
+                    hasErrors = true;
+                }
+            }
 
             const controls = form.querySelectorAll('input, select, textarea');
             controls.forEach((ctrl) => {
@@ -437,7 +537,7 @@
                 const label = this.getLabelForField(ctrl);
                 const val = (ctrl.value || '').trim();
 
-                // 1. Required check
+                // Required check
                 if (ctrl.hasAttribute('required') || ctrl.required) {
                     if (ctrl.type === 'checkbox') {
                         if (!ctrl.checked) {
@@ -459,7 +559,34 @@
                     }
                 }
 
-                // 2. Email format check if filled
+                // Number input check: amount must be > 0 if required or if min="0.01"
+                if (ctrl.type === 'number') {
+                    const num = parseFloat(val);
+                    if (ctrl.name === 'amount' && ctrl.form && ctrl.form.id === 'payment-record-form') {
+                        if (val === '') {
+                            errors[fieldName] = 'Amount is required.';
+                            hasErrors = true;
+                            return;
+                        } else if (isNaN(num)) {
+                            errors[fieldName] = 'Amount must be a number.';
+                            hasErrors = true;
+                            return;
+                        } else if (num <= 0) {
+                            errors[fieldName] = 'Paid amount must be greater than 0.';
+                            hasErrors = true;
+                            return;
+                        }
+                    } else if (ctrl.hasAttribute('min') && val !== '' && !isNaN(num)) {
+                        const min = parseFloat(ctrl.getAttribute('min'));
+                        if (min > 0 && num < min) {
+                            errors[fieldName] = `${label} must be greater than 0.`;
+                            hasErrors = true;
+                            return;
+                        }
+                    }
+                }
+
+                // Email format check if filled
                 if (ctrl.type === 'email' && val) {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(val)) {
@@ -469,11 +596,21 @@
                     }
                 }
 
-                // 3. Time comparison check: end_time must be after start_time if both given
+                // Time comparison check: end_time must be after start_time if both given
                 if (ctrl.name === 'end_time' && val) {
                     const startCtrl = form.querySelector('[name="start_time"]') || form.querySelector('#start_time') || form.querySelector('#cs-start-time');
                     if (startCtrl && startCtrl.value && val <= startCtrl.value) {
                         errors[fieldName] = 'End time must be after start time.';
+                        hasErrors = true;
+                        return;
+                    }
+                }
+
+                // Date comparison check: end_date must be on or after start_date if both given
+                if (ctrl.name === 'end_date' && val) {
+                    const startCtrl = form.querySelector('[name="start_date"]') || form.querySelector('#start_date') || form.querySelector('#cs-start-date');
+                    if (startCtrl && startCtrl.value && val < startCtrl.value) {
+                        errors[fieldName] = 'End date must be on or after start date.';
                         hasErrors = true;
                         return;
                     }
@@ -496,19 +633,43 @@
             const clearForElement = (el) => {
                 if (!el) return;
                 el.classList.remove('is-invalid');
-                let target = el.closest('.input-group') || el.closest('.ts-wrapper') || (el.nextElementSibling && el.nextElementSibling.classList.contains('ts-wrapper') ? el.nextElementSibling : el);
+                let target = el.closest('.input-group') || el.closest('.ts-wrapper') || el.closest('.select2-container') || (el.nextElementSibling && (el.nextElementSibling.classList.contains('ts-wrapper') || el.nextElementSibling.classList.contains('select2') || el.nextElementSibling.classList.contains('select2-container')) ? el.nextElementSibling : el);
+                if (target !== el) {
+                    target.classList.remove('is-invalid');
+                }
+                if (el.tomselect && el.tomselect.wrapper) {
+                    el.tomselect.wrapper.classList.remove('is-invalid');
+                }
                 let prev = target.previousElementSibling;
                 if (prev && (prev.classList.contains('app-field-error') || prev.classList.contains('invalid-feedback'))) {
                     prev.remove();
                 }
-                const fieldName = el.name || el.id;
+                const fieldName = (el.name || el.id || '').replace(/\[\]$/, '');
                 if (fieldName) {
-                    form.querySelectorAll(`[data-error-field="${fieldName}"]`).forEach(err => err.remove());
+                    form.querySelectorAll(`[data-error-field="${fieldName}"], [data-error-field="${fieldName}[]"]`).forEach(err => err.remove());
                 }
             };
 
             form.addEventListener('input', (e) => clearForElement(e.target), true);
-            form.addEventListener('change', (e) => clearForElement(e.target), true);
+            form.addEventListener('change', (e) => {
+                clearForElement(e.target);
+                if (e.target.name === 'weekly_days[]' || e.target.classList.contains('cs-weekly-day')) {
+                    form.querySelectorAll('[data-error-field="weekly_days"]').forEach(err => err.remove());
+                    form.querySelectorAll('input[name="weekly_days[]"], .cs-weekly-day').forEach(cb => cb.classList.remove('is-invalid'));
+                }
+                if (e.target.classList.contains('split-method-chk')) {
+                    form.querySelectorAll('[data-error-field="split_methods"]').forEach(err => err.remove());
+                    form.querySelectorAll('.split-method-chk').forEach(cb => cb.classList.remove('is-invalid'));
+                }
+                if (e.target.name === 'recurrence_type' || e.target.id === 'recurrence_type' || e.target.id === 'cs-recurrence-type') {
+                    const type = e.target.value;
+                    if (type === 'one_time') {
+                        form.querySelectorAll('[data-error-field="start_date"], [data-error-field="end_date"], [data-error-field="weekly_days"]').forEach(err => err.remove());
+                    } else {
+                        form.querySelectorAll('[data-error-field="working_date"], [data-error-field="date"]').forEach(err => err.remove());
+                    }
+                }
+            }, true);
         }
     };
 
@@ -561,6 +722,15 @@
     }
 
     document.querySelectorAll("form").forEach(bindFormSubmit);
+
+    document.addEventListener("hidden.bs.modal", (e) => {
+        if (e.target && window.AppFormErrors) {
+            window.AppFormErrors.clear(e.target);
+            e.target.querySelectorAll("form").forEach(modalForm => {
+                window.AppFormErrors.clear(modalForm);
+            });
+        }
+    });
 
     const ctxTrend = document.getElementById("bookingTrendChart");
     if (ctxTrend && window.Chart) {

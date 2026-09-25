@@ -681,6 +681,7 @@ if (!function_exists('ordinalSuffix')) {
         // Staff Schedule Management
         document.addEventListener('DOMContentLoaded', function () {
             const currentStaffId = {{ isset($currentStaff) ? $currentStaff->id : 'null' }};
+            const currentStaffLocationId = {{ isset($currentStaff) && $currentStaff->location_id ? $currentStaff->location_id : 'null' }};
             const currentStaffName = @json($currentStaff->name ?? '');
             const currentStaffCategory = @json($currentStaff->category ?? '');
             const schedules = @json($schedules ?? []);
@@ -954,6 +955,7 @@ if (!function_exists('ordinalSuffix')) {
                 const formData = new FormData();
 
                 formData.append('staff_id', csStaffId?.value || '');
+                formData.append('location_id', currentStaffLocationId || '');
                 formData.append('recurrence_type', csRecurrenceType?.value || 'one_time');
                 formData.append('start_time', csStartTime?.value || '');
                 formData.append('end_time', csEndTime?.value || '');

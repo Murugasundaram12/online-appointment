@@ -91,9 +91,9 @@
                 <form action="{{ route('payment-records.store') }}" method="POST" class="row g-3" id="payment-record-form" novalidate>
                     @csrf
                     <div class="col-md-3">
-                        <label class="form-label">Invoice <span class="required-mark">*</span></label>
+                        <label class="form-label" for="payment-invoice">Invoice <span class="required-mark">*</span></label>
                         @error('invoice_id')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" data-error-field="invoice_id" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -101,7 +101,7 @@
                             <option value="">Select invoice</option>
                             @foreach($invoices as $invoice)
                                 @php
-                                    $invBal = max((float) $invoice->total_amount - (float) $invoice->paid_amount, 0);
+                                     $invBal = max((float) $invoice->total_amount - (float) $invoice->paid_amount, 0);
                                 @endphp
                                 <option value="{{ $invoice->id }}"
                                     data-number="{{ $invoice->invoice_number }}"
@@ -118,9 +118,9 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Method <span class="required-mark">*</span></label>
+                        <label class="form-label" for="pmt-method-select">Method <span class="required-mark">*</span></label>
                         @error('payment_method')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" data-error-field="payment_method" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -134,22 +134,22 @@
                         </select>
                     </div>
                     <div class="col-md-2" id="pmt-amount-wrapper">
-                        <label class="form-label" id="pmt-amount-label">Amount <span class="required-mark">*</span></label>
+                        <label class="form-label" id="pmt-amount-label" for="payment-amount">Amount <span class="required-mark">*</span></label>
                         @error('amount')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" data-error-field="amount" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
-                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control @error('amount') is-invalid @enderror" value="{{ old('amount', '0') }}" placeholder="0.00" required>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="payment-amount" class="form-control @error('amount') is-invalid @enderror" value="{{ old('amount', '') }}" placeholder="0.00" required>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Date <span class="required-mark">*</span></label>
+                        <label class="form-label" for="payment-date">Date <span class="required-mark">*</span></label>
                         @error('payment_date')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" data-error-field="payment_date" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
-                        <input type="date" name="payment_date" class="form-control @error('payment_date') is-invalid @enderror" value="{{ old('payment_date', now()->toDateString()) }}" required>
+                        <input type="date" name="payment_date" id="payment-date" class="form-control @error('payment_date') is-invalid @enderror" value="{{ old('payment_date', now()->toDateString()) }}" required>
                     </div>
                     <div class="col-md-3 d-flex align-items-end gap-2">
                         <button type="submit" id="pmt-submit-btn" class="btn btn-primary flex-grow-1">Add payment</button>
@@ -191,7 +191,7 @@
                                 <div id="pmt-cash-amount-col" class="col-md-6 col-lg-3">
                                     <label class="form-label small" for="split-cash-amount">Cash Amount <span class="required-mark">*</span></label>
                                     @error('cash_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -200,7 +200,7 @@
                                 <div id="pmt-card-amount-col" class="col-md-6 col-lg-3">
                                     <label class="form-label small" for="split-card-amount">Card Amount <span class="required-mark">*</span></label>
                                     @error('card_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -209,7 +209,7 @@
                                 <div id="pmt-etransfer-amount-col" class="col-md-6 col-lg-3 d-none">
                                     <label class="form-label small" for="split-etransfer-amount">E-Transfer Amount <span class="required-mark">*</span></label>
                                     @error('e_transfer_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -218,7 +218,7 @@
                                 <div id="pmt-insurance-amount-col" class="col-md-6 col-lg-3 d-none">
                                     <label class="form-label small" for="split-insurance-amount">Insurance Amount <span class="required-mark">*</span></label>
                                     @error('insurance_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -236,7 +236,7 @@
                                 <div class="col-md-3">
                                     <label class="form-label small" for="card_brand_input">Card Brand <span class="required-mark">*</span></label>
                                     @error('card_brand')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -248,12 +248,11 @@
                                         <option value="Discover">Discover</option>
                                         <option value="Other">Other</option>
                                     </select>
-                                    <div class="invalid-feedback small" id="card-brand-feedback">Please select a Card Brand.</div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small" for="cardholder_name_input">Cardholder Name</label>
                                     @error('cardholder_name')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -262,17 +261,16 @@
                                 <div class="col-md-3">
                                     <label class="form-label small" for="card_last_four_input">Last 4 Digits</label>
                                     @error('card_last_four')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
                                     <input type="text" name="card_last_four" id="card_last_four_input" maxlength="4" class="form-control form-control-sm @error('card_last_four') is-invalid @enderror" placeholder="1234">
-                                    <div class="invalid-feedback small" id="card-last-four-feedback">Card last 4 digits must be exactly 4 numeric digits.</div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label small" for="transaction_reference_input">Transaction Reference</label>
                                     @error('transaction_reference')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -290,7 +288,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Reference Number</label>
                                     @error('e_transfer_reference')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -299,7 +297,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Sender Name</label>
                                     @error('sender_name')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -308,7 +306,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Transfer Date</label>
                                     @error('transfer_date')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -326,7 +324,7 @@
                                 <div class="col-12">
                                     <label class="form-label small">Select Client's Saved Insurance</label>
                                     @error('insurance_information_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -339,7 +337,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Insurance Company</label>
                                     @error('insurance_company_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -353,7 +351,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Policy ID</label>
                                     @error('policy_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -362,7 +360,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label small">Member ID / Contract No.</label>
                                     @error('member_id_or_contract_number')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -371,7 +369,7 @@
                                 <div class="col-md-4 mt-2">
                                     <label class="form-label small">Claim / Reference Number</label>
                                     @error('claim_reference')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -380,7 +378,7 @@
                                 <div class="col-md-4 mt-2">
                                     <label class="form-label small">Amount Submitted</label>
                                     @error('amount_submitted')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -393,7 +391,7 @@
                     <div class="col-md-12">
                         <label class="form-label small">Notes / Reference</label>
                         @error('notes')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -521,6 +519,7 @@
                 });
 
                 addPaymentBtn?.addEventListener('click', () => {
+                    window.AppFormErrors?.clear(form);
                     paymentFormCard?.classList.remove('d-none');
                     addPaymentBtn.setAttribute('aria-expanded', 'true');
                     paymentFormCard?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -535,6 +534,7 @@
 
                 cancelBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
+                        window.AppFormErrors?.clear(form);
                         if (form) {
                             form.reset();
                         }
@@ -553,7 +553,7 @@
                         if (amount) {
                             amount.removeAttribute('readonly');
                             amount.classList.remove('bg-light', 'is-invalid');
-                            amount.value = '0';
+                            amount.value = '';
                         }
                         if (pmtMethod) {
                             pmtMethod.value = '';
@@ -988,7 +988,7 @@
                     clearInsuranceFields();
                     if (!opt || !opt.value) {
                         if (banner) banner.classList.add('d-none');
-                        if (amount) { amount.value = '0'; }
+                        if (amount) { amount.value = ''; }
                         if (cashInput) cashInput.value = '';
                         if (cardInput) cardInput.value = '';
                         if (etransferInput) etransferInput.value = '';
@@ -998,7 +998,7 @@
                         return;
                     }
 
-                    if (amount) { amount.value = '0'; }
+                    if (amount) { amount.value = ''; }
                     if (cashInput) cashInput.value = '';
                     if (cardInput) cardInput.value = '';
                     if (etransferInput) etransferInput.value = '';
@@ -1014,21 +1014,27 @@
                     validateAmounts();
                 });
 
-                form?.addEventListener('submit', (e) => {
+                window.AppFormErrors?.attachAutoClear(form);
+
+                form?.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.AppFormErrors?.clear(form);
+
+                    const clientErrors = {};
+
+                    if (!invoice || !invoice.value) {
+                        clientErrors['invoice_id'] = 'Invoice is required.';
+                    }
+
                     const val = pmtMethod ? pmtMethod.value : '';
                     if (!val) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (pmtMethod) pmtMethod.classList.add('is-invalid');
-                        pmtMethod?.focus();
-                        if (window.AppToast && typeof window.AppToast.show === 'function') {
-                            window.AppToast.show({
-                                type: 'danger',
-                                title: 'Error',
-                                message: 'Please select a payment method.'
-                            });
-                        }
-                        return false;
+                        clientErrors['payment_method'] = 'Payment method is required.';
+                    }
+
+                    const dateInput = form.querySelector('[name="payment_date"]');
+                    if (!dateInput || !dateInput.value) {
+                        clientErrors['payment_date'] = 'Date is required.';
                     }
 
                     const balance = getRemainingBalance();
@@ -1039,43 +1045,19 @@
                     const isInsuranceSelectedInSplit = isBoth && chkInsurance && chkInsurance.checked;
                     const cardVal = isBoth ? (parseFloat(cardInput?.value || 0) || 0) : (val === 'card' ? total : 0);
 
-                    // Overpayment check
-                    if (balance > 0 && total > (balance + EPS)) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        showOverpaymentToast();
-                        setInputInvalidClass(true);
-                        if (submitBtn) submitBtn.disabled = true;
-                        return false;
-                    }
-
-                    if (total <= 0) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (amount) amount.classList.add('is-invalid');
-                        if (window.AppToast && typeof window.AppToast.show === 'function') {
-                            window.AppToast.show({
-                                type: 'danger',
-                                title: 'Error',
-                                message: 'Please enter a valid payment amount.'
-                            });
+                    if (!isBoth) {
+                        const amtStr = (amount?.value ?? '').trim();
+                        if (amtStr === '') {
+                            clientErrors['amount'] = 'Amount is required.';
+                        } else if (isNaN(Number(amtStr))) {
+                            clientErrors['amount'] = 'Amount must be a number.';
+                        } else if (parseFloat(amtStr) <= 0) {
+                            clientErrors['amount'] = 'Paid amount must be greater than 0.';
                         }
-                        return false;
-                    }
-
-                    if (isBoth) {
+                    } else {
                         const checked = Array.from(splitCheckboxes).filter(c => c.checked);
                         if (checked.length < 2) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'Please select at least two payment methods for Split Payment.'
-                                });
-                            }
-                            return false;
+                            clientErrors['split_methods'] = 'Please select at least two payment methods for Split Payment.';
                         }
 
                         let hasPositiveAmount = false;
@@ -1094,52 +1076,26 @@
                         });
 
                         if (!validAmounts || !hasPositiveAmount) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'Selected payment method amounts must be greater than or equal to 0.00, and at least one must be greater than 0.00.'
-                                });
-                            }
-                            return false;
+                            clientErrors['amount'] = 'Selected payment method amounts must be greater than or equal to 0.00, and at least one must be greater than 0.00.';
                         }
+                    }
+
+                    // Overpayment check
+                    if (balance > 0 && total > (balance + EPS)) {
+                        clientErrors['amount'] = 'Payment amount cannot be greater than the remaining invoice balance.';
+                        showOverpaymentToast();
                     }
 
                     // When Card Amount > 0: Card details must be validated before allowing submission
                     if ((val === 'card' && total > 0) || (isCardSelectedInSplit && cardVal > 0)) {
                         if (cardBrandInput && !cardBrandInput.value) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            cardBrandInput.classList.add('is-invalid');
-                            cardBrandInput.focus();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'The card brand field is required when paying with card.'
-                                });
-                            }
-                            return false;
+                            clientErrors['card_brand'] = 'The card brand field is required when paying with card.';
                         }
 
                         if (cardLastFourInput && cardLastFourInput.value && !/^\d{4}$/.test(cardLastFourInput.value)) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            cardLastFourInput.classList.add('is-invalid');
-                            cardLastFourInput.focus();
-                            if (window.AppToast && typeof window.AppToast.show === 'function') {
-                                window.AppToast.show({
-                                    type: 'danger',
-                                    title: 'Validation Error',
-                                    message: 'Card last 4 digits must be exactly 4 numeric digits.'
-                                });
-                            }
-                            return false;
+                            clientErrors['card_last_four'] = 'Card last 4 digits must be exactly 4 numeric digits.';
                         }
                     } else {
-                        // When Card Amount = 0 or payment method does not include card: clear card metadata so it is not stored
                         if (cardBrandInput) cardBrandInput.value = '';
                         if (cardholderNameInput) cardholderNameInput.value = '';
                         if (cardLastFourInput) cardLastFourInput.value = '';
@@ -1148,6 +1104,53 @@
 
                     if (!val.includes('insurance') && !isInsuranceSelectedInSplit) {
                         clearInsuranceFields();
+                    }
+
+                    if (Object.keys(clientErrors).length > 0) {
+                        if (window.AppFormErrors) {
+                            window.AppFormErrors.show(form, clientErrors);
+                        }
+                        return false;
+                    }
+
+                    try {
+                        if (submitBtn) submitBtn.disabled = true;
+                        const formData = new FormData(form);
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (res.status === 422) {
+                            const data = await res.json();
+                            if (window.AppFormErrors && data.errors) {
+                                window.AppFormErrors.show(form, data.errors);
+                            }
+                            if (submitBtn) submitBtn.disabled = false;
+                            return false;
+                        }
+
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            if (window.AppToast && typeof window.AppToast.show === 'function') {
+                                window.AppToast.show({
+                                    type: 'danger',
+                                    title: 'Error',
+                                    message: errData.message || 'Payment could not be recorded.'
+                                });
+                            }
+                            if (submitBtn) submitBtn.disabled = false;
+                            return false;
+                        }
+
+                        window.AppFormErrors?.clear(form);
+                        window.location.reload();
+                    } catch (err) {
+                        form.submit();
                     }
                 });
 

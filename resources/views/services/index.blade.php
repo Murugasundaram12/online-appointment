@@ -127,7 +127,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Service name <span class="required-mark">*</span></label>
                                         @error('name')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -145,7 +145,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Category <span class="required-mark">*</span></label>
                                         @error('service_category_id')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -164,7 +164,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Service type</label>
                                         @error('type')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -184,7 +184,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Price (CA$) <span class="required-mark">*</span></label>
                                         @error('price')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -199,7 +199,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Duration <span class="required-mark">*</span></label>
                                         @error('duration_minutes')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -222,7 +222,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Service Color</label>
                                         @error('color')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -239,7 +239,7 @@
                                     <div class="field-content">
                                         <label class="form-label">Description</label>
                                         @error('description')
-                                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
@@ -293,15 +293,17 @@
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
                                         <label class="form-label">Category <span class="required-mark">*</span></label>
+                                        @error('service_category_id')
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
                                         <select class="form-select @error('service_category_id') is-invalid @enderror" id="edit-service-category" name="service_category_id" required>
                                             <option value="">Select Category</option>
                                             @foreach($categories as $category)
                                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('service_category_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>

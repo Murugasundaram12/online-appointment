@@ -22,7 +22,7 @@
                         <div class="col-md-6">
                             <label for="name" class="form-label">Location Name <span class="required-mark">*</span></label>
                             @error('name')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -32,7 +32,7 @@
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email Address</label>
                             @error('email')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -42,7 +42,7 @@
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
                             @error('phone')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -52,7 +52,7 @@
                         <div class="col-md-6">
                             <label for="color" class="form-label">Color Theme</label>
                             @error('color')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -62,7 +62,7 @@
                         <div class="col-md-6">
                             <label for="timezone" class="form-label">Timezone</label>
                             @error('timezone')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -84,7 +84,7 @@
                         <div class="col-12">
                             <label for="address" class="form-label">Address</label>
                             @error('address')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror

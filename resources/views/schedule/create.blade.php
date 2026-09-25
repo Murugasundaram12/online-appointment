@@ -149,7 +149,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-3">
                             <label class="form-label small fw-semibold text-muted" for="staff_id">Staff <span class="required-mark">*</span></label>
                             @error('staff_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="staff_id">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -168,7 +168,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-3">
                             <label class="form-label small fw-semibold text-muted" for="location_id">Location <span class="required-mark">*</span></label>
                             @error('location_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="location_id">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -185,11 +185,12 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-2">
                             <label class="form-label small fw-semibold text-muted" for="recurrence_type">Recurrence Type <span class="required-mark">*</span></label>
                             @error('recurrence_type')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="recurrence_type">
                                     {{ $message }}
                                 </div>
                             @enderror
                             <select name="recurrence_type" id="recurrence_type" class="form-select @error('recurrence_type') is-invalid @enderror" required>
+                                <option value="">Select Recurrence Type</option>
                                 <option value="one_time" {{ old('recurrence_type', $editing?->recurrence_type ?? 'one_time') == 'one_time' ? 'selected' : '' }}>One Time</option>
                                 <option value="daily" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'daily' ? 'selected' : '' }}>Daily</option>
                                 <option value="weekly" {{ old('recurrence_type', $editing?->recurrence_type ?? '') == 'weekly' ? 'selected' : '' }}>Weekly (e.g. Every Sunday)</option>
@@ -201,7 +202,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted" for="start_time">Start Time <span class="required-mark">*</span></label>
                             @error('start_time')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="start_time">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -211,7 +212,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted" for="end_time">End Time <span class="required-mark">*</span></label>
                             @error('end_time')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="end_time">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -230,7 +231,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">Break Start</label>
                             @error('break_start')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="break_start">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -239,7 +240,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-6 col-md-2">
                             <label class="form-label small fw-semibold text-muted">Break End</label>
                             @error('break_end')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="break_end">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -259,7 +260,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted" for="working_date">Date <span class="required-mark">*</span></label>
                             @error('working_date')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="working_date">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -273,7 +274,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted" for="start_date">Start Date <span class="required-mark">*</span></label>
                             @error('start_date')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="start_date">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -282,7 +283,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted" for="end_date">End Date <span class="required-mark">*</span></label>
                             @error('end_date')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="end_date">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -295,7 +296,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12">
                             <label class="form-label small fw-semibold text-muted d-block mb-2">Select Weekdays <span class="required-mark">*</span></label>
                             @error('weekly_days')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="weekly_days">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -310,7 +311,7 @@ if (!function_exists('ordinalSuffix')) {
                                         5 => 'Friday',
                                         6 => 'Saturday',
                                     ];
-                                    $oldWeeklyDays = old('weekly_days', $editWeeklyDays ?: [0]); // Default Sunday
+                                    $oldWeeklyDays = old('weekly_days', $editWeeklyDays ?: []);
                                 @endphp
                                 @foreach($weekdays as $val => $label)
                                     <div class="weekday-checkbox-btn">
@@ -329,7 +330,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
                             @error('monthly_day')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="monthly_day">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -348,7 +349,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Month <span class="required-mark">*</span></label>
                             @error('yearly_month')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="yearly_month">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -368,7 +369,7 @@ if (!function_exists('ordinalSuffix')) {
                         <div class="col-12 col-md-4">
                             <label class="form-label small fw-semibold text-muted">Day of Month <span class="required-mark">*</span></label>
                             @error('yearly_day')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert" data-error-field="yearly_day">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -414,10 +415,32 @@ if (!function_exists('ordinalSuffix')) {
                 panelMonthly.classList.add('d-none');
                 panelYearly.classList.add('d-none');
 
+                const workingDateInput = document.getElementById('working_date');
+                const startDateInput = document.getElementById('start_date');
+                const endDateInput = document.getElementById('end_date');
+
                 if (type === 'one_time') {
                     panelOneTime.classList.remove('d-none');
+                    if (workingDateInput) workingDateInput.required = true;
+                    if (startDateInput) startDateInput.required = false;
+                    if (endDateInput) endDateInput.required = false;
+
+                    [panelDateRange, panelWeekly, panelMonthly, panelYearly].forEach(panel => {
+                        if (panel) {
+                            panel.querySelectorAll('.app-field-error').forEach(e => e.remove());
+                            panel.querySelectorAll('.is-invalid').forEach(e => e.classList.remove('is-invalid'));
+                        }
+                    });
                 } else {
                     panelDateRange.classList.remove('d-none');
+                    if (workingDateInput) workingDateInput.required = false;
+                    if (startDateInput) startDateInput.required = true;
+                    if (endDateInput) endDateInput.required = true;
+
+                    if (panelOneTime) {
+                        panelOneTime.querySelectorAll('.app-field-error').forEach(e => e.remove());
+                        panelOneTime.querySelectorAll('.is-invalid').forEach(e => e.classList.remove('is-invalid'));
+                    }
                     if (type === 'weekly') {
                         panelWeekly.classList.remove('d-none');
                     } else if (type === 'monthly') {
@@ -470,6 +493,19 @@ if (!function_exists('ordinalSuffix')) {
                     if (locId && !locationSelect.value) {
                         locationSelect.value = locId;
                         locationSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }
+
+            const scheduleForm = document.getElementById('scheduleForm');
+            if (scheduleForm) {
+                window.AppFormErrors?.attachAutoClear(scheduleForm);
+                scheduleForm.addEventListener('submit', function (e) {
+                    window.AppFormErrors?.clear(scheduleForm);
+                    if (window.AppFormErrors && !window.AppFormErrors.validate(scheduleForm)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
                     }
                 });
             }

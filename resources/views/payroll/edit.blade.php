@@ -25,7 +25,7 @@
                                 <div class="col-md-3">
                                     <label for="period_start" class="form-label">Period Start <span class="required-mark">*</span></label>
                                     @error('period_start')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -34,7 +34,7 @@
                                 <div class="col-md-3">
                                     <label for="period_end" class="form-label">Period End <span class="required-mark">*</span></label>
                                     @error('period_end')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -43,7 +43,7 @@
                                 <div class="col-md-3">
                                     <label for="total_hours" class="form-label">Worked Hours</label>
                                     @error('total_hours')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -52,7 +52,7 @@
                                 <div class="col-md-3">
                                     <label for="payment_date" class="form-label">Payment Date <span class="required-mark" id="payment_date_mark">*</span></label>
                                     @error('payment_date')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -61,7 +61,7 @@
                                 <div class="col-md-4">
                                     <label for="salary_amount" class="form-label">Basic Salary <span class="required-mark">*</span></label>
                                     @error('salary_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -70,7 +70,7 @@
                                 <div class="col-md-4">
                                     <label for="commission_amount" class="form-label">Commission</label>
                                     @error('commission_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -79,7 +79,7 @@
                                 <div class="col-md-4">
                                     <label for="bonus" class="form-label">Bonus</label>
                                     @error('bonus')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -88,7 +88,7 @@
                                 <div class="col-md-4">
                                     <label for="deductions" class="form-label">Deductions</label>
                                     @error('deductions')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -97,7 +97,7 @@
                                 <div class="col-md-4">
                                     <label for="payment_type" class="form-label">Payment Method <span class="required-mark">*</span></label>
                                     @error('payment_type')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -110,7 +110,7 @@
                                 <div class="col-md-4">
                                     <label for="status" class="form-label">Status <span class="required-mark">*</span></label>
                                     @error('status')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -125,7 +125,7 @@
                                 <div class="col-12">
                                     <label for="notes" class="form-label">Notes</label>
                                     @error('notes')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror

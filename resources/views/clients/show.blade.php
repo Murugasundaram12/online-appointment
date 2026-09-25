@@ -528,7 +528,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-dark">Client Notes & Medical History</label>
-                                @error('notes')<div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
+                                @error('notes')<div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
                                 <textarea name="notes" class="form-control @error('notes') is-invalid @enderror" rows="5" placeholder="Enter clinical notes, patient preferences, or allergy details...">{{ old('notes', $client->notes) }}</textarea>
                             </div>
                             <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Save Notes</button>
@@ -603,7 +603,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
                                 @error('insurance_company_id')
-                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                         {{ $message }}
                                     </div>
                                 @enderror
@@ -616,7 +616,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Policy ID</label>
                                 @error('policy_id')
-                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                         {{ $message }}
                                     </div>
                                 @enderror
@@ -625,7 +625,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Member ID / Contract Number</label>
                                 @error('member_id_or_contract_number')
-                                    <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                    <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                         {{ $message }}
                                     </div>
                                 @enderror
@@ -657,7 +657,7 @@
                         <div class="mb-3">
                             <label class="form-label">Insurance Company <span class="required-mark">*</span></label>
                             @error('insurance_company_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -671,7 +671,7 @@
                         <div class="mb-3">
                             <label class="form-label">Policy ID</label>
                             @error('policy_id')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -680,7 +680,7 @@
                         <div class="mb-3">
                             <label class="form-label">Member ID / Contract Number</label>
                             @error('member_id_or_contract_number')
-                                <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror

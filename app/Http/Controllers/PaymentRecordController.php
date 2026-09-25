@@ -122,8 +122,14 @@ class PaymentRecordController extends Controller
             'amount_submitted' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ], [
-            'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
+            'invoice_id.required' => 'Invoice is required.',
+            'invoice_id.exists' => 'The selected invoice is invalid.',
+            'payment_method.required' => 'Payment method is required.',
+            'amount.required' => 'Amount is required.',
             'amount.gt' => 'Paid amount must be greater than 0.',
+            'amount.numeric' => 'Amount must be a number.',
+            'payment_date.required' => 'Date is required.',
+            'card_last_four.regex' => 'Card last 4 digits must be exactly 4 numeric digits.',
         ]);
 
         try {

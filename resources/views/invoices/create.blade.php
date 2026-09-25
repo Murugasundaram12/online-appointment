@@ -32,7 +32,7 @@
                                 <div class="col-12">
                                     <label for="appointment_id" class="form-label">Appointment <span class="required-mark">*</span></label>
                                     @error('appointment_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -57,7 +57,7 @@
                                 <div class="col-md-6">
                                     <label for="client_id" class="form-label">Patient / Client <span class="required-mark">*</span></label>
                                     @error('client_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -74,7 +74,7 @@
                                 <div class="col-md-6">
                                     <label for="staff_id" class="form-label">Practitioner Name <span class="required-mark">*</span></label>
                                     @error('staff_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -91,7 +91,7 @@
                                 <div class="col-md-6">
                                     <label for="total_amount" class="form-label">Total Amount <span class="required-mark">*</span></label>
                                     @error('total_amount')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -106,7 +106,7 @@
                                 <div class="col-md-6">
                                     <label for="status" class="form-label">Status</label>
                                     @error('status')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -122,7 +122,7 @@
                                 <div class="col-md-6">
                                     <label for="issued_date" class="form-label">Issued Date <span class="required-mark">*</span></label>
                                     @error('issued_date')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -133,7 +133,7 @@
                                 <div class="col-md-6">
                                     <label for="due_date" class="form-label">Due Date</label>
                                     @error('due_date')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror

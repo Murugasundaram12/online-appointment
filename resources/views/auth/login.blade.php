@@ -114,7 +114,7 @@
                     <div class="mb-3">
                         <label class="form-label" for="email">Email <span class="required-mark">*</span></label>
                         @error('email')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -124,7 +124,7 @@
                     <div class="mb-3">
                         <label class="form-label" for="password">Password <span class="required-mark">*</span></label>
                         @error('password')
-                            <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -153,11 +153,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', () => {
-            const button = document.getElementById('loginButton');
-            button.textContent = 'Signing in...';
-            button.disabled = true;
-        });
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            window.AppFormErrors?.attachAutoClear(loginForm);
+            loginForm.addEventListener('submit', (e) => {
+                window.AppFormErrors?.clear(loginForm);
+                if (window.AppFormErrors && !window.AppFormErrors.validate(loginForm)) {
+                    e.preventDefault();
+                    return false;
+                }
+                const button = document.getElementById('loginButton');
+                if (button) {
+                    button.textContent = 'Signing in...';
+                    button.disabled = true;
+                }
+            });
+        }
     </script>
 </body>
 

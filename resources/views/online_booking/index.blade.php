@@ -53,7 +53,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Location</label>
                                     @error('location_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -67,7 +67,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Service <span class="required-mark">*</span></label>
                                     @error('service_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -81,7 +81,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Staff <span class="required-mark">*</span></label>
                                     @error('staff_id')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -95,7 +95,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Date <span class="required-mark">*</span></label>
                                     @error('booking_date')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -104,7 +104,7 @@
                                 <div class="col-12">
                                     <label class="form-label">Available time <span class="required-mark">*</span></label>
                                     @error('start_time')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -117,7 +117,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Name <span class="required-mark">*</span></label>
                                     @error('client_name')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -126,7 +126,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Email</label>
                                     @error('client_email')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -135,7 +135,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Phone</label>
                                     @error('client_phone')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
@@ -144,7 +144,7 @@
                                 <div class="col-12">
                                     <label class="form-label">Notes</label>
                                     @error('notes')
-                                        <div class="invalid-feedback d-block text-danger small mb-1 fw-medium" role="alert">
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror

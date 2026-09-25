@@ -308,17 +308,86 @@ class ValidationErrorUiTest extends TestCase
                 'invoice_id' => '',
                 'amount' => '',
                 'payment_method' => '',
+                'payment_date' => '',
             ]);
 
-        $response->assertSessionHasErrors(['invoice_id', 'amount', 'payment_method']);
+        $response->assertSessionHasErrors(['invoice_id', 'amount', 'payment_method', 'payment_date']);
         $followResponse = $this->followRedirects($response);
         $html = $followResponse->getContent();
 
+        // 1. Invoice error
         $invoiceInputPos = strpos($html, 'id="payment-invoice"');
-        $invoiceErrorPos = strpos($html, 'The invoice id field is required.');
+        $invoiceErrorPos = strpos($html, 'Invoice is required.');
         $this->assertNotFalse($invoiceInputPos);
         $this->assertNotFalse($invoiceErrorPos);
         $this->assertTrue($invoiceErrorPos < $invoiceInputPos, 'Invoice error must appear before invoice select');
+
+        // 2. Payment Method error
+        $methodInputPos = strpos($html, 'id="pmt-method-select"');
+        $methodErrorPos = strpos($html, 'Payment method is required.');
+        $this->assertNotFalse($methodInputPos);
+        $this->assertNotFalse($methodErrorPos);
+        $this->assertTrue($methodErrorPos < $methodInputPos, 'Payment method error must appear before payment method select');
+
+        // 3. Amount error
+        $amountInputPos = strpos($html, 'id="payment-amount"');
+        $amountErrorPos = strpos($html, 'Amount is required.');
+        $this->assertNotFalse($amountInputPos);
+        $this->assertNotFalse($amountErrorPos);
+        $this->assertTrue($amountErrorPos < $amountInputPos, 'Amount error must appear before amount input');
+
+        // 4. Payment Date error
+        $dateInputPos = strpos($html, 'id="payment-date"');
+        $dateErrorPos = strpos($html, 'Date is required.');
+        $this->assertNotFalse($dateInputPos);
+        $this->assertNotFalse($dateErrorPos);
+        $this->assertTrue($dateErrorPos < $dateInputPos, 'Date error must appear before date input');
+    }
+
+    public function test_payment_record_zero_amount_validation_renders_directly_above_field(): void
+    {
+        $client = \App\Models\Client::create([
+            'first_name' => 'Zero',
+            'last_name' => 'AmountClient',
+            'email' => 'zero@example.com',
+            'phone' => '4165551234',
+        ]);
+        $invoice = \App\Models\Invoice::create([
+            'invoice_number' => 'INV-TEST-001',
+            'client_id' => $client->id,
+            'staff_id' => $this->admin->id,
+            'total_amount' => 100.00,
+            'status' => 'outstanding',
+            'issued_date' => now()->toDateString(),
+        ]);
+
+        $response = $this->actingAs($this->admin, 'staff')
+            ->from(route('payment-records.index'))
+            ->post(route('payment-records.store'), [
+                'invoice_id' => $invoice->id,
+                'amount' => 0,
+                'payment_method' => 'cash',
+                'payment_date' => now()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors(['amount']);
+        $followResponse = $this->followRedirects($response);
+        $html = $followResponse->getContent();
+
+        $amountInputPos = strpos($html, 'id="payment-amount"');
+        $amountErrorPos = strpos($html, 'Paid amount must be greater than 0.');
+        $this->assertNotFalse($amountInputPos);
+        $this->assertNotFalse($amountErrorPos);
+        $this->assertTrue($amountErrorPos < $amountInputPos, 'Zero amount error must appear before amount input');
+    }
+
+    public function test_payment_record_ajax_422_validation_errors(): void
+    {
+        $response = $this->actingAs($this->admin, 'staff')
+            ->postJson(route('payment-records.store'), []);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['invoice_id', 'amount', 'payment_method', 'payment_date']);
     }
 
     public function test_service_validation_errors_and_successful_save(): void
@@ -368,46 +437,63 @@ class ValidationErrorUiTest extends TestCase
         ]);
     }
 
-    public function test_schedule_validation_errors_and_successful_save(): void
+    public function test_schedule_one_time_validation_errors_render_directly_above_fields(): void
     {
-        // 1. Empty required fields -> validation errors
+        // 1. Empty required fields for One Time recurrence
         $response = $this->actingAs($this->admin, 'staff')
             ->from(route('schedule.create'))
             ->post(route('schedule.store'), [
                 'staff_id' => '',
+                'location_id' => '',
                 'recurrence_type' => 'one_time',
                 'working_date' => '',
                 'start_time' => '',
                 'end_time' => '',
             ]);
 
-        $response->assertSessionHasErrors(['staff_id', 'working_date', 'start_time', 'end_time']);
+        $response->assertSessionHasErrors(['staff_id', 'location_id', 'working_date', 'start_time', 'end_time']);
         $followResponse = $this->followRedirects($response);
         $html = $followResponse->getContent();
 
+        // Staff error before staff select
         $staffInputPos = strpos($html, 'id="staff_id"');
         $staffErrorPos = strpos($html, 'Staff is required.');
         $this->assertNotFalse($staffInputPos);
         $this->assertNotFalse($staffErrorPos);
         $this->assertTrue($staffErrorPos < $staffInputPos, 'Staff error must appear before staff select');
 
+        // Location error before location select
+        $locInputPos = strpos($html, 'id="location_id"');
+        $locErrorPos = strpos($html, 'Location is required.');
+        $this->assertNotFalse($locInputPos);
+        $this->assertNotFalse($locErrorPos);
+        $this->assertTrue($locErrorPos < $locInputPos, 'Location error must appear before location select');
+
+        // Date error before date input
         $dateInputPos = strpos($html, 'id="working_date"');
         $dateErrorPos = strpos($html, 'Date is required.');
         $this->assertNotFalse($dateInputPos);
         $this->assertNotFalse($dateErrorPos);
         $this->assertTrue($dateErrorPos < $dateInputPos, 'Date error must appear before date input');
 
+        // Start time error before start time input
         $startInputPos = strpos($html, 'id="start_time"');
         $startErrorPos = strpos($html, 'Start time is required.');
         $this->assertNotFalse($startInputPos);
         $this->assertNotFalse($startErrorPos);
         $this->assertTrue($startErrorPos < $startInputPos, 'Start time error must appear before start time input');
 
+        // End time error before end time input
         $endInputPos = strpos($html, 'id="end_time"');
         $endErrorPos = strpos($html, 'End time is required.');
         $this->assertNotFalse($endInputPos);
         $this->assertNotFalse($endErrorPos);
         $this->assertTrue($endErrorPos < $endInputPos, 'End time error must appear before end time input');
+
+        // Ensure weekly errors do NOT appear for One Time mode
+        $this->assertStringNotContainsString('Start date is required.', $html);
+        $this->assertStringNotContainsString('End date is required.', $html);
+        $this->assertStringNotContainsString('Please select at least one day for weekly recurrence.', $html);
 
         // 2. Valid schedule -> successful save
         $tomorrow = now()->addDays(2)->format('Y-m-d');
@@ -430,27 +516,88 @@ class ValidationErrorUiTest extends TestCase
         ]);
     }
 
-    public function test_schedule_recurring_validation_and_successful_save(): void
+    public function test_schedule_weekly_validation_errors_render_directly_above_fields(): void
     {
-        $startDate = now()->addDay()->format('Y-m-d');
-        $endDate = now()->addWeeks(2)->format('Y-m-d');
-
-        // Missing weekly days when recurrence_type is weekly
         $response = $this->actingAs($this->admin, 'staff')
             ->from(route('schedule.create'))
             ->post(route('schedule.store'), [
-                'staff_id' => $this->admin->id,
+                'staff_id' => '',
+                'location_id' => '',
                 'recurrence_type' => 'weekly',
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'start_time' => '10:00',
-                'end_time' => '16:00',
+                'start_date' => '',
+                'end_date' => '',
+                'start_time' => '',
+                'end_time' => '',
                 'weekly_days' => [],
             ]);
 
-        $response->assertSessionHasErrors(['weekly_days']);
+        $response->assertSessionHasErrors([
+            'staff_id',
+            'location_id',
+            'start_date',
+            'end_date',
+            'start_time',
+            'end_time',
+            'weekly_days',
+        ]);
+        $followResponse = $this->followRedirects($response);
+        $html = $followResponse->getContent();
+
+        // Staff error
+        $staffInputPos = strpos($html, 'id="staff_id"');
+        $staffErrorPos = strpos($html, 'Staff is required.');
+        $this->assertNotFalse($staffInputPos);
+        $this->assertNotFalse($staffErrorPos);
+        $this->assertTrue($staffErrorPos < $staffInputPos);
+
+        // Location error
+        $locInputPos = strpos($html, 'id="location_id"');
+        $locErrorPos = strpos($html, 'Location is required.');
+        $this->assertNotFalse($locInputPos);
+        $this->assertNotFalse($locErrorPos);
+        $this->assertTrue($locErrorPos < $locInputPos);
+
+        // Start Date error
+        $startDateInputPos = strpos($html, 'id="start_date"');
+        $startDateErrorPos = strpos($html, 'Start date is required.');
+        $this->assertNotFalse($startDateInputPos);
+        $this->assertNotFalse($startDateErrorPos);
+        $this->assertTrue($startDateErrorPos < $startDateInputPos);
+
+        // End Date error
+        $endDateInputPos = strpos($html, 'id="end_date"');
+        $endDateErrorPos = strpos($html, 'End date is required.');
+        $this->assertNotFalse($endDateInputPos);
+        $this->assertNotFalse($endDateErrorPos);
+        $this->assertTrue($endDateErrorPos < $endDateInputPos);
+
+        // Start Time error
+        $startTimeInputPos = strpos($html, 'id="start_time"');
+        $startTimeErrorPos = strpos($html, 'Start time is required.');
+        $this->assertNotFalse($startTimeInputPos);
+        $this->assertNotFalse($startTimeErrorPos);
+        $this->assertTrue($startTimeErrorPos < $startTimeInputPos);
+
+        // End Time error
+        $endTimeInputPos = strpos($html, 'id="end_time"');
+        $endTimeErrorPos = strpos($html, 'End time is required.');
+        $this->assertNotFalse($endTimeInputPos);
+        $this->assertNotFalse($endTimeErrorPos);
+        $this->assertTrue($endTimeErrorPos < $endTimeInputPos);
+
+        // Weekly days error before checkbox group
+        $weeklyGroupPos = strpos($html, 'class="weekday-checkbox-group"');
+        $weeklyErrorPos = strpos($html, 'Please select at least one day for weekly recurrence.');
+        $this->assertNotFalse($weeklyGroupPos);
+        $this->assertNotFalse($weeklyErrorPos);
+        $this->assertTrue($weeklyErrorPos < $weeklyGroupPos, 'Weekly days error must appear before weekdays group');
+
+        // Ensure One-Time only error does NOT appear in Weekly mode
+        $this->assertStringNotContainsString('Date is required.', $html);
 
         // Valid weekly schedule
+        $startDate = now()->addDay()->format('Y-m-d');
+        $endDate = now()->addWeeks(2)->format('Y-m-d');
         $validResponse = $this->actingAs($this->admin, 'staff')
             ->post(route('schedule.store'), [
                 'staff_id' => $this->admin->id,
@@ -470,6 +617,15 @@ class ValidationErrorUiTest extends TestCase
                 ->where('end_time', '16:00')
                 ->count() > 0
         );
+    }
+
+    public function test_schedule_ajax_422_validation_errors(): void
+    {
+        $response = $this->actingAs($this->admin, 'staff')
+            ->postJson(route('schedule.store'), []);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['staff_id', 'location_id', 'recurrence_type', 'start_time', 'end_time']);
     }
 
     public function test_invoice_appointment_required_validation_and_successful_create(): void
