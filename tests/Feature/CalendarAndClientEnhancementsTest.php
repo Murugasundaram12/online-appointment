@@ -271,14 +271,14 @@ class CalendarAndClientEnhancementsTest extends TestCase
             'service_id' => $this->service->id,
             'start_time' => '2026-09-28T14:00:00',
             'end_time' => '2026-09-28T15:00:00',
-            'status' => 'confirmed',
+            'status' => 'booked',
         ]);
 
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
         $this->assertDatabaseHas('appointments', [
             'id' => $appointment->id,
-            'status' => 'confirmed',
+            'status' => 'booked',
         ]);
     }
 

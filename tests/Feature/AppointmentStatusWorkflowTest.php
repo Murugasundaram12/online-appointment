@@ -82,7 +82,7 @@ class AppointmentStatusWorkflowTest extends TestCase
     }
 
     /** 1-6. Valid statuses accepted during storeAppointment */
-    public function test_pending_status_accepted(): void
+    public function test_pending_status_rejected(): void
     {
         $slot = $this->futureSlot(1, 9);
         $res = $this->actingAs($this->adminStaff, 'staff')->postJson('/calendar/appointments', array_merge([
@@ -92,8 +92,8 @@ class AppointmentStatusWorkflowTest extends TestCase
             'status' => 'pending',
         ], $slot));
 
-        $res->assertStatus(201);
-        $this->assertDatabaseHas('appointments', ['status' => 'pending']);
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['status']);
     }
 
     public function test_booked_status_accepted(): void
@@ -110,7 +110,7 @@ class AppointmentStatusWorkflowTest extends TestCase
         $this->assertDatabaseHas('appointments', ['status' => 'booked']);
     }
 
-    public function test_confirmed_status_accepted(): void
+    public function test_confirmed_status_rejected(): void
     {
         $slot = $this->futureSlot(1, 11);
         $res = $this->actingAs($this->adminStaff, 'staff')->postJson('/calendar/appointments', array_merge([
@@ -120,8 +120,8 @@ class AppointmentStatusWorkflowTest extends TestCase
             'status' => 'confirmed',
         ], $slot));
 
-        $res->assertStatus(201);
-        $this->assertDatabaseHas('appointments', ['status' => 'confirmed']);
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['status']);
     }
 
     public function test_completed_status_accepted(): void
@@ -181,7 +181,7 @@ class AppointmentStatusWorkflowTest extends TestCase
     }
 
     /** 8-12. Valid status transitions allowed */
-    public function test_pending_to_confirmed_allowed(): void
+    public function test_pending_to_booked_allowed(): void
     {
         $appt = Appointment::create([
             'staff_id' => $this->adminStaff->id,
@@ -193,14 +193,14 @@ class AppointmentStatusWorkflowTest extends TestCase
         ]);
 
         $res = $this->actingAs($this->adminStaff, 'staff')->putJson("/calendar/appointments/{$appt->id}", [
-            'status' => 'confirmed',
+            'status' => 'booked',
         ]);
 
         $res->assertStatus(200);
-        $this->assertEquals('confirmed', $appt->fresh()->status);
+        $this->assertEquals('booked', $appt->fresh()->status);
     }
 
-    public function test_booked_to_confirmed_allowed(): void
+    public function test_booked_to_no_show_allowed(): void
     {
         $appt = Appointment::create([
             'staff_id' => $this->adminStaff->id,
@@ -212,11 +212,11 @@ class AppointmentStatusWorkflowTest extends TestCase
         ]);
 
         $res = $this->actingAs($this->adminStaff, 'staff')->putJson("/calendar/appointments/{$appt->id}", [
-            'status' => 'confirmed',
+            'status' => 'no_show',
         ]);
 
         $res->assertStatus(200);
-        $this->assertEquals('confirmed', $appt->fresh()->status);
+        $this->assertEquals('no_show', $appt->fresh()->status);
     }
 
     public function test_confirmed_to_completed_allowed(): void
@@ -332,7 +332,7 @@ class AppointmentStatusWorkflowTest extends TestCase
         $res->assertStatus(422);
     }
 
-    public function test_no_show_to_confirmed_rejected(): void
+    public function test_no_show_to_booked_allowed(): void
     {
         $appt = Appointment::create([
             'staff_id' => $this->adminStaff->id,
@@ -344,10 +344,11 @@ class AppointmentStatusWorkflowTest extends TestCase
         ]);
 
         $res = $this->actingAs($this->adminStaff, 'staff')->putJson("/calendar/appointments/{$appt->id}", [
-            'status' => 'confirmed',
+            'status' => 'booked',
         ]);
 
-        $res->assertStatus(422);
+        $res->assertStatus(200);
+        $this->assertEquals('booked', $appt->fresh()->status);
     }
 
     /** 17-19. Terminal status rescheduling rejected */
@@ -391,7 +392,7 @@ class AppointmentStatusWorkflowTest extends TestCase
         $res->assertJsonFragment(['message' => 'Cancelled appointments cannot be rescheduled.']);
     }
 
-    public function test_no_show_appointment_reschedule_rejected(): void
+    public function test_no_show_appointment_reschedule_allowed(): void
     {
         $appt = Appointment::create([
             'staff_id' => $this->adminStaff->id,
@@ -407,8 +408,8 @@ class AppointmentStatusWorkflowTest extends TestCase
             'end_time' => now()->addDays(2)->setTime(12, 0)->format('Y-m-d\TH:i:s'),
         ]);
 
-        $res->assertStatus(422);
-        $res->assertJsonFragment(['message' => 'No-show appointments cannot be rescheduled.']);
+        $res->assertStatus(200);
+        $this->assertEquals(now()->addDays(2)->setTime(11, 0)->format('Y-m-d H:i:s'), $appt->fresh()->start_time->format('Y-m-d H:i:s'));
     }
 
     /** 20-23. Reminder logic tests */

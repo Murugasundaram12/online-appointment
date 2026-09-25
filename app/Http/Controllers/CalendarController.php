@@ -462,7 +462,7 @@ class CalendarController extends Controller
             'location_id' => ['nullable', 'exists:locations,id'],
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'status' => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'status' => 'nullable|in:booked,completed,cancelled,no_show',
             'cancellation_reason' => 'nullable|string',
             'notes' => 'nullable|string'
         ]);
@@ -560,7 +560,7 @@ class CalendarController extends Controller
             ], 403);
         }
 
-        // Terminal status lock: completed appointments are strictly read-only; cancelled and no_show cannot be rescheduled.
+        // Terminal status lock: completed appointments are strictly read-only; cancelled cannot be rescheduled.
         $currentStatus = $appointment->status;
         if ($currentStatus === 'completed') {
             return response()->json([
@@ -569,14 +569,13 @@ class CalendarController extends Controller
             ], 422);
         }
 
-        $terminalStatuses = ['cancelled', 'no_show'];
+        $terminalStatuses = ['cancelled'];
         $rescheduleFields = ['start_time', 'end_time', 'staff_id', 'service_id', 'location_id'];
         $isRescheduling = collect($rescheduleFields)->contains(fn($f) => $request->has($f));
 
         if ($isRescheduling && in_array($currentStatus, $terminalStatuses, true)) {
             $label = match ($currentStatus) {
                 'cancelled' => 'Cancelled',
-                'no_show'   => 'No-show',
                 default     => ucfirst($currentStatus),
             };
             return response()->json([
@@ -597,7 +596,7 @@ class CalendarController extends Controller
             'location_id'         => ['nullable', Rule::exists('locations', 'id')->where('is_active', true)],
             'start_time'          => 'nullable|date',
             'end_time'            => 'nullable|date|after:start_time',
-            'status'              => 'nullable|in:pending,booked,confirmed,completed,cancelled,no_show',
+            'status'              => 'nullable|in:booked,completed,cancelled,no_show',
             'cancellation_reason' => [Rule::requiredIf(fn () => $request->input('status') === 'cancelled'), 'nullable', 'string'],
             'client_id'           => 'sometimes|exists:clients,id',
             'notes'               => 'nullable|string'
@@ -1398,17 +1397,18 @@ class CalendarController extends Controller
     /**
      * Centralized status transition policy.
      * Returns a map of current_status => allowed_next_statuses.
-     * Terminal statuses (completed, cancelled, no_show) have no allowed outbound transitions.
+     * Terminal statuses (completed, cancelled) have no allowed outbound transitions.
+     * No-show appointments can be manually transitioned back to active statuses or cancelled/completed.
      */
     private function allowedTransitions(): array
     {
         return [
-            'pending'   => ['booked', 'confirmed', 'completed', 'cancelled', 'no_show'],
-            'booked'    => ['confirmed', 'completed', 'cancelled', 'no_show'],
-            'confirmed' => ['booked', 'completed', 'cancelled', 'no_show'],
+            'booked'    => ['completed', 'cancelled', 'no_show'],
             'completed' => [],
             'cancelled' => [],
-            'no_show'   => [],
+            'no_show'   => ['booked', 'cancelled', 'completed'],
+            'pending'   => ['booked', 'completed', 'cancelled', 'no_show'],
+            'confirmed' => ['booked', 'completed', 'cancelled', 'no_show'],
         ];
     }
 

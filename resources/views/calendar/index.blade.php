@@ -883,11 +883,7 @@
                     </select>
                     <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
                         <option value="">All statuses</option>
-                        <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending
-                        </option>
                         <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
-                        <option value="confirmed" {{ ($filters['status'] ?? '') === 'confirmed' ? 'selected' : '' }}>Confirmed
-                        </option>
                         <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed
                         </option>
                         <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled
@@ -973,8 +969,6 @@
                     class="bx bx-file me-1"></i>View Forms</a>
         </div>
         <div id="card-quick-actions" class="p-2 border-top d-flex gap-1 flex-wrap align-items-center">
-            <button type="button" class="btn btn-sm btn-outline-primary btn-quick-status d-none" data-status="confirmed"><i
-                    class='bx bx-check-double me-1'></i>Confirm</button>
             <button type="button" class="btn btn-sm btn-outline-success btn-quick-status d-none" data-status="completed"><i
                     class='bx bx-check-circle me-1'></i>Complete</button>
             <button type="button" class="btn btn-sm btn-outline-danger btn-quick-status d-none" data-status="cancelled"><i
@@ -1852,12 +1846,10 @@
 
                 // Update Quick Action Buttons Visibility
                 const allowedMap = {
-                    pending: ['confirmed', 'cancelled', 'no_show'],
-                    booked: ['confirmed', 'cancelled', 'no_show'],
-                    confirmed: ['completed', 'cancelled', 'no_show'],
+                    booked: ['completed', 'cancelled', 'no_show'],
                     completed: [],
                     cancelled: [],
-                    no_show: []
+                    no_show: ['booked', 'cancelled', 'completed']
                 };
                 const validNext = allowedMap[status] || [];
                 const quickActionBtns = document.querySelectorAll('#card-quick-actions .btn-quick-status');
@@ -1961,28 +1953,53 @@
                 return toLocalDateTime(d);
             }
 
-            async function getErrorMessage(response, fallback = 'Request failed') {
-                const raw = await response.text();
-                if (!raw) return `${fallback} (${response.status})`;
+            async function parseResponsePayload(response) {
+                if (!response) return { ok: false, status: 0, raw: '', json: null };
+                const raw = await response.text().catch(() => '');
+                let json = null;
+                if (raw) {
+                    try {
+                        json = JSON.parse(raw);
+                    } catch (_) {
+                        json = null;
+                    }
+                }
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    raw: raw,
+                    json: json
+                };
+            }
 
-                try {
-                    const err = JSON.parse(raw);
-                    if (err.message) return err.message;
-                    if (err.errors && typeof err.errors === 'object') {
-                        const firstField = Object.keys(err.errors)[0];
-                        if (firstField && Array.isArray(err.errors[firstField]) && err.errors[firstField][0]) {
-                            return err.errors[firstField][0];
+            function extractErrorMessage(parsed, fallback = 'Request failed') {
+                if (parsed && parsed.json) {
+                    if (parsed.json.message) return parsed.json.message;
+                    if (parsed.json.errors && typeof parsed.json.errors === 'object') {
+                        const firstField = Object.keys(parsed.json.errors)[0];
+                        if (firstField && Array.isArray(parsed.json.errors[firstField]) && parsed.json.errors[firstField][0]) {
+                            return parsed.json.errors[firstField][0];
                         }
                     }
-                } catch (_) {
-                    // ignore JSON parse errors and fall back to a safe message
                 }
+
+                const raw = parsed?.raw || '';
+                const status = parsed?.status || 0;
+                if (!raw) return `${fallback} (${status})`;
 
                 if (/^\s*</.test(raw) || raw.length > 500) {
-                    return `${fallback}. Server returned an unexpected error (${response.status}).`;
+                    return `${fallback}. Server returned an unexpected error (${status}).`;
                 }
 
-                return raw || `${fallback} (${response.status})`;
+                return raw || `${fallback} (${status})`;
+            }
+
+            async function getErrorMessage(responseOrParsed, fallback = 'Request failed') {
+                if (responseOrParsed && typeof responseOrParsed.raw !== 'undefined') {
+                    return extractErrorMessage(responseOrParsed, fallback);
+                }
+                const parsed = await parseResponsePayload(responseOrParsed);
+                return extractErrorMessage(parsed, fallback);
             }
 
             function getWeekRange(startDate) {
@@ -2904,12 +2921,18 @@
                         apptSaveBtn.textContent = 'Loading appointment...';
                     }
 
-                    const res = await fetch(calendarUrl(`appointments/${appointmentId}`));
-                    if (!res.ok) {
-                        const msg = await getErrorMessage(res, 'Unable to load appointment');
+                    const res = await fetch(calendarUrl(`appointments/${appointmentId}`), {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const parsedRes = await parseResponsePayload(res);
+                    if (!parsedRes.ok) {
+                        const msg = extractErrorMessage(parsedRes, 'Unable to load appointment');
                         throw new Error(msg);
                     }
-                    const appt = await res.json();
+                    const appt = parsedRes.json;
+                    if (!appt) {
+                        throw new Error('Invalid appointment data received.');
+                    }
 
                     if (String(appt.status || '').toLowerCase() === 'completed') {
                         fillReadonlyAppointmentDetails(appt);
@@ -3580,22 +3603,27 @@
                         body: JSON.stringify(payload)
                     });
 
-                    if (!res.ok) {
-                        if (res.status === 422) {
-                            const errorJson = await res.json().catch(() => ({}));
-                            if (window.AppFormErrors && errorJson.errors) {
-                                const unmapped = window.AppFormErrors.show(appointmentForm, errorJson.errors);
+                    const parsedRes = await parseResponsePayload(res);
+
+                    if (!parsedRes.ok) {
+                        if (parsedRes.status === 422) {
+                            if (window.AppFormErrors && parsedRes.json?.errors) {
+                                const unmapped = window.AppFormErrors.show(appointmentForm, parsedRes.json.errors);
                                 if (unmapped.length > 0) {
                                     showPageNotice(unmapped.join(' '));
                                 }
                                 return;
                             }
+                            if (parsedRes.json?.message) {
+                                showPageNotice(parsedRes.json.message);
+                                return;
+                            }
                         }
-                        const msg = await getErrorMessage(res, 'Save failed');
+                        const msg = extractErrorMessage(parsedRes, 'Save failed');
                         throw new Error(msg);
                     }
 
-                    const resData = await res.json().catch(() => ({}));
+                    const resData = parsedRes.json || {};
 
                     // Clear any previous validation errors and close modal
                     window.AppFormErrors?.clear(appointmentForm);
@@ -3807,28 +3835,29 @@
                         body: JSON.stringify(payload)
                     });
 
-                    if (!createClientRes.ok) {
-                        if (createClientRes.status === 422) {
-                            const errorJson = await createClientRes.json().catch(() => ({}));
-                            if (window.AppFormErrors && errorJson.errors) {
-                                const unmapped = window.AppFormErrors.show(newClientForm, errorJson.errors);
+                    const parsedClientRes = await parseResponsePayload(createClientRes);
+                    if (!parsedClientRes.ok) {
+                        if (parsedClientRes.status === 422) {
+                            if (window.AppFormErrors && parsedClientRes.json?.errors) {
+                                const unmapped = window.AppFormErrors.show(newClientForm, parsedClientRes.json.errors);
                                 if (unmapped.length > 0) {
                                     showPageNotice(unmapped.join(' '));
                                 }
                                 return;
                             }
+                            if (parsedClientRes.json?.message) {
+                                showPageNotice(parsedClientRes.json.message);
+                                return;
+                            }
                         }
-                        const msg = await getErrorMessage(createClientRes, 'Unable to create client');
+                        const msg = extractErrorMessage(parsedClientRes, 'Unable to create client');
                         throw new Error(msg);
                     }
 
-                    const ct = (createClientRes.headers.get('content-type') || '').toLowerCase();
-                    if (!ct.includes('application/json')) {
-                        const raw = await createClientRes.text();
-                        throw new Error(raw ? 'Unexpected server response. Please try again.' : 'Unexpected server response.');
+                    const created = parsedClientRes.json;
+                    if (!created || !created.client) {
+                        throw new Error('Unexpected server response.');
                     }
-
-                    const created = await createClientRes.json();
                     window.CALENDAR_DATA.clients.push(created.client);
                     hydrateClientOptions();
 
@@ -3907,8 +3936,9 @@
                         body: JSON.stringify({ start_time: toApiDateTime(newStart), end_time: toApiDateTime(newEnd) })
                     });
 
-                    if (!upd.ok) {
-                        const msg = await getErrorMessage(upd, 'Unable to reschedule');
+                    const parsedUpd = await parseResponsePayload(upd);
+                    if (!parsedUpd.ok) {
+                        const msg = extractErrorMessage(parsedUpd, 'Unable to reschedule');
                         showPageNotice(msg || 'Unable to reschedule.');
                         await loadDataAndRender();
                         return;
