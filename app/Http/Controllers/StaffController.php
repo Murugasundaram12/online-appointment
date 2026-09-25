@@ -66,6 +66,16 @@ class StaffController extends Controller
         } else {
             $validated['password'] = null;
         }
+
+        foreach (['name', 'phone', 'bio', 'color', 'registration_number', 'designation', 'category', 'location_id'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+        if (array_key_exists('salary', $validated) && ($validated['salary'] === '' || $validated['salary'] === null)) {
+            $validated['salary'] = 0;
+        }
+
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
 
         Staff::create($validated);
@@ -109,6 +119,15 @@ class StaffController extends Controller
             } else {
                 unset($validated['password']);
             }
+        }
+
+        foreach (['name', 'phone', 'bio', 'color', 'registration_number', 'designation', 'category', 'location_id'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+        if (array_key_exists('salary', $validated) && ($validated['salary'] === '' || $validated['salary'] === null)) {
+            $validated['salary'] = 0;
         }
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : false;
@@ -160,7 +179,7 @@ class StaffController extends Controller
     private function validateStaff(Request $request, ?Staff $staff, bool $passwordRequired): array
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required',
                 'email',
@@ -184,6 +203,8 @@ class StaffController extends Controller
         ];
 
         $validated = $request->validate($rules, [
+            'email.required' => 'Email is required.',
+            'email.email' => 'The email field must be a valid email address.',
             'email.unique' => 'This email is already used by another staff member.',
             'location_id.exists' => 'Please choose an active location for this staff member.',
             'color.regex' => 'Staff color must be a valid hex color like #4f46e5.',

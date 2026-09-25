@@ -274,7 +274,9 @@
                     'date': 'Date',
                     'start date': 'Start date',
                     'end date': 'End date',
-                    'amount': 'Amount'
+                    'amount': 'Amount',
+                    'email': 'Email',
+                    'email address': 'Email'
                 };
                 if (naturalLabels[lower]) {
                     labelText = naturalLabels[lower];

@@ -5,7 +5,7 @@
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
-            <h2 class="fs-4 m-0 fw-bold">{{ $staff->name }}</h2>
+            <h2 class="fs-4 m-0 fw-bold">{{ $staff->name ?: ($staff->email ?: 'Staff') }}</h2>
             <div class="d-flex gap-2">
                 <a href="{{ route('staff.edit', $staff->id) }}" class="btn btn-primary btn-sm">Edit Staff</a>
                 <a href="{{ route('staff.index') }}" class="btn btn-white border btn-sm text-muted">Back to List</a>
@@ -21,10 +21,10 @@
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
                                 style="width: 56px; height: 56px; background: {{ $staff->color ?: '#4f46e5' }};">
-                                {{ strtoupper(substr($staff->name, 0, 2)) }}
+                                {{ strtoupper(substr($staff->name ?: ($staff->email ?: 'ST'), 0, 2)) }}
                             </div>
                             <div>
-                                <h3 class="fs-5 mb-1">{{ $staff->name }}</h3>
+                                <h3 class="fs-5 mb-1">{{ $staff->name ?: ($staff->email ?: 'Staff') }}</h3>
                                 <span class="badge {{ $staff->is_active ? 'bg-success' : 'bg-secondary' }}">
                                     {{ $staff->is_active ? 'Active' : 'Inactive' }}
                                 </span>

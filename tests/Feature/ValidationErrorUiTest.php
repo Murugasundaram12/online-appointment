@@ -77,24 +77,18 @@ class ValidationErrorUiTest extends TestCase
             ->from(route('staff.create'))
             ->post(route('staff.store'), [
                 'name' => '',
-                'email' => 'not-an-email',
+                'email' => '',
                 'password' => 'short',
             ]);
 
-        $response->assertSessionHasErrors(['name', 'email', 'password']);
+        $response->assertSessionHasErrors(['email', 'password']);
+        $response->assertSessionDoesntHaveErrors(['name']);
         $followResponse = $this->followRedirects($response);
         $html = $followResponse->getContent();
 
-        // Name error should appear before name input
-        $nameInputPos = strpos($html, 'id="name"');
-        $nameErrorPos = strpos($html, 'The name field is required.');
-        $this->assertNotFalse($nameInputPos);
-        $this->assertNotFalse($nameErrorPos);
-        $this->assertTrue($nameErrorPos < $nameInputPos, 'Name error must appear before name input');
-
         // Email error should appear before email input
         $emailInputPos = strpos($html, 'id="email"');
-        $emailErrorPos = strpos($html, 'The email field must be a valid email address.');
+        $emailErrorPos = strpos($html, 'Email is required.');
         $this->assertNotFalse($emailInputPos);
         $this->assertNotFalse($emailErrorPos);
         $this->assertTrue($emailErrorPos < $emailInputPos, 'Email error must appear before email input');

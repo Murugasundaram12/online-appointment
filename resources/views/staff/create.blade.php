@@ -17,16 +17,16 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">Full Name <span class="required-mark">*</span></label>
+                            <label for="name" class="form-label">Full Name</label>
                             @error('name')
                                 <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="email" class="form-label">Email Address <span class="required-mark">*</span></label>
+                            <label for="email" class="form-label">Email <span class="required-mark">*</span></label>
                             @error('email')
                                 <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}

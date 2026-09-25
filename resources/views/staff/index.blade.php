@@ -71,7 +71,7 @@
                                                 style="width: 25px; height: 25px; font-size: 0.7rem;">
                                                 <i class='bx bx-user'></i>
                                             </div>
-                                            <span class="small text-dark fw-500">{{ $staff->name }}</span>
+                                            <span class="small text-dark fw-500">{{ $staff->name ?: '-' }}</span>
                                         </div>
                                     </td>
                                     <td class="small">{{ $staff->access_level ? ucfirst($staff->access_level) : '-' }}</td>
@@ -103,7 +103,7 @@
                                                 @method('DELETE')
                                                 <button type="button" class="btn btn-link text-muted p-0 js-delete-staff"
                                                     data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
-                                                    data-staff-name="{{ $staff->name }}"
+                                                    data-staff-name="{{ $staff->name ?: $staff->email }}"
                                                     data-form-id="delete-staff-form-{{ $staff->id }}"
                                                     title="Delete staff">
                                                     <i class='bx bx-trash'></i>
@@ -142,14 +142,14 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Staff name <span class="required-mark">*</span></label>
+                                        <label class="form-label">Staff name</label>
                                         @error('name')
                                             <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
                                         <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" placeholder="Enter staff name"
-                                            value="{{ old('name') }}" required>
+                                            value="{{ old('name') }}">
                                     </div>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Email address <span class="required-mark">*</span></label>
+                                        <label class="form-label">Email <span class="required-mark">*</span></label>
                                         @error('email')
                                             <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
@@ -320,9 +320,9 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-user'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Staff name <span class="required-mark">*</span></label>
+                                        <label class="form-label">Staff name</label>
                                         <input type="text" class="form-control" id="edit-staff-name" name="name"
-                                            placeholder="Enter staff name" required>
+                                            placeholder="Enter staff name">
                                     </div>
                                 </div>
                             </div>
@@ -403,7 +403,7 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Email address <span class="required-mark">*</span></label>
+                                        <label class="form-label">Email <span class="required-mark">*</span></label>
                                         <input type="email" class="form-control" id="edit-staff-email" name="email"
                                             placeholder="Enter email address" required>
                                     </div>

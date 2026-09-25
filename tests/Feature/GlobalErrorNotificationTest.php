@@ -61,7 +61,7 @@ class GlobalErrorNotificationTest extends TestCase
             ]);
 
         $response->assertRedirect(route('staff.index'));
-        $response->assertSessionHasErrors(['name', 'email']);
+        $response->assertSessionHasErrors(['email']);
 
         $followUp = $this->actingAs($this->staff, 'staff')->get(route('staff.index'));
         $followUp->assertStatus(200);

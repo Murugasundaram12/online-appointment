@@ -23,7 +23,12 @@ class AuthController extends Controller
         ]);
 
         try {
-            $staff = Staff::where('email', $validated['email'])->first();
+            $normalizedEmail = strtolower(trim((string) $validated['email']));
+
+            $staff = Staff::whereRaw(
+                'LOWER(TRIM(email)) = ?',
+                [$normalizedEmail]
+            )->first();
         } catch (QueryException $e) {
             report($e);
 
