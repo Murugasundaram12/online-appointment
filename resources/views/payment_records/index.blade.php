@@ -15,9 +15,14 @@
                 </button>
             </div>
         </div>
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
+        <div id="payment-alert-container">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+        </div>
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
@@ -335,14 +340,14 @@
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-4">
-                                    <label class="form-label small">Insurance Company</label>
+                                    <label class="form-label small" for="pmt-insurance-company-id">Insurance Company <span class="text-muted fw-normal">(Optional)</span></label>
                                     @error('insurance_company_id')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
                                     <select name="insurance_company_id" id="pmt-insurance-company-id" class="form-select form-select-sm @error('insurance_company_id') is-invalid @enderror">
-                                        <option value="">Select Company</option>
+                                        <option value="">Select Company (Optional)</option>
                                         @foreach($insuranceCompanies as $comp)
                                             <option value="{{ $comp->id }}">{{ $comp->name }}</option>
                                         @endforeach
@@ -403,6 +408,28 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                // Display success message from previous AJAX submission if present
+                const savedPaymentMsg = sessionStorage.getItem('payment_success_message');
+                if (savedPaymentMsg) {
+                    sessionStorage.removeItem('payment_success_message');
+                    if (window.AppToast && typeof window.AppToast.show === 'function') {
+                        window.AppToast.show({
+                            type: 'success',
+                            title: 'Success',
+                            message: savedPaymentMsg
+                        });
+                    }
+                    const alertContainer = document.getElementById('payment-alert-container');
+                    if (alertContainer && !alertContainer.querySelector('.alert-success')) {
+                        alertContainer.innerHTML = `
+                            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                                <i class="bx bx-check-circle me-1"></i> ${savedPaymentMsg}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                    }
+                }
+
                 const form = document.getElementById('payment-record-form');
                 const invoice = document.getElementById('payment-invoice');
                 const amount = document.getElementById('payment-amount');
@@ -456,14 +483,20 @@
                 function clearInsuranceFields() {
                     if (savedInsSelect) savedInsSelect.value = '';
                     if (insuranceCompanyInput) {
+                        insuranceCompanyInput.removeAttribute('required');
+                        insuranceCompanyInput.required = false;
                         insuranceCompanyInput.value = '';
                         insuranceCompanyInput.classList.remove('is-invalid');
                     }
                     if (policyIdInput) {
+                        policyIdInput.removeAttribute('required');
+                        policyIdInput.required = false;
                         policyIdInput.value = '';
                         policyIdInput.classList.remove('is-invalid');
                     }
                     if (memberIdInput) {
+                        memberIdInput.removeAttribute('required');
+                        memberIdInput.required = false;
                         memberIdInput.value = '';
                         memberIdInput.classList.remove('is-invalid');
                     }
@@ -568,6 +601,11 @@
                         if (cardBrandInput) {
                             cardBrandInput.removeAttribute('required');
                             cardBrandInput.required = false;
+                        }
+                        if (insuranceCompanyInput) {
+                            insuranceCompanyInput.removeAttribute('required');
+                            insuranceCompanyInput.required = false;
+                            insuranceCompanyInput.classList.remove('is-invalid');
                         }
                         if (validationMsg) validationMsg.classList.add('d-none');
                         if (statusBadge) {
@@ -703,7 +741,13 @@
                     }
                     if (insuranceBlock) {
                         insuranceBlock.classList.toggle('d-none', !showInsurance);
-                        if (!showInsurance) {
+                        if (showInsurance) {
+                            if (insuranceCompanyInput) {
+                                insuranceCompanyInput.removeAttribute('required');
+                                insuranceCompanyInput.required = false;
+                                insuranceCompanyInput.classList.remove('is-invalid');
+                            }
+                        } else {
                             clearInsuranceFields();
                         }
                     }
@@ -1146,6 +1190,12 @@
                             if (submitBtn) submitBtn.disabled = false;
                             return false;
                         }
+
+                        const data = await res.json().catch(() => ({}));
+                        const successMsg = (data && data.message) ? data.message : 'Payment recorded successfully. Invoice updated.';
+                        try {
+                            sessionStorage.setItem('payment_success_message', successMsg);
+                        } catch (e) {}
 
                         window.AppFormErrors?.clear(form);
                         window.location.reload();

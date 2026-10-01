@@ -342,6 +342,15 @@ class PaymentRecordController extends Controller
             return back()->withInput()->with('error', 'Payment could not be saved: ' . $e->getMessage());
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            session()->flash('success', 'Payment recorded successfully. Invoice updated.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully. Invoice updated.',
+                'redirect_url' => route('invoices.show', $validated['invoice_id']),
+            ]);
+        }
+
         return redirect()
             ->route('invoices.show', $validated['invoice_id'])
             ->with('success', 'Payment recorded successfully. Invoice updated.');
