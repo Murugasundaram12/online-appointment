@@ -37,6 +37,10 @@ class Staff extends Authenticatable
         'is_active' => 'boolean'
     ];
 
+    protected $appends = [
+        'category_ids',
+    ];
+
     public const SUPER_ADMIN_EMAIL = 'udhayakumarn@gmail.com';
 
     public function isSuperAdmin(): bool
@@ -47,6 +51,19 @@ class Staff extends Authenticatable
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(ServiceCategory::class, 'staff_categories');
+    }
+
+    public function getCategoryIdsAttribute(): array
+    {
+        if ($this->relationLoaded('categories')) {
+            return $this->categories->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        }
+        return $this->categories()->pluck('service_categories.id')->map(fn ($id) => (int) $id)->values()->all();
     }
 
     public function schedules()

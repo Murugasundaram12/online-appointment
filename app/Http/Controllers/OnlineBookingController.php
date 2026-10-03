@@ -28,7 +28,7 @@ class OnlineBookingController extends Controller
             ->with('category:id,name')
             ->orderBy('name')
             ->get(['id', 'name', 'price', 'duration_minutes', 'service_category_id']);
-        $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'category', 'location_id']);
+        $staff = Staff::where('is_active', true)->with('categories:id,name')->orderBy('name')->get(['id', 'name', 'category', 'location_id']);
         return view('online_booking.index', compact('locations', 'services', 'staff'));
     }
 
@@ -50,7 +50,7 @@ class OnlineBookingController extends Controller
             $staffQuery->where('location_id', $validated['location_id']);
         }
 
-        $staffQuery = StaffCategoryService::scopeStaffByCategory($staffQuery, $service->category?->name);
+        $staffQuery = StaffCategoryService::scopeStaffByCategory($staffQuery, $service);
 
         $date = Carbon::parse($validated['date']);
         $slots = [];
@@ -124,7 +124,7 @@ class OnlineBookingController extends Controller
                 $end = Carbon::parse($validated['end_time']);
                 $windows = $this->staffWorkingWindows($validated['staff_id'], $start);
                 $service = Service::with('category')->where('is_active', true)->findOrFail($validated['service_id']);
-                $staff = Staff::where('is_active', true)->findOrFail($validated['staff_id']);
+                $staff = Staff::with('categories')->where('is_active', true)->findOrFail($validated['staff_id']);
 
                 if (!StaffCategoryService::staffCanProvide($staff, $service)) {
                     throw \Illuminate\Validation\ValidationException::withMessages([

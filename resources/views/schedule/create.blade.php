@@ -159,7 +159,7 @@ if (!function_exists('ordinalSuffix')) {
                                     <option value="{{ $st->id }}"
                                         data-location-id="{{ $st->location_id }}"
                                         {{ old('staff_id', $editing?->staff_id ?? ($selectedStaff?->id ?? '')) == $st->id ? 'selected' : '' }}>
-                                        {{ $st->name }} ({{ $st->category ?? 'General' }})
+                                        {{ $st->name }} ({{ $st->categories->isNotEmpty() ? $st->categories->pluck('name')->join(', ') : ($st->category ?? 'General') }})
                                     </option>
                                 @endforeach
                             </select>

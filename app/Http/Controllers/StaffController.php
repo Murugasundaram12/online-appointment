@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\ServiceCategory;
 use App\Models\Staff;
+use App\Support\StaffCategoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,7 @@ class StaffController extends Controller
 {
     public function index(Request $request)
     {
-        $staffs = Staff::with('location')
+        $staffs = Staff::with(['location', 'categories'])
             ->withCount(['appointments', 'payrolls'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
@@ -26,7 +27,17 @@ class StaffController extends Controller
                 });
             })
             ->when($request->filled('category'), function ($query) use ($request) {
-                $query->where('category', 'like', '%' . $request->category . '%');
+                $categoryFilter = trim($request->category);
+                $query->where(function ($q) use ($categoryFilter) {
+                    $q->whereHas('categories', function ($cq) use ($categoryFilter) {
+                        if (is_numeric($categoryFilter)) {
+                            $cq->where('service_categories.id', $categoryFilter);
+                        } else {
+                            $cq->where('service_categories.name', 'like', "%{$categoryFilter}%");
+                        }
+                    })
+                    ->orWhere('category', 'like', "%{$categoryFilter}%");
+                });
             })
             ->when($request->filled('access_level'), function ($query) use ($request) {
                 $query->where('access_level', $request->access_level);
@@ -37,9 +48,10 @@ class StaffController extends Controller
             ->latest()
             ->paginate($this->perPage($request))
             ->withQueryString();
+
         $locations = Location::where('is_active', true)->orderBy('name')->get();
-        $categories = Staff::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
         $serviceCategories = ServiceCategory::orderBy('name')->get();
+        $categories = $serviceCategories->pluck('name');
 
         return view('staff.index', compact('staffs', 'locations', 'categories', 'serviceCategories'));
     }
@@ -78,14 +90,24 @@ class StaffController extends Controller
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
 
-        Staff::create($validated);
+        $staff = Staff::create($validated);
+
+        if ($request->has('categories')) {
+            $categoryIds = array_filter((array) ($validated['categories'] ?? []));
+            $staff->categories()->sync($categoryIds);
+        } elseif ($request->filled('category')) {
+            $matched = ServiceCategory::whereRaw('LOWER(TRIM(name)) = ?', [StaffCategoryService::normalize($request->category)])->first();
+            if ($matched) {
+                $staff->categories()->sync([$matched->id]);
+            }
+        }
 
         return redirect()->route('staff.index')->with('success', 'Staff created successfully.');
     }
 
     public function show(string $id)
     {
-        $staff = Staff::with(['location', 'payrolls' => fn ($query) => $query->latest('period_end')->limit(5)])
+        $staff = Staff::with(['location', 'categories', 'payrolls' => fn ($query) => $query->latest('period_end')->limit(5)])
             ->withCount(['appointments', 'schedules', 'payrolls'])
             ->findOrFail($id);
 
@@ -97,7 +119,7 @@ class StaffController extends Controller
 
     public function edit(string $id)
     {
-        $staff = Staff::findOrFail($id);
+        $staff = Staff::with('categories')->findOrFail($id);
         $locations = Location::where('is_active', true)
             ->orWhere('id', $staff->location_id)
             ->orderBy('name')
@@ -132,6 +154,24 @@ class StaffController extends Controller
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : false;
         $staff->update($validated);
+
+        if ($request->has('categories')) {
+            $categoryIds = array_filter((array) ($validated['categories'] ?? []));
+            $staff->categories()->sync($categoryIds);
+        } elseif ($request->has('categories_submitted')) {
+            $staff->categories()->sync([]);
+        } elseif ($request->has('category')) {
+            if ($request->filled('category')) {
+                $matched = ServiceCategory::whereRaw('LOWER(TRIM(name)) = ?', [StaffCategoryService::normalize($request->category)])->first();
+                if ($matched) {
+                    $staff->categories()->sync([$matched->id]);
+                } else {
+                    $staff->categories()->sync([]);
+                }
+            } else {
+                $staff->categories()->sync([]);
+            }
+        }
 
         return redirect()->route('staff.index')->with('success', 'Staff updated successfully.');
     }
@@ -193,6 +233,8 @@ class StaffController extends Controller
             'registration_number' => ['nullable', 'string', 'max:100'],
             'designation' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:100'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['integer', 'distinct', Rule::exists('service_categories', 'id')],
             'salary' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'location_id' => [
                 'nullable',
@@ -208,6 +250,9 @@ class StaffController extends Controller
             'email.unique' => 'This email is already used by another staff member.',
             'location_id.exists' => 'Please choose an active location for this staff member.',
             'color.regex' => 'Staff color must be a valid hex color like #4f46e5.',
+            'categories.array' => 'Categories must be an array.',
+            'categories.*.exists' => 'The selected category does not exist.',
+            'categories.*.distinct' => 'Duplicate categories are not allowed.',
         ]);
 
         if (empty($validated['access_level'])) {

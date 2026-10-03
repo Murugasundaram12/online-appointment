@@ -44,8 +44,20 @@
                             <dd class="col-7">{{ $staff->registration_number ?: '-' }}</dd>
                             <dt class="col-5 text-muted">Designation</dt>
                             <dd class="col-7">{{ $staff->designation ?: '-' }}</dd>
-                            <dt class="col-5 text-muted">Category</dt>
-                            <dd class="col-7">{{ $staff->category ?: '-' }}</dd>
+                            <dt class="col-5 text-muted">Categories</dt>
+                            <dd class="col-7">
+                                @if($staff->categories->isNotEmpty())
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($staff->categories as $c)
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ $c->name }}</span>
+                                        @endforeach
+                                    </div>
+                                @elseif(!empty($staff->category))
+                                    <span class="badge bg-secondary-subtle text-secondary">{{ $staff->category }}</span>
+                                @else
+                                    -
+                                @endif
+                            </dd>
                             <dt class="col-5 text-muted">Salary</dt>
                             <dd class="col-7">{{ number_format((float) ($staff->salary ?? 0), 2) }}</dd>
                         </dl>

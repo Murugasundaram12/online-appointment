@@ -25,7 +25,7 @@ class ScheduleController extends Controller
     }
     public function index(Request $request)
     {
-        $staff = Staff::with('location')->get();
+        $staff = Staff::with(['location', 'categories'])->get();
         $locations = Location::where('is_active', true)->get();
 
         $selectedRange = $request->query('range', 'this_week');
@@ -68,7 +68,7 @@ class ScheduleController extends Controller
                 break;
         }
 
-        $query = StaffSchedule::with(['staff', 'staff.location'])
+        $query = StaffSchedule::with(['staff', 'staff.location', 'staff.categories'])
             ->whereBetween('working_date', [$start->toDateString(), $end->toDateString()]);
 
         if ($currentStaffId) {
@@ -170,7 +170,7 @@ class ScheduleController extends Controller
     public function create(Request $request)
     {
         $staffId = $request->query('staff_id');
-        $staff = Staff::all();
+        $staff = Staff::with('categories')->get();
         $locations = Location::where('is_active', true)->orderBy('name')->get();
         $selectedStaff = $staffId ? Staff::find($staffId) : null;
         $selectedLocationId = $selectedStaff?->location_id ?? null;

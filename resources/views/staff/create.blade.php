@@ -78,22 +78,45 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="category" class="form-label">Category</label>
-                            @error('category')
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Service Categories</label>
+                            @error('categories')
                                 <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
-                            <select class="form-select @error('category') is-invalid @enderror" id="category" name="category">
-                                <option value="" selected>Select Category</option>
-                                @foreach($serviceCategories ?? $categories ?? [] as $categoryOption)
-                                    @php $catName = is_string($categoryOption) ? $categoryOption : $categoryOption->name; @endphp
-                                    <option value="{{ $catName }}" {{ old('category') == $catName ? 'selected' : '' }}>
-                                        {{ $catName }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @error('categories.*')
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <input type="hidden" name="categories_submitted" value="1">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="row g-2">
+                                    @php
+                                        $oldCategories = (array) old('categories', []);
+                                    @endphp
+                                    @forelse($serviceCategories ?? $categories ?? [] as $categoryOption)
+                                        @php
+                                            $catId = is_object($categoryOption) ? $categoryOption->id : null;
+                                            $catName = is_object($categoryOption) ? $categoryOption->name : $categoryOption;
+                                        @endphp
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="categories[]"
+                                                    value="{{ $catId }}" id="cat_create_{{ $catId }}"
+                                                    {{ in_array($catId, $oldCategories) ? 'checked' : '' }}>
+                                                <label class="form-check-label user-select-none" for="cat_create_{{ $catId }}">
+                                                    {{ $catName }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="col-12 text-muted small">No service categories defined.</div>
+                                    @endforelse
+                                </div>
+                                <div class="form-text mt-2 text-muted">Select one or more service categories. Leave unselected for unrestricted staff.</div>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="createStaffPassword" class="form-label">Password</label>

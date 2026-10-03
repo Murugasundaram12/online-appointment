@@ -74,7 +74,7 @@
                                     <select class="form-select @error('service_id') is-invalid @enderror" name="service_id" id="service_id" required>
                                         <option value="">Select service</option>
                                         @foreach($services as $service)
-                                            <option value="{{ $service->id }}" data-category="{{ $service->category?->name ?? '' }}" data-duration="{{ $service->duration_minutes }}" data-price="{{ $service->price }}">{{ $service->name }} - ${{ number_format($service->price, 2) }}</option>
+                                            <option value="{{ $service->id }}" data-category-id="{{ $service->service_category_id ?? ($service->category?->id ?? '') }}" data-category="{{ $service->category?->name ?? '' }}" data-duration="{{ $service->duration_minutes }}" data-price="{{ $service->price }}">{{ $service->name }} - ${{ number_format($service->price, 2) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -88,7 +88,7 @@
                                     <select class="form-select @error('staff_id') is-invalid @enderror" name="staff_id" id="staff_id">
                                         <option value="">Any available staff</option>
                                         @foreach($staff as $member)
-                                            <option value="{{ $member->id }}" data-category="{{ $member->category ?? '' }}" data-location="{{ $member->location_id ?? '' }}">{{ $member->name }}</option>
+                                            <option value="{{ $member->id }}" data-category-ids="{{ json_encode($member->categories->pluck('id')->values()->all()) }}" data-category="{{ $member->categories->pluck('name')->join(', ') ?: ($member->category ?? '') }}" data-location="{{ $member->location_id ?? '' }}">{{ $member->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -189,21 +189,41 @@
             return String(value || '').trim().toLowerCase();
         }
 
-        function servicesMatch(staffCategory, serviceCategory) {
-            if (!staffCategory) return true;
-            if (!serviceCategory) return true;
-            return staffCategory === serviceCategory
-                || staffCategory.includes(serviceCategory)
-                || serviceCategory.includes(staffCategory);
+        function parseCategoryIds(datasetVal) {
+            if (!datasetVal) return [];
+            try {
+                const parsed = JSON.parse(datasetVal);
+                return Array.isArray(parsed) ? parsed.map(Number) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function staffCanProvideService(staffOpt, serviceOpt) {
+            if (!serviceOpt || !serviceOpt.value) return true;
+            const serviceCategoryId = serviceOpt.dataset.categoryId ? Number(serviceOpt.dataset.categoryId) : null;
+            if (!serviceCategoryId) return true;
+
+            const staffCategoryIds = parseCategoryIds(staffOpt.dataset.categoryIds);
+            if (staffCategoryIds.length > 0) {
+                return staffCategoryIds.includes(serviceCategoryId);
+            }
+
+            const staffCat = normalizeCategory(staffOpt.dataset.category);
+            if (!staffCat) return true;
+
+            const svcCat = normalizeCategory(serviceOpt.dataset.category);
+            if (!svcCat) return true;
+            return staffCat === svcCat || staffCat.includes(svcCat) || svcCat.includes(staffCat);
         }
 
         function staffMatchesSelectedFilters(opt) {
-            const staffCat = normalizeCategory(opt.dataset.category);
-            const svcCat = normalizeCategory(serviceSelect.selectedOptions[0] ? serviceSelect.selectedOptions[0].dataset.category : '');
             const locVal = locationSelect.value;
             const staffLoc = String(opt.dataset.location || '');
             if (locVal && staffLoc && staffLoc !== String(locVal)) return false;
-            return servicesMatch(staffCat, svcCat);
+
+            const selectedServiceOpt = serviceSelect.selectedOptions[0];
+            return staffCanProvideService(opt, selectedServiceOpt);
         }
 
         function filterStaffByService() {
@@ -215,11 +235,10 @@
         }
 
         function filterServicesByStaff() {
-            const staffCat = normalizeCategory(staffSelect.selectedOptions[0] ? staffSelect.selectedOptions[0].dataset.category : '');
+            const selectedStaffOpt = staffSelect.selectedOptions[0];
             Array.from(serviceSelect.options).forEach(opt => {
                 if (opt.value === '') { opt.disabled = false; return; }
-                const svcCat = normalizeCategory(opt.dataset.category);
-                opt.disabled = !servicesMatch(staffCat, svcCat);
+                opt.disabled = selectedStaffOpt && selectedStaffOpt.value ? !staffCanProvideService(selectedStaffOpt, opt) : false;
                 if (opt.disabled && opt.selected) opt.selected = false;
             });
         }

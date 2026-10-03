@@ -13,4 +13,9 @@ class ServiceCategory extends Model
     {
         return $this->hasMany(Service::class);
     }
+
+    public function staff()
+    {
+        return $this->belongsToMany(Staff::class, 'staff_categories');
+    }
 }

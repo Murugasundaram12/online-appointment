@@ -103,12 +103,12 @@ class LoginRedirectAndStaffCategoryTest extends TestCase
 
     public function test_staff_create_view_loads_dynamic_categories_and_saves_staff(): void
     {
-        ServiceCategory::create(['name' => 'Acupuncture']);
-        ServiceCategory::create(['name' => 'Chiropractic']);
+        $acupCat = ServiceCategory::create(['name' => 'Acupuncture']);
+        $chiroCat = ServiceCategory::create(['name' => 'Chiropractic']);
 
         $response = $this->actingAs($this->staff, 'staff')->get(route('staff.create'));
         $response->assertOk();
-        $response->assertSee('Select Category');
+        $response->assertSee('Service Categories');
         $response->assertSee('Acupuncture');
         $response->assertSee('Chiropractic');
 
@@ -119,6 +119,7 @@ class LoginRedirectAndStaffCategoryTest extends TestCase
             'password' => 'password123',
             'access_level' => 'staff',
             'category' => 'Acupuncture',
+            'categories' => [$acupCat->id],
             'location_id' => $this->location->id,
             'is_active' => '1',
         ]);
@@ -126,20 +127,24 @@ class LoginRedirectAndStaffCategoryTest extends TestCase
         $storeResponse->assertRedirect(route('staff.index'));
         $this->assertDatabaseHas('staff', [
             'email' => 'bob.new@example.com',
-            'category' => 'Acupuncture',
         ]);
+        $createdStaff = Staff::where('email', 'bob.new@example.com')->first();
+        $this->assertTrue($createdStaff->categories->contains($acupCat));
     }
 
     public function test_staff_edit_view_has_existing_category_selected_and_updates_successfully(): void
     {
-        ServiceCategory::create(['name' => 'Massage Therapy']);
-        ServiceCategory::create(['name' => 'Physiotherapy']);
+        $massageCat = ServiceCategory::create(['name' => 'Massage Therapy']);
+        $physioCat = ServiceCategory::create(['name' => 'Physiotherapy']);
+        $this->staff->categories()->sync([$massageCat->id]);
 
         $response = $this->actingAs($this->staff, 'staff')->get(route('staff.edit', $this->staff->id));
         $response->assertOk();
-        $response->assertSee('Select Category');
+        $response->assertSee('Service Categories');
         $response->assertSee('Massage Therapy');
-        $response->assertSee('value="Massage Therapy" selected', false);
+        $response->assertSee('Physiotherapy');
+        $response->assertSee('id="cat_edit_' . $massageCat->id . '"', false);
+        $response->assertSee('checked', false);
 
         // Update category to Physiotherapy
         $updateResponse = $this->actingAs($this->staff, 'staff')->put(route('staff.update', $this->staff->id), [
@@ -147,6 +152,7 @@ class LoginRedirectAndStaffCategoryTest extends TestCase
             'email' => 'jane@example.com',
             'access_level' => 'admin',
             'category' => 'Physiotherapy',
+            'categories' => [$physioCat->id],
             'location_id' => $this->location->id,
             'is_active' => '1',
         ]);
@@ -154,8 +160,9 @@ class LoginRedirectAndStaffCategoryTest extends TestCase
         $updateResponse->assertRedirect(route('staff.index'));
         $this->assertDatabaseHas('staff', [
             'id' => $this->staff->id,
-            'category' => 'Physiotherapy',
         ]);
+        $this->assertTrue($this->staff->fresh()->categories->contains($physioCat));
+        $this->assertFalse($this->staff->fresh()->categories->contains($massageCat));
     }
 
     public function test_newly_added_category_appears_in_staff_views_automatically(): void

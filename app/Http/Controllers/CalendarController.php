@@ -29,7 +29,18 @@ class CalendarController extends Controller
      */
     public function index(Request $request)
     {
-        $staffs  = Staff::where('is_active', true)->get(['id', 'name', 'location_id', 'category']);
+        $staffs = Staff::where('is_active', true)
+            ->with('categories:id,name')
+            ->get(['id', 'name', 'location_id', 'category']);
+
+        $staffs->each(function ($s) {
+            $categoryIds = $s->categories->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+            $s->setAttribute('category_ids', $categoryIds);
+            $categoryNames = $s->categories->pluck('name')->all();
+            if (!empty($categoryNames)) {
+                $s->category = implode(' • ', $categoryNames);
+            }
+        });
         $clients = Client::orderByDesc('updated_at')->limit(100)->get(['id', 'name', 'email', 'phone']);
         $services = Service::where('is_active', true)
             ->with('category:id,name')
@@ -406,7 +417,7 @@ class CalendarController extends Controller
         $service = $serviceId ? Service::where('is_active', true)->find($serviceId) : null;
         $bufferMinutes = (int) ($service?->buffer_minutes ?? 0);
 
-        $staffQuery = Staff::where('is_active', true);
+        $staffQuery = Staff::where('is_active', true)->with('categories:id,name');
         if ($locationId) {
             $staffQuery->where(function ($q) use ($locationId) {
                 $q->whereNull('location_id')->orWhere('location_id', $locationId);
@@ -434,12 +445,16 @@ class CalendarController extends Controller
 
         return response()->json([
             'success' => true,
-            'staff' => $availableStaff->map(fn($s) => [
-                'id' => $s->id,
-                'name' => $s->name,
-                'location_id' => $s->location_id,
-                'category' => $s->category,
-            ])
+            'staff' => $availableStaff->map(function ($s) {
+                $categoryNames = $s->categories->pluck('name')->all();
+                return [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'location_id' => $s->location_id,
+                    'category' => !empty($categoryNames) ? implode(' • ', $categoryNames) : ($s->category ?? ''),
+                    'category_ids' => $s->categories->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+                ];
+            })
         ]);
     }
 
@@ -627,7 +642,7 @@ class CalendarController extends Controller
             $staffChanged = isset($validated['staff_id']) && (int) $validated['staff_id'] !== (int) $appointment->staff_id;
 
             $service = Service::with('category')->find($serviceId);
-            $staff = Staff::find($staffId);
+            $staff = Staff::with('categories')->find($staffId);
 
             if (!$service || !$staff) {
                 return response()->json([
@@ -653,7 +668,7 @@ class CalendarController extends Controller
             }
 
             // The chosen staff/service combination must be compatible.
-            if (!StaffCategoryService::categoryMatches($staff->category, $service->category?->name)) {
+            if (!StaffCategoryService::staffCanProvide($staff, $service)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'The selected service is not available for this staff member.',

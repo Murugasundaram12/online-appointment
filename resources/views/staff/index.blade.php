@@ -55,7 +55,7 @@
                                 <th scope="col" class="ps-4 py-3 border-0">Staff name <i class='bx bx-up-arrow-alt'></i>
                                 </th>
                                 <th scope="col" class="py-3 border-0">Access level</th>
-                                <th scope="col" class="py-3 border-0">Category</th>
+                                <th scope="col" class="py-3 border-0">Categories</th>
                                 <th scope="col" class="py-3 border-0">Email address</th>
                                 <th scope="col" class="py-3 border-0">Last login</th>
                                 <th scope="col" class="py-3 border-0">Payroll</th>
@@ -75,7 +75,19 @@
                                         </div>
                                     </td>
                                     <td class="small">{{ $staff->access_level ? ucfirst($staff->access_level) : '-' }}</td>
-                                    <td class="text-muted small">{{ $staff->category ?? '-' }}</td>
+                                    <td class="small">
+                                        @if($staff->categories->isNotEmpty())
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach($staff->categories as $c)
+                                                    <span class="badge bg-light text-primary border">{{ $c->name }}</span>
+                                                @endforeach
+                                            </div>
+                                        @elseif(!empty($staff->category))
+                                            <span class="badge bg-light text-muted border">{{ $staff->category }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td class="small text-muted">{{ $staff->email }}</td>
                                     <td class="small text-muted">
                                         {{ $staff->last_login_at ? $staff->last_login_at->format('M j, Y') : '-' }}
@@ -89,7 +101,9 @@
                                             data-access_level="{{ $staff->access_level }}"
                                             data-registration_number="{{ e($staff->registration_number) }}"
                                             data-designation="{{ e($staff->designation) }}"
-                                            data-category="{{ $staff->category }}" data-salary="{{ $staff->salary }}"
+                                            data-category="{{ $staff->category }}"
+                                            data-category-ids="{{ json_encode($staff->categories->pluck('id')->values()->all()) }}"
+                                            data-salary="{{ $staff->salary }}"
                                             data-location_id="{{ $staff->location_id }}"
                                             data-is_active="{{ $staff->is_active ? 1 : 0 }}"
                                             data-phone="{{ $staff->phone }}" data-bio="{{ $staff->bio }}"
@@ -192,18 +206,29 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Category</label>
-                                        @error('category')
+                                        <label class="form-label">Service Categories</label>
+                                        @error('categories')
                                             <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
-                                        <select class="form-select @error('category') is-invalid @enderror" name="category">
-                                            <option value="" selected>Select Category</option>
-                                            @foreach($serviceCategories ?? [] as $cat)
-                                                <option value="{{ $cat->name }}" {{ old('category') == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <input type="hidden" name="categories_submitted" value="1">
+                                        <div class="p-2 border rounded bg-light" style="max-height: 140px; overflow-y: auto;">
+                                            <div class="row g-2">
+                                                @foreach($serviceCategories ?? [] as $cat)
+                                                    <div class="col-sm-6">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" name="categories[]"
+                                                                value="{{ $cat->id }}" id="add_modal_cat_{{ $cat->id }}"
+                                                                {{ in_array($cat->id, (array) old('categories', [])) ? 'checked' : '' }}>
+                                                            <label class="form-check-label small user-select-none" for="add_modal_cat_{{ $cat->id }}">
+                                                                {{ $cat->name }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -369,13 +394,23 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-category'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Category</label>
-                                        <select class="form-select" id="edit-staff-category" name="category">
-                                            <option value="">Select Category</option>
-                                            @foreach($serviceCategories ?? [] as $cat)
-                                                <option value="{{ $cat->name }}">{{ $cat->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label class="form-label">Service Categories</label>
+                                        <input type="hidden" name="categories_submitted" value="1">
+                                        <div class="p-2 border rounded bg-light" style="max-height: 140px; overflow-y: auto;">
+                                            <div class="row g-1">
+                                                @foreach($serviceCategories ?? [] as $cat)
+                                                    <div class="col-12">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input edit-staff-category-checkbox" type="checkbox" name="categories[]"
+                                                                value="{{ $cat->id }}" id="edit_modal_cat_{{ $cat->id }}">
+                                                            <label class="form-check-label small user-select-none" for="edit_modal_cat_{{ $cat->id }}">
+                                                                {{ $cat->name }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -492,14 +527,16 @@
                         document.getElementById('edit-staff-access-level').value = btn.dataset.access_level || '';
                         if (document.getElementById('edit-staff-registration-number')) document.getElementById('edit-staff-registration-number').value = btn.dataset.registration_number || '';
                         if (document.getElementById('edit-staff-designation')) document.getElementById('edit-staff-designation').value = btn.dataset.designation || '';
-                        const editCatSelect = document.getElementById('edit-staff-category');
-                        if (editCatSelect) {
-                            const currentCat = btn.dataset.category || '';
-                            if (currentCat && !Array.from(editCatSelect.options).some(o => o.value === currentCat)) {
-                                editCatSelect.add(new Option(currentCat, currentCat, true, true));
-                            }
-                            editCatSelect.value = currentCat;
+                        const editCatBoxes = document.querySelectorAll('.edit-staff-category-checkbox');
+                        let catIds = [];
+                        try {
+                            catIds = JSON.parse(btn.dataset.categoryIds || '[]');
+                        } catch (e) {
+                            catIds = [];
                         }
+                        editCatBoxes.forEach(cb => {
+                            cb.checked = catIds.map(Number).includes(Number(cb.value));
+                        });
                         document.getElementById('edit-staff-location').value = btn.dataset.location_id || '';
                         document.getElementById('edit-staff-salary').value = btn.dataset.salary || '';
                         const editPass = document.getElementById('editStaffPassword') || document.getElementById('edit-staff-password');

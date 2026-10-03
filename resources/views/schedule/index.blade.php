@@ -411,8 +411,13 @@ if (!function_exists('ordinalSuffix')) {
                             <tr>
                                 <td class="px-4">
                                     <div class="fw-semibold">{{ $entry['staff']['name'] ?? '—' }}</div>
-                                    @if(!empty($entry['staff']['category']))
-                                        <div class="small text-muted">{{ $entry['staff']['category'] }}</div>
+                                    @php
+                                        $entryCategories = !empty($entry['staff']['categories'])
+                                            ? collect($entry['staff']['categories'])->pluck('name')->join(', ')
+                                            : ($entry['staff']['category'] ?? '');
+                                    @endphp
+                                    @if(!empty($entryCategories))
+                                        <div class="small text-muted">{{ $entryCategories }}</div>
                                     @endif
                                 </td>
                                 <td><span class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span></td>
@@ -683,7 +688,11 @@ if (!function_exists('ordinalSuffix')) {
             const currentStaffId = {{ isset($currentStaff) ? $currentStaff->id : 'null' }};
             const currentStaffLocationId = {{ isset($currentStaff) && $currentStaff->location_id ? $currentStaff->location_id : 'null' }};
             const currentStaffName = @json($currentStaff->name ?? '');
-            const currentStaffCategory = @json($currentStaff->category ?? '');
+            const currentStaffCategory = @json(
+                $currentStaff && $currentStaff->categories->isNotEmpty()
+                    ? $currentStaff->categories->pluck('name')->join(', ')
+                    : ($currentStaff->category ?? '')
+            );
             const schedules = @json($schedules ?? []);
             const baseWeekStart = @json(isset($weekStart) ? $weekStart->toDateString() : null);
             const scheduleEditBaseUrl = @json(route('schedule.edit', '__ID__'));

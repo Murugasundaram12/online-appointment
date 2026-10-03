@@ -2282,6 +2282,22 @@
                 newClientForm?.reset();
             }
 
+            function mergeStaffIntoCalendarData(staffList) {
+                if (!Array.isArray(staffList) || !window.CALENDAR_DATA) return;
+                if (!Array.isArray(window.CALENDAR_DATA.staffs)) {
+                    window.CALENDAR_DATA.staffs = [];
+                }
+                staffList.forEach(s => {
+                    if (!s || !s.id) return;
+                    const idx = window.CALENDAR_DATA.staffs.findIndex(existing => String(existing.id) === String(s.id));
+                    if (idx >= 0) {
+                        window.CALENDAR_DATA.staffs[idx] = Object.assign({}, window.CALENDAR_DATA.staffs[idx], s);
+                    } else {
+                        window.CALENDAR_DATA.staffs.push(s);
+                    }
+                });
+            }
+
             function fillSelect(selectEl, items, placeholder, valueKey = 'id', labelKey = 'name') {
                 selectEl.innerHTML = '';
                 const first = document.createElement('option');
@@ -2298,6 +2314,17 @@
                         const durStr = item.duration_minutes ? `${item.duration_minutes} min` : '';
                         const extra = [costStr, durStr].filter(Boolean).join(' - ');
                         if (extra) label += ` (${extra})`;
+                        const svcCatId = item.service_category_id || (item.category ? item.category.id : '');
+                        if (svcCatId) {
+                            option.dataset.categoryId = String(svcCatId);
+                        }
+                    }
+                    if (selectEl === staffField) {
+                        const catIds = Array.isArray(item.category_ids) ? item.category_ids : [];
+                        option.dataset.categoryIds = JSON.stringify(catIds);
+                        if (item.category) {
+                            option.dataset.category = item.category;
+                        }
                     }
                     option.textContent = label;
                     selectEl.appendChild(option);
@@ -2434,11 +2461,28 @@
                 const svc = services.find(s => String(s.id) === String(serviceId));
                 if (!svc) return true;
 
+                const svcCatId = svc.service_category_id || (svc.category ? svc.category.id : null);
+                if (!svcCatId) return true;
+
+                let categoryIds = [];
+                if (Array.isArray(staff.category_ids)) {
+                    categoryIds = staff.category_ids.map(Number).filter(n => Number.isFinite(n) && n > 0);
+                }
+
+                if (categoryIds.length > 0) {
+                    return categoryIds.includes(Number(svcCatId));
+                }
+
                 const staffCat = normalizeCategory(staff.category || '');
                 if (!staffCat) return true;
 
                 const svcCat = normalizeCategory(svc.category ? svc.category.name : '');
                 if (!svcCat) return true;
+
+                const staffCatParts = staffCat.split(/[•,\/|]+/).map(p => p.trim()).filter(Boolean);
+                if (staffCatParts.length > 0) {
+                    return staffCatParts.some(part => svcCat === part || svcCat.includes(part) || part.includes(svcCat));
+                }
                 return svcCat === staffCat || svcCat.includes(staffCat) || staffCat.includes(svcCat);
             }
 
@@ -2469,15 +2513,59 @@
                 if (!staffId) return [];
                 const staff = (window.CALENDAR_DATA.staffs || []).find(s => String(s.id) === String(staffId));
                 const services = window.CALENDAR_DATA.services || [];
-                if (!staff) return [];
 
-                const staffCategory = normalizeCategory(staff.category || '');
-                if (!staffCategory) return services;
+                let staffCategoryIds = [];
+                let staffCategoryStr = '';
 
-                return services.filter(s => {
-                    const category = normalizeCategory(s.category ? s.category.name : '');
-                    if (!category) return false;
-                    return category === staffCategory || category.includes(staffCategory) || staffCategory.includes(category);
+                if (staff) {
+                    if (Array.isArray(staff.category_ids)) {
+                        staffCategoryIds = staff.category_ids.map(Number).filter(n => Number.isFinite(n) && n > 0);
+                    }
+                    staffCategoryStr = staff.category || '';
+                }
+
+                // If not found in CALENDAR_DATA.staffs or category_ids empty, check staffField option dataset
+                if (staffCategoryIds.length === 0 && staffField) {
+                    const opt = Array.from(staffField.options).find(o => String(o.value) === String(staffId));
+                    if (opt && opt.dataset.categoryIds) {
+                        try {
+                            const parsed = JSON.parse(opt.dataset.categoryIds);
+                            if (Array.isArray(parsed)) {
+                                staffCategoryIds = parsed.map(Number).filter(n => Number.isFinite(n) && n > 0);
+                            }
+                        } catch (e) {}
+                    }
+                    if (!staffCategoryStr && opt && opt.dataset.category) {
+                        staffCategoryStr = opt.dataset.category;
+                    }
+                }
+
+                // PRIMARY matching: multiple category IDs
+                if (staffCategoryIds.length > 0) {
+                    return services.filter(service => {
+                        const serviceCategoryId = Number(service.service_category_id || (service.category ? service.category.id : 0));
+                        // Uncategorized services are available to all staff
+                        if (!serviceCategoryId) return true;
+                        return staffCategoryIds.includes(serviceCategoryId);
+                    });
+                }
+
+                // Fallback for staff with zero assigned categories in pivot:
+                const staffCategory = normalizeCategory(staffCategoryStr);
+                if (!staffCategory) {
+                    // Zero assigned categories: unrestricted behavior preserved
+                    return services;
+                }
+
+                const staffCategoryParts = staffCategory.split(/[•,\/|]+/).map(p => p.trim()).filter(Boolean);
+
+                return services.filter(service => {
+                    const serviceCategoryName = normalizeCategory(service.category ? service.category.name : '');
+                    if (!serviceCategoryName) return true;
+                    if (staffCategoryParts.length > 0) {
+                        return staffCategoryParts.some(part => serviceCategoryName === part || serviceCategoryName.includes(part) || part.includes(serviceCategoryName));
+                    }
+                    return serviceCategoryName === staffCategory || serviceCategoryName.includes(staffCategory) || staffCategory.includes(serviceCategoryName);
                 });
             }
 
@@ -2494,7 +2582,7 @@
 
                 if (currentServiceId && hasSelectOptionValue(serviceField, currentServiceId)) {
                     serviceField.value = String(currentServiceId);
-                } else if (currentServiceId) {
+                } else if (currentServiceId && preserveValue !== undefined) {
                     const svc = (window.CALENDAR_DATA.services || []).find(s => String(s.id) === String(currentServiceId));
                     if (svc) {
                         ensureSelectOption(serviceField, svc.id, svc.name);
@@ -2656,6 +2744,7 @@
 
                     const data = await res.json();
                     const availableStaff = Array.isArray(data.staff) ? data.staff : [];
+                    mergeStaffIntoCalendarData(availableStaff);
 
                     fillSelect(
                         staffField,
@@ -2918,6 +3007,7 @@
 
                     const data = await res.json();
                     const availableStaff = Array.isArray(data.staff) ? data.staff : [];
+                    mergeStaffIntoCalendarData(availableStaff);
 
                     // If user clicked in Day view on a specific staff column:
                     let isAvailable = availableStaff.length > 0;
@@ -2972,6 +3062,7 @@
                 toggleCancellationReasonField();
 
                 if (Array.isArray(preloadedStaff) && preloadedStaff.length > 0) {
+                    mergeStaffIntoCalendarData(preloadedStaff);
                     fillSelect(
                         staffField,
                         preloadedStaff,
