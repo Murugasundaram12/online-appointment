@@ -80,4 +80,15 @@ class Staff extends Authenticatable
     {
         return $this->hasMany(Payroll::class);
     }
+
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function assignedQuotationItems()
+    {
+        return $this->hasMany(QuotationItem::class);
+    }
 }
+

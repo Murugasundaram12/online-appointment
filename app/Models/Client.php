@@ -110,4 +110,10 @@ class Client extends Model
     {
         return $this->hasMany(InsuranceInformation::class);
     }
+
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class);
+    }
 }
+
