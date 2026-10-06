@@ -7,8 +7,12 @@ use App\Models\Appointment;
 use App\Models\BusinessSetting;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\PaymentRecord;
+use App\Models\Service;
 use App\Models\Staff;
+use App\Services\InvoiceCalculationService;
+use App\Services\InvoiceCreationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +22,16 @@ use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
+    private InvoiceCalculationService $calculator;
+    private InvoiceCreationService $invoiceCreationService;
+
+    public function __construct(
+        ?InvoiceCalculationService $calculator = null,
+        ?InvoiceCreationService $invoiceCreationService = null
+    ) {
+        $this->calculator = $calculator ?? app(InvoiceCalculationService::class);
+        $this->invoiceCreationService = $invoiceCreationService ?? app(InvoiceCreationService::class);
+    }
     public function index(Request $request)
     {
         $staff = Auth::guard('staff')->user();
@@ -60,6 +74,7 @@ class InvoiceController extends Controller
     {
         $clients = Client::orderBy('name')->get(['id', 'name', 'email', 'phone']);
         $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']);
+        $services = Service::where('is_active', true)->orderBy('name')->get();
         $appointments = Appointment::with(['client:id,name', 'staff:id,name', 'service:id,name,price'])
             ->where('status', '!=', 'cancelled')
             ->whereDoesntHave('invoice')
@@ -70,6 +85,7 @@ class InvoiceController extends Controller
         return view('invoices.create', [
             'clients' => $clients,
             'staff' => $staff,
+            'services' => $services,
             'appointments' => $appointments,
             'nextInvoiceNumber' => $this->nextInvoiceNumber(),
             'currency' => BusinessSetting::where('key', 'currency')->value('value') ?: '$',
@@ -80,63 +96,47 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'appointment_id' => ['required', 'exists:appointments,id'],
-            'client_id' => 'required|exists:clients,id',
-            'staff_id' => 'required|exists:staff,id',
+            'client_id'      => 'required|exists:clients,id',
+            'staff_id'       => 'required|exists:staff,id',
             'invoice_number' => ['nullable', 'string', 'max:255', Rule::unique('invoices', 'invoice_number')],
-            'total_amount' => 'required|numeric|min:0.01',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|in:outstanding,paid,partially_paid,void',
-            'issued_date' => 'required|date',
-            'due_date' => 'nullable|date|after_or_equal:issued_date',
+            'total_amount'   => 'nullable|numeric|min:0.01',
+            'paid_amount'    => 'nullable|numeric|min:0',
+            'status'         => 'nullable|in:outstanding,paid,partially_paid,void',
+            'issued_date'    => 'required|date',
+            'due_date'       => 'nullable|date|after_or_equal:issued_date',
+            'items'          => 'nullable|array',
+            'items.*.service_id'      => 'nullable|exists:services,id',
+            'items.*.staff_id'        => 'nullable|exists:staff,id',
+            'items.*.description'     => 'nullable|string|max:255',
+            'items.*.quantity'        => 'nullable|numeric|gt:0',
+            'items.*.unit_price'      => 'nullable|numeric|min:0',
+            'items.*.discount_amount' => 'nullable|numeric|min:0',
+            'items.*.tax_rate'        => 'nullable|numeric|between:0,100',
         ], [
             'appointment_id.required' => 'The appointment field is required.',
-            'appointment_id.exists' => 'The selected appointment is invalid.',
-            'appointment_id.unique' => 'An invoice already exists for the selected appointment.',
-            'invoice_number.unique' => 'This invoice number is already used by another invoice.',
+            'appointment_id.exists'   => 'The selected appointment is invalid.',
+            'appointment_id.unique'   => 'An invoice already exists for the selected appointment.',
+            'invoice_number.unique'   => 'This invoice number is already used by another invoice.',
         ]);
 
-        $invoice = DB::transaction(function () use ($validated) {
-            if (!empty($validated['appointment_id'])) {
-                $appointment = Appointment::with(['client', 'staff', 'service'])->findOrFail($validated['appointment_id']);
-
-                if ($appointment->status === 'cancelled') {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'appointment_id' => 'Cannot create an invoice for a cancelled appointment.',
-                    ]);
-                }
-
-                if ($appointment->invoice()->exists()) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'appointment_id' => 'An invoice already exists for the selected appointment.',
-                    ]);
-                }
-            }
-
-            $validated['invoice_number'] = $validated['invoice_number'] ?? $this->nextInvoiceNumber();
-            $initialPaid = min((float) ($validated['paid_amount'] ?? 0), (float) $validated['total_amount']);
-            $totalAmount = (float) $validated['total_amount'];
-
-            $validated['paid_amount'] = 0;
-            $validated['status'] = ($validated['status'] ?? null) === 'void' ? 'void' : 'outstanding';
-
-            $invoice = Invoice::create($validated);
-
-            if ($initialPaid > 0 && $invoice->status !== 'void') {
-                PaymentRecord::create([
-                    'invoice_id' => $invoice->id,
-                    'amount' => $initialPaid,
-                    'payment_method' => 'cash',
-                    'payment_date' => $validated['issued_date'] ?? now()->toDateString(),
-                    'transaction_id' => 'INIT-' . $invoice->id,
-                ]);
-
-                $invoice->paid_amount = $initialPaid;
-                $invoice->status = $this->statusForAmounts($initialPaid, $totalAmount);
-                $invoice->save();
-            }
-
-            return $invoice;
-        });
+        try {
+            $invoice = $this->invoiceCreationService->createInvoice([
+                'appointment_id' => $validated['appointment_id'],
+                'client_id'      => (int) $validated['client_id'],
+                'staff_id'       => (int) $validated['staff_id'],
+                'invoice_number' => $validated['invoice_number'] ?? null,
+                'issued_date'    => $validated['issued_date'],
+                'due_date'       => $validated['due_date'] ?? null,
+                'status'         => $validated['status'] ?? null,
+                'items'          => $request->input('items', []),
+                'paid_amount'    => $validated['paid_amount'] ?? 0,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $field = str_contains($e->getMessage(), 'appointment') ? 'appointment_id' : 'items';
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $field => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->route('invoices.show', $invoice->id)->with('success', 'Invoice created successfully.');
     }
@@ -259,16 +259,12 @@ class InvoiceController extends Controller
 
     private function nextInvoiceNumber(): string
     {
-        $prefix = BusinessSetting::where('key', 'invoice_prefix')->value('value') ?: 'INV';
-        return $prefix . '-' . now()->format('Ymd') . '-' . str_pad((string) ((Invoice::max('id') ?? 0) + 1), 4, '0', STR_PAD_LEFT);
+        return $this->invoiceCreationService->generateInvoiceNumber();
     }
 
     private function statusForAmounts(float $paid, float $total): string
     {
-        if ($paid >= $total) {
-            return 'paid';
-        }
-        return $paid > 0 ? 'partially_paid' : 'outstanding';
+        return $this->invoiceCreationService->statusForAmounts($paid, $total);
     }
 
     private function invoiceQuery()
@@ -278,6 +274,8 @@ class InvoiceController extends Controller
             'staff.location',
             'appointment.service',
             'appointment.location',
+            'items.service',
+            'items.staff',
             'payments' => fn ($query) => $query->with('insuranceCompany')->orderBy('payment_date')->orderBy('created_at'),
         ]);
     }

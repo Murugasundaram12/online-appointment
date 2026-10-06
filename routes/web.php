@@ -22,6 +22,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\InsuranceCompanyController;
 use App\Http\Controllers\InsuranceInformationController;
+use App\Http\Controllers\QuotationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -127,6 +128,12 @@ Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name(
 Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
 Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 Route::get('invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+
+Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
+Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+Route::get('quotations/{quotation}/download', [QuotationController::class, 'download'])->name('quotations.download');
+Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
 
 Route::get('payment-records', [PaymentRecordController::class, 'index'])->name('payment-records.index');
 Route::post('payment-records', [PaymentRecordController::class, 'store'])->name('payment-records.store');

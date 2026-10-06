@@ -1,43 +1,50 @@
 @extends('layouts.app')
 
-@section('title', 'Create Invoice')
+@section('title', 'Create Quotation')
 
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
             <div>
-                <h2 class="fs-4 m-0 fw-bold">Create Invoice</h2>
-                <div class="text-muted small">Generate a clinic billing invoice for a patient or appointment.</div>
+                <h2 class="fs-4 m-0 fw-bold">Create Quotation</h2>
+                <div class="text-muted small">Generate a pricing estimate or quotation for a client or prospective appointment.</div>
             </div>
-            <a href="{{ route('invoices.index') }}" class="btn btn-white border btn-sm text-muted">Back to invoices</a>
+            <a href="{{ route('calendar.index') }}" class="btn btn-white border btn-sm text-muted">Back to Calendar</a>
         </div>
     </nav>
 
     <div class="container-fluid px-4 pt-4">
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class='bx bx-check-circle me-1'></i> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <div class="row g-4">
             <div class="col-xl-8">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center gap-3 mb-4">
-                            <div class="kpi-icon"><i class='bx bx-receipt'></i></div>
+                            <div class="kpi-icon"><i class='bx bx-file-blank'></i></div>
                             <div>
-                                <h3 class="fs-5 fw-bold mb-1">Invoice Details</h3>
-                                <p class="text-muted mb-0 small">Select an appointment to auto-fill patient, staff, service, and amount where available.</p>
+                                <h3 class="fs-5 fw-bold mb-1">Quotation Details</h3>
+                                <p class="text-muted mb-0 small">Select a client and add line items. Linking to an appointment is entirely optional.</p>
                             </div>
                         </div>
 
-                        <form action="{{ route('invoices.store') }}" method="POST" id="invoice-create-form" novalidate>
+                        <form action="{{ route('quotations.store') }}" method="POST" id="quotation-create-form" novalidate>
                             @csrf
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label for="appointment_id" class="form-label">Appointment <span class="required-mark">*</span></label>
+                                    <label for="appointment_id" class="form-label">Appointment <span class="text-muted fw-normal">(Optional)</span></label>
                                     @error('appointment_id')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
-                                    <select id="appointment_id" name="appointment_id" class="form-select @error('appointment_id') is-invalid @enderror" required>
-                                        <option value="">Select Appointment</option>
+                                    <select id="appointment_id" name="appointment_id" class="form-select @error('appointment_id') is-invalid @enderror">
+                                        <option value="">None (Standalone Quotation)</option>
                                         @foreach($appointments as $appointment)
                                             <option value="{{ $appointment->id }}"
                                                 data-client-id="{{ $appointment->client_id }}"
@@ -52,18 +59,18 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <div class="form-text">Appointments that already have invoices are hidden.</div>
+                                    <div class="form-text">Optional: Link to an appointment to auto-fill client, practitioner, and service item.</div>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="client_id" class="form-label">Patient / Client <span class="required-mark">*</span></label>
+                                    <label for="client_id" class="form-label">Client / Patient <span class="required-mark">*</span></label>
                                     @error('client_id')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                              {{ $message }}
                                         </div>
                                     @enderror
                                     <select id="client_id" name="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
-                                        <option value="">Select patient</option>
+                                        <option value="">Select client</option>
                                         @foreach($clients as $client)
                                             <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
                                                 {{ $client->name }}{{ $client->phone ? ' - ' . $client->phone : '' }}
@@ -73,14 +80,14 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="staff_id" class="form-label">Practitioner Name <span class="required-mark">*</span></label>
+                                    <label for="staff_id" class="form-label">Practitioner <span class="required-mark">*</span></label>
                                     @error('staff_id')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
                                     <select id="staff_id" name="staff_id" class="form-select @error('staff_id') is-invalid @enderror" required>
-                                        <option value="">Select staff</option>
+                                        <option value="">Select practitioner</option>
                                         @foreach($staff as $member)
                                             <option value="{{ $member->id }}" {{ old('staff_id') == $member->id ? 'selected' : '' }}>
                                                 {{ $member->name }}
@@ -89,23 +96,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-4">
-                                    <label for="status" class="form-label">Status</label>
-                                    @error('status')
-                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                    <select id="status" name="status" class="form-select @error('status') is-invalid @enderror">
-                                        @foreach(['outstanding', 'partially_paid', 'paid', 'void'] as $status)
-                                            <option value="{{ $status }}" {{ old('status', 'outstanding') === $status ? 'selected' : '' }}>
-                                                {{ ucfirst(str_replace('_', ' ', $status)) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label for="issued_date" class="form-label">Issued Date <span class="required-mark">*</span></label>
                                     @error('issued_date')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
@@ -116,25 +107,22 @@
                                         class="form-control @error('issued_date') is-invalid @enderror" required>
                                 </div>
 
-                                <div class="col-md-4">
-                                    <label for="due_date" class="form-label">Due Date</label>
-                                    @error('due_date')
+                                <div class="col-md-6">
+                                    <label for="valid_until" class="form-label">Valid Until <span class="required-mark">*</span></label>
+                                    @error('valid_until')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
-                                    <input type="date" id="due_date" name="due_date" value="{{ old('due_date') }}"
-                                        class="form-control @error('due_date') is-invalid @enderror">
+                                    <input type="date" id="valid_until" name="valid_until" value="{{ old('valid_until', now()->addDays(30)->toDateString()) }}"
+                                        class="form-control @error('valid_until') is-invalid @enderror" required>
                                 </div>
-
-                                {{-- Hidden total_amount for backward compatibility --}}
-                                <input type="hidden" id="total_amount" name="total_amount" value="{{ old('total_amount', '0.00') }}">
 
                                 {{-- Multi-Item Section --}}
                                 <div class="col-12 mt-4 pt-3 border-top">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h4 class="fs-6 fw-bold mb-0 text-dark">
-                                            <i class='bx bx-list-ul me-1 text-primary'></i> Invoice Items
+                                            <i class='bx bx-list-ul me-1 text-primary'></i> Quotation Items
                                         </h4>
                                         <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm" id="btn-add-item">
                                             <i class='bx bx-plus'></i> Add Item
@@ -142,11 +130,6 @@
                                     </div>
 
                                     @error('items')
-                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-2 fw-medium" role="alert">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                    @error('total_amount')
                                         <div class="invalid-feedback d-block app-field-error text-danger small mb-2 fw-medium" role="alert">
                                             {{ $message }}
                                         </div>
@@ -166,10 +149,10 @@
                                                     <th scope="col" style="width: 19%;" class="py-2 border-0">Description</th>
                                                     <th scope="col" style="width: 15%;" class="py-2 border-0">Practitioner</th>
                                                     <th scope="col" style="width: 8%;" class="py-2 border-0 text-center">Qty</th>
-                                                    <th scope="col" style="width: 11%;" class="py-2 border-0 text-end">Price</th>
+                                                    <th scope="col" style="width: 11%;" class="py-2 border-0 text-end">Rate</th>
                                                     <th scope="col" style="width: 9%;" class="py-2 border-0 text-end">Disc ($)</th>
                                                     <th scope="col" style="width: 7%;" class="py-2 border-0 text-end">Tax (%)</th>
-                                                    <th scope="col" style="width: 10%;" class="py-2 border-0 text-end">Total</th>
+                                                    <th scope="col" style="width: 10%;" class="py-2 border-0 text-end">Amount</th>
                                                     <th scope="col" style="width: 4%;" class="py-2 border-0 text-center"><i class='bx bx-cog'></i></th>
                                                 </tr>
                                             </thead>
@@ -186,6 +169,7 @@
                                                                 'unit_price' => '0.00',
                                                                 'discount_amount' => '0.00',
                                                                 'tax_rate' => '0.00',
+                                                                'sort_order' => '1',
                                                             ]
                                                         ];
                                                     }
@@ -216,7 +200,7 @@
                                                         </td>
                                                         <td>
                                                             <select name="items[{{ $index }}][staff_id]" class="form-select form-select-sm item-staff">
-                                                                <option value="">Same as Provider</option>
+                                                                <option value="">Same as Practitioner</option>
                                                                 @foreach($staff as $member)
                                                                     <option value="{{ $member->id }}"
                                                                         {{ (string) ($item['staff_id'] ?? '') === (string) $member->id ? 'selected' : '' }}>
@@ -253,6 +237,7 @@
                                                             {{ $currency }}0.00
                                                         </td>
                                                         <td class="text-center align-middle">
+                                                            <input type="hidden" name="items[{{ $index }}][sort_order]" class="item-sort-order" value="{{ $index + 1 }}">
                                                             <button type="button" class="btn btn-link text-danger p-0 btn-remove-row" title="Remove Item" style="visibility: {{ count($initialItems) > 1 ? 'visible' : 'hidden' }};">
                                                                 <i class='bx bx-trash fs-5'></i>
                                                             </button>
@@ -263,7 +248,7 @@
                                         </table>
                                     </div>
 
-                                    <!-- Summary Card -->
+                                    <!-- Summary Preview Card -->
                                     <div class="row justify-content-end mt-3">
                                         <div class="col-md-6 col-lg-5">
                                             <div class="bg-light p-3 rounded border">
@@ -287,11 +272,34 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                {{-- Notes and Terms --}}
+                                <div class="col-md-6 mt-3">
+                                    <label for="notes" class="form-label">Notes <span class="text-muted fw-normal">(Optional)</span></label>
+                                    @error('notes')
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <textarea id="notes" name="notes" rows="3" class="form-control @error('notes') is-invalid @enderror"
+                                        placeholder="Optional remarks or instructions for the client...">{{ old('notes') }}</textarea>
+                                </div>
+
+                                <div class="col-md-6 mt-3">
+                                    <label for="terms" class="form-label">Terms & Conditions <span class="text-muted fw-normal">(Optional)</span></label>
+                                    @error('terms')
+                                        <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    <textarea id="terms" name="terms" rows="3" class="form-control @error('terms') is-invalid @enderror"
+                                        placeholder="Validity, cancellation, or payment terms...">{{ old('terms') }}</textarea>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 mt-4">
-                                <a href="{{ route('invoices.index') }}" class="btn btn-light">Cancel</a>
-                                <button type="submit" class="btn btn-primary px-4" data-loading-text="Creating...">Create Invoice</button>
+                                <a href="{{ route('calendar.index') }}" class="btn btn-light">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-4" data-loading-text="Creating...">Create Quotation</button>
                             </div>
                         </form>
                     </div>
@@ -301,19 +309,30 @@
             <div class="col-xl-4">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
-                        <div class="text-muted small text-uppercase fw-bold mb-2">Next invoice number</div>
-                        <div class="fs-4 fw-bold text-primary mb-3">{{ $nextInvoiceNumber }}</div>
+                        <div class="text-muted small text-uppercase fw-bold mb-2">Next Quotation Number</div>
+                        <div class="fs-4 fw-bold text-primary mb-3">{{ $nextQuotationNumber }}</div>
                         <div class="alert app-alert app-alert-info mb-0">
                             <i class='bx bx-info-circle' aria-hidden="true"></i>
-                            <div>Invoice numbers are generated automatically using the configured invoice prefix.</div>
+                            <div>Quotation numbers are generated automatically using the sequential quote prefix.</div>
                         </div>
                     </div>
                 </div>
+
                 <div class="card shadow-sm border-0 mt-3">
                     <div class="card-body p-4">
-                        <div class="text-muted small text-uppercase fw-bold mb-2">Selected service</div>
-                        <div id="selected-service-name" class="fw-bold">No appointment selected</div>
-                        <div class="text-muted small mt-2">Select an appointment to generate an invoice.</div>
+                        <div class="text-muted small text-uppercase fw-bold mb-2">Quotation Status</div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-secondary text-white px-3 py-2 fs-6">Draft</span>
+                        </div>
+                        <div class="text-muted small">New quotations are saved with Draft status until sent or approved.</div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mt-3">
+                    <div class="card-body p-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-2">Linked Appointment</div>
+                        <div id="selected-appointment-info" class="fw-bold text-dark">No appointment selected (Standalone quote)</div>
+                        <div class="text-muted small mt-2">Quotations can be standalone or linked to a scheduled appointment.</div>
                     </div>
                 </div>
             </div>
@@ -343,7 +362,7 @@
             </td>
             <td>
                 <select name="items[__INDEX__][staff_id]" class="form-select form-select-sm item-staff">
-                    <option value="">Same as Provider</option>
+                    <option value="">Same as Practitioner</option>
                     @foreach($staff as $member)
                         <option value="{{ $member->id }}">{{ $member->name }}</option>
                     @endforeach
@@ -373,6 +392,7 @@
                 {{ $currency }}0.00
             </td>
             <td class="text-center align-middle">
+                <input type="hidden" name="items[__INDEX__][sort_order]" class="item-sort-order" value="__NUM__">
                 <button type="button" class="btn btn-link text-danger p-0 btn-remove-row" title="Remove Item">
                     <i class='bx bx-trash fs-5'></i>
                 </button>
@@ -388,8 +408,7 @@
             const appointment = document.getElementById('appointment_id');
             const client = document.getElementById('client_id');
             const staff = document.getElementById('staff_id');
-            const totalAmountHidden = document.getElementById('total_amount');
-            const serviceName = document.getElementById('selected-service-name');
+            const appointmentInfo = document.getElementById('selected-appointment-info');
             const itemsTableBody = document.getElementById('items-table-body');
             const btnAddItem = document.getElementById('btn-add-item');
             const template = document.getElementById('item-row-template');
@@ -412,6 +431,11 @@
                             input.setAttribute('name', name.replace(/items\[\d+\]/, `items[${i}]`));
                         }
                     });
+
+                    const sortOrderInput = row.querySelector('.item-sort-order');
+                    if (sortOrderInput) {
+                        sortOrderInput.value = i + 1;
+                    }
 
                     const removeBtn = row.querySelector('.btn-remove-row');
                     if (removeBtn) {
@@ -464,17 +488,17 @@
                 if (summaryDiscount) summaryDiscount.textContent = '-' + currencySymbol + discountSum.toFixed(2);
                 if (summaryTax) summaryTax.textContent = currencySymbol + taxSum.toFixed(2);
                 if (summaryTotal) summaryTotal.textContent = currencySymbol + grandTotalSum.toFixed(2);
-
-                if (totalAmountHidden) {
-                    totalAmountHidden.value = grandTotalSum.toFixed(2);
-                }
             }
 
             function applyAppointment() {
                 const selected = appointment?.selectedOptions?.[0];
                 if (!selected || !selected.value) {
-                    if (serviceName) serviceName.textContent = 'No appointment selected';
+                    if (appointmentInfo) appointmentInfo.textContent = 'No appointment selected (Standalone quote)';
                     return;
+                }
+
+                if (appointmentInfo) {
+                    appointmentInfo.textContent = selected.text.trim();
                 }
 
                 if (selected.dataset.clientId && client) {
@@ -483,11 +507,8 @@
                 if (selected.dataset.staffId && staff) {
                     staff.value = selected.dataset.staffId;
                 }
-                if (serviceName) {
-                    serviceName.textContent = selected.dataset.serviceName || 'Service';
-                }
 
-                // Populate or update the first item row
+                // Populate or update the first item row if available
                 const firstRow = itemsTableBody.querySelector('.item-row');
                 if (firstRow) {
                     const svcSelect = firstRow.querySelector('.item-service');

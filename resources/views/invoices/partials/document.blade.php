@@ -23,6 +23,7 @@
     $end = $appointment?->end_time;
     $duration = $start && $end ? $start->diffInMinutes($end) : null;
     $money = fn ($amount) => $currency . number_format((float) $amount, 2);
+    $formatQty = fn ($qty) => ((float) $qty == (int) $qty) ? (string) (int) $qty : rtrim(rtrim(number_format((float) $qty, 2, '.', ''), '0'), '.');
 @endphp
 
 <article class="invoice-document" aria-labelledby="invoice-title">
@@ -75,23 +76,40 @@
         <div class="invoice-panel-cell">
             <div class="invoice-panel">
                 <h2>Appointment Details</h2>
-                <div class="detail-grid">
-                    <div class="detail-grid-row">
-                        <div class="detail-grid-label">Practitioner Name</div>
-                        <div class="detail-grid-value">
-                            {{ $staff->name ?? 'Not available' }}
-                            @if(!empty($staff?->registration_number))
-                                <br><span class="muted" style="font-size: 0.82rem;">Reg. No: {{ $staff->registration_number }}</span>
-                            @endif
+                @if($appointment)
+                    <div class="detail-grid">
+                        <div class="detail-grid-row">
+                            <div class="detail-grid-label">Practitioner Name</div>
+                            <div class="detail-grid-value">
+                                {{ $staff->name ?? 'Not available' }}
+                                @if(!empty($staff?->registration_number))
+                                    <br><span class="muted" style="font-size: 0.82rem;">Reg. No: {{ $staff->registration_number }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="detail-grid-row"><div class="detail-grid-label">Service</div><div class="detail-grid-value">{{ $service->name ?? 'Service' }}</div></div>
+                        <div class="detail-grid-row"><div class="detail-grid-label">Clinic Location</div><div class="detail-grid-value">{{ $location->address ?? 'Not available' }}</div></div>
+                        <div class="detail-grid-row"><div class="detail-grid-label">Appointment Date</div><div class="detail-grid-value">{{ $start ? $start->format($dateFormat) : 'Not available' }}</div></div>
+                        <div class="detail-grid-row"><div class="detail-grid-label">Appointment Time</div><div class="detail-grid-value">{{ $start && $end ? $start->format($timeFormat) . ' - ' . $end->format($timeFormat) : 'Not available' }}</div></div>
+                        @if($duration !== null)<div class="detail-grid-row"><div class="detail-grid-label">Duration</div><div class="detail-grid-value">{{ $duration }} minutes</div></div>@endif
+                        @if($appointment?->status)<div class="detail-grid-row"><div class="detail-grid-label">Status</div><div class="detail-grid-value">{{ ucfirst($appointment->status) }}</div></div>@endif
+                    </div>
+                @else
+                    <div class="detail-grid">
+                        <div class="detail-grid-row">
+                            <div class="detail-grid-label">Practitioner Name</div>
+                            <div class="detail-grid-value">{{ $staff->name ?? 'Not available' }}</div>
+                        </div>
+                        <div class="detail-grid-row">
+                            <div class="detail-grid-label">Clinic Location</div>
+                            <div class="detail-grid-value">{{ $location->address ?? ($location->name ?? 'Not available') }}</div>
+                        </div>
+                        <div class="detail-grid-row">
+                            <div class="detail-grid-label">Type</div>
+                            <div class="detail-grid-value">Direct Clinic Billing</div>
                         </div>
                     </div>
-                    <div class="detail-grid-row"><div class="detail-grid-label">Service</div><div class="detail-grid-value">{{ $service->name ?? 'Service' }}</div></div>
-                    <div class="detail-grid-row"><div class="detail-grid-label">Clinic Location</div><div class="detail-grid-value">{{ $location->address ?? 'Not available' }}</div></div>
-                    <div class="detail-grid-row"><div class="detail-grid-label">Appointment Date</div><div class="detail-grid-value">{{ $start ? $start->format($dateFormat) : 'Not available' }}</div></div>
-                    <div class="detail-grid-row"><div class="detail-grid-label">Appointment Time</div><div class="detail-grid-value">{{ $start && $end ? $start->format($timeFormat) . ' - ' . $end->format($timeFormat) : 'Not available' }}</div></div>
-                    @if($duration !== null)<div class="detail-grid-row"><div class="detail-grid-label">Duration</div><div class="detail-grid-value">{{ $duration }} minutes</div></div>@endif
-                    @if($appointment?->status)<div class="detail-grid-row"><div class="detail-grid-label">Status</div><div class="detail-grid-value">{{ ucfirst($appointment->status) }}</div></div>@endif
-                </div>
+                @endif
             </div>
         </div>
     </section>
@@ -101,29 +119,64 @@
         <table class="invoice-table">
             <thead>
                 <tr>
-                    <th style="width: 38%;">Description</th>
-                    <th style="width: 28%;">Practitioner Name</th>
-                    <th class="text-center" style="width: 10%;">Qty</th>
-                    <th class="text-right" style="width: 12%;">Rate</th>
-                    <th class="text-right" style="width: 12%;">Amount</th>
+                    <th class="text-center" style="width: 4%;">#</th>
+                    <th style="width: 30%;">Description</th>
+                    <th style="width: 18%;">Practitioner</th>
+                    <th class="text-center" style="width: 8%;">Qty</th>
+                    <th class="text-right" style="width: 11%;">Rate</th>
+                    <th class="text-right" style="width: 11%;">Discount</th>
+                    <th class="text-right" style="width: 8%;">Tax</th>
+                    <th class="text-right" style="width: 10%;">Amount</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>
-                        <strong>{{ $service->name ?? 'Clinic service' }}</strong>
-                        @if($start)<div class="muted">{{ $start->format($dateFormat) }}</div>@endif
-                    </td>
-                    <td>
-                        {{ $staff->name ?? 'Not available' }}
-                        @if(!empty($staff?->registration_number))
-                            <div class="muted" style="font-size: 0.8rem;">Reg. No: {{ $staff->registration_number }}</div>
-                        @endif
-                    </td>
-                    <td class="text-center">1</td>
-                    <td class="text-right">{{ $money($invoice->total_amount) }}</td>
-                    <td class="text-right strong">{{ $money($invoice->total_amount) }}</td>
-                </tr>
+                @forelse($invoice->items ?? [] as $item)
+                    @php
+                        $itemDesc = $item->description ?: ($item->service?->name ?? 'Invoice item');
+                        $itemStaff = $item->staff ?: $staff;
+                    @endphp
+                    <tr>
+                        <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                        <td>
+                            <strong>{{ $itemDesc }}</strong>
+                            @if($item->service && $item->service->name !== $itemDesc)
+                                <div class="muted">{{ $item->service->name }}</div>
+                            @elseif($loop->first && $start)
+                                <div class="muted">{{ $start->format($dateFormat) }}</div>
+                            @endif
+                        </td>
+                        <td>
+                            {{ $itemStaff?->name ?? 'Not available' }}
+                            @if(!empty($itemStaff?->registration_number))
+                                <div class="muted" style="font-size: 0.8rem;">Reg. No: {{ $itemStaff->registration_number }}</div>
+                            @endif
+                        </td>
+                        <td class="text-center">{{ $formatQty($item->quantity) }}</td>
+                        <td class="text-right">{{ $money($item->unit_price) }}</td>
+                        <td class="text-right">
+                            @if((float) $item->discount_amount > 0)
+                                <span class="text-danger">-{{ $money($item->discount_amount) }}</span>
+                            @else
+                                <span class="muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if((float) $item->tax_amount > 0)
+                                {{ $money($item->tax_amount) }}
+                                @if((float) $item->tax_rate > 0)
+                                    <div class="muted" style="font-size: 0.75rem;">({{ (float) $item->tax_rate }}%)</div>
+                                @endif
+                            @else
+                                <span class="muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-right strong">{{ $money($item->line_total) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-3">No invoice items recorded.</td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </section>
@@ -132,7 +185,7 @@
         <div class="payment-history-cell">
             <div class="invoice-section" style="margin-top: 0;">
                 <h2>Payment History</h2>
-                @if($invoice->payments->isNotEmpty())
+                @if(optional($invoice->payments)->isNotEmpty())
                     <table class="invoice-table compact">
                         <thead>
                             <tr>
@@ -165,12 +218,37 @@
 
         <div class="totals-card-cell">
             <aside class="totals-card" aria-label="Invoice financial summary">
-                <div class="summary-row"><span>Subtotal</span><strong>{{ $money($invoice->total_amount) }}</strong></div>
-                <div class="summary-row"><span>Tax</span><strong>{{ $money(0) }}</strong></div>
-                <div class="summary-row"><span>Discount</span><strong>{{ $money(0) }}</strong></div>
-                <div class="summary-row"><span>Total</span><strong>{{ $money($invoice->total_amount) }}</strong></div>
-                <div class="summary-row"><span>Amount Paid</span><strong>{{ $money($invoice->paid_amount) }}</strong></div>
-                <div class="summary-row balance"><span>Balance Due</span><strong>{{ $money($balance) }}</strong></div>
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <strong>{{ $money($invoice->subtotal ?? $invoice->total_amount) }}</strong>
+                </div>
+                @if((float) ($invoice->discount_amount ?? 0) > 0)
+                    <div class="summary-row">
+                        <span>Discount</span>
+                        <strong class="text-danger">-{{ $money($invoice->discount_amount) }}</strong>
+                    </div>
+                @else
+                    <div class="summary-row">
+                        <span>Discount</span>
+                        <strong>{{ $money(0) }}</strong>
+                    </div>
+                @endif
+                <div class="summary-row">
+                    <span>Tax</span>
+                    <strong>{{ $money($invoice->tax_amount ?? 0) }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Total</span>
+                    <strong>{{ $money($invoice->total_amount) }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Amount Paid</span>
+                    <strong>{{ $money($invoice->paid_amount) }}</strong>
+                </div>
+                <div class="summary-row balance">
+                    <span>Balance Due</span>
+                    <strong>{{ $money($balance) }}</strong>
+                </div>
                 <div class="payment-status-box">
                     <span>Payment Status</span>
                     <strong>{{ $statusLabel }}</strong>

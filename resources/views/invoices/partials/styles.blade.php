@@ -76,11 +76,16 @@
 
     .invoice-section { margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }
     .invoice-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .invoice-table thead { display: table-header-group; }
+    .invoice-table tr { page-break-inside: avoid; break-inside: avoid; }
     .invoice-table th { background: var(--invoice-soft); color: var(--invoice-muted); font-size: 10px; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--invoice-border); text-align: left; font-weight: 700; }
     .invoice-table td { padding: 6px 8px; border-bottom: 1px solid var(--invoice-border); font-size: 11px; vertical-align: top; }
     .invoice-table.compact td { padding: 5px 8px; }
     .text-right { text-align: right !important; }
     .text-center { text-align: center !important; }
+    .text-danger { color: var(--invoice-danger) !important; }
+    .text-muted { color: var(--invoice-muted) !important; }
+    .py-3 { padding-top: 10px !important; padding-bottom: 10px !important; }
     .strong { color: var(--invoice-dark); font-weight: 800; }
 
     .invoice-bottom-table { display: table; width: 100%; table-layout: fixed; margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }
