@@ -70,7 +70,7 @@ class InvoiceController extends Controller
         return view('invoices.index', compact('invoices'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $clients = Client::orderBy('name')->get(['id', 'name', 'email', 'phone']);
         $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']);
@@ -87,6 +87,7 @@ class InvoiceController extends Controller
             'staff' => $staff,
             'services' => $services,
             'appointments' => $appointments,
+            'selectedAppointmentId' => $request->integer('appointment_id') ?: null,
             'nextInvoiceNumber' => $this->nextInvoiceNumber(),
             'currency' => BusinessSetting::where('key', 'currency')->value('value') ?: '$',
         ]);

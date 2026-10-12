@@ -2,6 +2,60 @@
 
 @section('title', 'Create Quotation')
 
+@push('styles')
+<style>
+    #items-table th,
+    #items-table td {
+        padding: 0.45rem 0.35rem;
+        vertical-align: middle;
+    }
+    #items-table .form-control-sm {
+        font-size: 0.84rem;
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
+        border-color: #d1d5db;
+        border-radius: 0.375rem;
+    }
+    #items-table .form-select-sm {
+        font-size: 0.84rem;
+        padding-left: 0.5rem;
+        padding-right: 1.85rem;
+        border-color: #d1d5db;
+        border-radius: 0.375rem;
+        text-overflow: ellipsis;
+    }
+    #items-table .form-control-sm:focus,
+    #items-table .form-select-sm:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.15rem rgba(99, 102, 241, 0.15);
+    }
+    /* Hide spin buttons in clean financial tables to avoid clipping numbers */
+    #items-table input[type=number]::-webkit-inner-spin-button,
+    #items-table input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    #items-table input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    #items-table .item-qty {
+        text-align: center;
+        min-width: 60px;
+    }
+    #items-table .item-price,
+    #items-table .item-discount,
+    #items-table .item-tax {
+        text-align: right;
+    }
+    #items-table .item-line-total {
+        white-space: nowrap;
+        font-weight: 600;
+        color: #1f2937;
+    }
+</style>
+@endpush
+
 @section('content')
     <nav class="navbar navbar-expand-lg navbar-light bg-light py-3 px-4 border-bottom">
         <div class="d-flex align-items-center w-100 justify-content-between">
@@ -141,19 +195,19 @@
                                     @endif
 
                                     <div class="table-responsive border rounded bg-white">
-                                        <table class="table table-hover align-middle mb-0" id="items-table" style="min-width: 760px;">
+                                        <table class="table table-hover align-middle mb-0" id="items-table" style="min-width: 950px; width: 100%;">
                                             <thead class="table-light text-muted small">
                                                 <tr>
-                                                    <th scope="col" style="width: 3%;" class="text-center py-2 border-0">#</th>
-                                                    <th scope="col" style="width: 22%;" class="py-2 border-0">Service</th>
-                                                    <th scope="col" style="width: 19%;" class="py-2 border-0">Description</th>
-                                                    <th scope="col" style="width: 15%;" class="py-2 border-0">Practitioner</th>
-                                                    <th scope="col" style="width: 8%;" class="py-2 border-0 text-center">Qty</th>
-                                                    <th scope="col" style="width: 11%;" class="py-2 border-0 text-end">Rate</th>
-                                                    <th scope="col" style="width: 9%;" class="py-2 border-0 text-end">Disc ($)</th>
-                                                    <th scope="col" style="width: 7%;" class="py-2 border-0 text-end">Tax (%)</th>
-                                                    <th scope="col" style="width: 10%;" class="py-2 border-0 text-end">Amount</th>
-                                                    <th scope="col" style="width: 4%;" class="py-2 border-0 text-center"><i class='bx bx-cog'></i></th>
+                                                    <th scope="col" style="width: 32px;" class="text-center py-2 border-0">#</th>
+                                                    <th scope="col" style="min-width: 200px;" class="py-2 border-0">Service</th>
+                                                    <th scope="col" style="min-width: 160px;" class="py-2 border-0">Description</th>
+                                                    <th scope="col" style="min-width: 150px;" class="py-2 border-0">Practitioner</th>
+                                                    <th scope="col" style="width: 70px;" class="py-2 border-0 text-center">Qty</th>
+                                                    <th scope="col" style="width: 95px;" class="py-2 border-0 text-end">Rate</th>
+                                                    <th scope="col" style="width: 85px;" class="py-2 border-0 text-end">Disc ($)</th>
+                                                    <th scope="col" style="width: 80px;" class="py-2 border-0 text-end">Tax (%)</th>
+                                                    <th scope="col" style="width: 90px;" class="py-2 border-0 text-end">Amount</th>
+                                                    <th scope="col" style="width: 38px;" class="py-2 border-0 text-center"><i class='bx bx-cog'></i></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="items-table-body">
