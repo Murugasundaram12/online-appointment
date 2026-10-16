@@ -56,7 +56,7 @@
     <div class="col-md-3">
         <label for="{{ $fieldId('client_since') }}" class="form-label">Client Since</label>
         @error('client_since')<div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">{{ $message }}</div>@enderror
-        <input type="date" class="form-control @error('client_since') is-invalid @enderror" id="{{ $fieldId('client_since') }}" name="client_since" value="{{ $dateValue('client_since', now()->toDateString()) }}" placeholder="Select client since date">
+        <input type="date" class="form-control @error('client_since') is-invalid @enderror" id="{{ $fieldId('client_since') }}" name="client_since" value="{{ $dateValue('client_since', $idPrefix === 'edit-client-' ? null : now()->toDateString()) }}" placeholder="Select client since date">
     </div>
     <div class="col-md-6">
         <label for="{{ $fieldId('address_line1') }}" class="form-label">Address Line 1</label>

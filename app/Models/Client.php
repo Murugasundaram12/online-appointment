@@ -68,6 +68,34 @@ class Client extends Model
         });
     }
 
+    public function getFirstNameAttribute($value): ?string
+    {
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        if (!empty($this->attributes['name'])) {
+            $parts = explode(' ', trim($this->attributes['name']), 2);
+            return $parts[0] ?? null;
+        }
+
+        return null;
+    }
+
+    public function getLastNameAttribute($value): ?string
+    {
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        if (!empty($this->attributes['name'])) {
+            $parts = explode(' ', trim($this->attributes['name']), 2);
+            return $parts[1] ?? ($parts[0] ?? null);
+        }
+
+        return null;
+    }
+
     public function getAgeAttribute(): ?int
     {
         if (!$this->dob) {

@@ -74,6 +74,7 @@
                                     <td class="pe-4 text-end">
                                         <button type="button" class="btn btn-link text-muted p-0 me-2 js-edit-client"
                                             data-bs-toggle="modal" data-bs-target="#editClientModal"
+                                            data-client-id="{{ $client->id }}"
                                             data-update-url="{{ route('clients.update', $client->id) }}"
                                             data-first-name="{{ e($client->first_name) }}"
                                             data-last-name="{{ e($client->last_name) }}"
@@ -82,7 +83,7 @@
                                             data-alternate-phone="{{ e($client->alternate_phone) }}"
                                             data-gender="{{ e($client->gender) }}"
                                             data-dob="{{ $client->dob ? $client->dob->format('Y-m-d') : '' }}"
-                                            data-client-since="{{ $client->client_since ? $client->client_since->format('Y-m-d') : '' }}"
+                                            data-client-since="{{ $client->client_since ? $client->client_since->format('Y-m-d') : ($client->created_at ? $client->created_at->format('Y-m-d') : '') }}"
                                             data-address-line1="{{ e($client->address_line1) }}"
                                             data-address-line2="{{ e($client->address_line2) }}"
                                             data-city="{{ e($client->city) }}"
@@ -155,7 +156,8 @@
                     <form id="editClientForm" method="POST" action="#" novalidate>
                         @csrf
                         @method('PUT')
-                        @include('clients.partials.form-fields', ['idPrefix' => 'edit-client-'])
+                        <input type="hidden" name="client_id" id="edit-client-id" value="{{ old('client_id') }}">
+                        @include('clients.partials.form-fields', ['idPrefix' => 'edit-client-', 'client' => null])
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -169,59 +171,85 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Reset Add Client form when modal is shown to prevent values appending
+            // Reset Add Client form when modal is shown via trigger button
             const addClientModal = document.getElementById('addClientModal');
             if (addClientModal) {
-                addClientModal.addEventListener('show.bs.modal', () => {
-                    const addForm = document.getElementById('addClientForm');
-                    if (addForm) {
-                        addForm.reset();
+                addClientModal.addEventListener('show.bs.modal', (e) => {
+                    if (e && e.relatedTarget) {
+                        const addForm = document.getElementById('addClientForm');
+                        if (addForm) {
+                            addForm.reset();
+                            const ageInput = document.getElementById('add-client-calculated-age');
+                            if (ageInput) ageInput.value = '';
+                            const today = new Date().toISOString().split('T')[0];
+                            const clientSince = document.getElementById('add-client-client-since');
+                            if (clientSince) clientSince.value = today;
+                            window.AppFormErrors?.clear(addForm);
+                        }
                     }
                 });
             }
 
             const editForm = document.getElementById('editClientForm');
             const buttons = document.querySelectorAll('.js-edit-client');
-            if (!editForm) return;
 
-            buttons.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    editForm.action = btn.dataset.updateUrl || '#';
-                    const setVal = (id, val) => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            el.value = val || '';
-                            el.dispatchEvent(new Event('input', { bubbles: true }));
+            if (editForm && buttons.length > 0) {
+                buttons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        window.AppFormErrors?.clear(editForm);
+                        editForm.action = btn.dataset.updateUrl || '#';
+                        const setVal = (id, val) => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.value = val || '';
+                                el.dispatchEvent(new Event('input', { bubbles: true }));
+                                el.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        };
+                        setVal('edit-client-id', btn.dataset.clientId);
+                        setVal('edit-client-first-name', btn.dataset.firstName);
+                        setVal('edit-client-last-name', btn.dataset.lastName);
+                        setVal('edit-client-email', btn.dataset.email);
+                        setVal('edit-client-phone', btn.dataset.phone);
+                        setVal('edit-client-alternate-phone', btn.dataset.alternatePhone);
+                        setVal('edit-client-gender', btn.dataset.gender);
+                        setVal('edit-client-dob', btn.dataset.dob);
+                        setVal('edit-client-client-since', btn.dataset.clientSince);
+                        setVal('edit-client-address-line1', btn.dataset.addressLine1);
+                        setVal('edit-client-address-line2', btn.dataset.addressLine2);
+                        setVal('edit-client-city', btn.dataset.city);
+                        setVal('edit-client-state', btn.dataset.state);
+                        setVal('edit-client-country', btn.dataset.country);
+                        setVal('edit-client-postal-code', btn.dataset.postalCode);
+                        setVal('edit-client-emergency-contact', btn.dataset.emergencyContact);
+                        setVal('edit-client-emergency-phone', btn.dataset.emergencyPhone);
+                        setVal('edit-client-notes', btn.dataset.notes);
+
+                        const vipEl = document.getElementById('edit-client-is-vip');
+                        if (vipEl) vipEl.checked = (btn.dataset.isVip === '1');
+                    });
+                });
+            }
+
+            @if($errors->any())
+                @if(old('_method') === 'PUT')
+                    const editClientModalEl = document.getElementById('editClientModal');
+                    if (editClientModalEl && window.bootstrap) {
+                        const ef = document.getElementById('editClientForm');
+                        const oldClientId = "{{ old('client_id') }}";
+                        if (oldClientId && ef) {
+                            ef.action = "{{ url('clients') }}/" + oldClientId;
                         }
-                    };
-                    setVal('edit-client-first-name', btn.dataset.firstName);
-                    setVal('edit-client-last-name', btn.dataset.lastName);
-                    setVal('edit-client-email', btn.dataset.email);
-                    setVal('edit-client-phone', btn.dataset.phone);
-                    setVal('edit-client-alternate-phone', btn.dataset.alternatePhone);
-                    setVal('edit-client-gender', btn.dataset.gender);
-                    setVal('edit-client-dob', btn.dataset.dob);
-                    setVal('edit-client-client-since', btn.dataset.clientSince);
-                    setVal('edit-client-address-line1', btn.dataset.addressLine1);
-                    setVal('edit-client-address-line2', btn.dataset.addressLine2);
-                    setVal('edit-client-city', btn.dataset.city);
-                    setVal('edit-client-state', btn.dataset.state);
-                    setVal('edit-client-country', btn.dataset.country);
-                    setVal('edit-client-postal-code', btn.dataset.postalCode);
-                    setVal('edit-client-emergency-contact', btn.dataset.emergencyContact);
-                    setVal('edit-client-emergency-phone', btn.dataset.emergencyPhone);
-                    setVal('edit-client-notes', btn.dataset.notes);
-
-                    const vipEl = document.getElementById('edit-client-is-vip');
-                    if (vipEl) vipEl.checked = (btn.dataset.isVip === '1');
-            });
-
-            @if($errors->any() && !old('_method'))
-                const addClientModalEl = document.getElementById('addClientModal');
-                if (addClientModalEl && window.bootstrap) {
-                    const addModal = new bootstrap.Modal(addClientModalEl);
-                    addModal.show();
-                }
+                        const editModal = new bootstrap.Modal(editClientModalEl);
+                        editModal.show();
+                    }
+                @else
+                    const addClientModalEl = document.getElementById('addClientModal');
+                    if (addClientModalEl && window.bootstrap) {
+                        const addModal = new bootstrap.Modal(addClientModalEl);
+                        addModal.show();
+                    }
+                @endif
             @endif
         });
     </script>
