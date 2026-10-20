@@ -221,10 +221,9 @@ class StaffController extends Controller
         $rules = [
             'name' => ['nullable', 'string', 'max:255'],
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
-                Rule::unique('staff', 'email')->ignore($staff?->id),
             ],
             'phone' => ['nullable', 'string', 'max:30'],
             'bio' => ['nullable', 'string', 'max:2000'],
@@ -245,9 +244,7 @@ class StaffController extends Controller
         ];
 
         $validated = $request->validate($rules, [
-            'email.required' => 'Email is required.',
             'email.email' => 'The email field must be a valid email address.',
-            'email.unique' => 'This email is already used by another staff member.',
             'location_id.exists' => 'Please choose an active location for this staff member.',
             'color.regex' => 'Staff color must be a valid hex color like #4f46e5.',
             'categories.array' => 'Categories must be an array.',

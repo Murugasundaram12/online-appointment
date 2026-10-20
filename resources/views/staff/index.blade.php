@@ -261,14 +261,14 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Email <span class="required-mark">*</span></label>
+                                        <label class="form-label">Email</label>
                                         @error('email')
                                             <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                                 {{ $message }}
                                             </div>
                                         @enderror
                                         <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-                                            value="{{ old('email') }}" placeholder="Enter email address" required>
+                                            value="{{ old('email') }}" placeholder="Enter email address">
                                     </div>
                                 </div>
                             </div>
@@ -438,9 +438,9 @@
                                 <div class="field-group">
                                     <div class="field-icon"><i class='bx bx-envelope'></i></div>
                                     <div class="field-content">
-                                        <label class="form-label">Email <span class="required-mark">*</span></label>
+                                        <label class="form-label">Email</label>
                                         <input type="email" class="form-control" id="edit-staff-email" name="email"
-                                            placeholder="Enter email address" required>
+                                            placeholder="Enter email address">
                                     </div>
                                 </div>
                             </div>

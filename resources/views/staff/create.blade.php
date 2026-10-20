@@ -26,13 +26,13 @@
                             <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="email" class="form-label">Email <span class="required-mark">*</span></label>
+                            <label for="email" class="form-label">Email</label>
                             @error('email')
                                 <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
                                     {{ $message }}
                                 </div>
                             @enderror
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}">
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
