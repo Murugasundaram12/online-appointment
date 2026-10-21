@@ -14,11 +14,7 @@
                 <div class="login-panel rounded-4 h-100">
                     <div>
                         <div class="d-flex align-items-center gap-3 mb-5">
-                            <div class="brand-mark"><i class='bx bx-calendar-star'></i></div>
-                            <div>
-                                <div class="fw-bold fs-5">{{ $businessName }}</div>
-                                <div class="text-white-50 small">Book your visit online</div>
-                            </div>
+                            <img src="{{ asset('mrclinicpro-logo.png') }}" alt="MrClinicPro" class="login-brand-logo">
                         </div>
                         <span class="trust-pill"><i class='bx bx-check-shield'></i> Secure booking request</span>
                         <h1 class="display-6 fw-bold mt-4 mb-3">Choose a time that works for you.</h1>

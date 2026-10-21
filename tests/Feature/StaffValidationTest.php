@@ -93,16 +93,19 @@ class StaffValidationTest extends TestCase
     }
 
     /**
-     * Staff Add - 4: Duplicate email -> validation fails.
+     * Staff Add - 4: Duplicate email -> succeeds.
      */
-    public function test_staff_add_duplicate_email_fails_validation(): void
+    public function test_staff_add_duplicate_email_succeeds(): void
     {
         $response = $this->actingAs($this->adminStaff, 'staff')
             ->post(route('staff.store'), [
+                'name' => 'Second Staff Member',
                 'email' => $this->adminStaff->email,
             ]);
 
-        $response->assertSessionHasErrors(['email' => 'This email is already used by another staff member.']);
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('staff.index'));
+        $this->assertSame(2, Staff::where('email', $this->adminStaff->email)->count());
     }
 
     /**
@@ -292,9 +295,9 @@ class StaffValidationTest extends TestCase
     }
 
     /**
-     * Staff Edit - 5: Duplicate email is rejected.
+     * Staff Edit - 5: Duplicate email is allowed.
      */
-    public function test_staff_edit_duplicate_email_is_rejected(): void
+    public function test_staff_edit_duplicate_email_is_allowed(): void
     {
         $staff1 = Staff::create([
             'name' => 'Staff One',
@@ -315,8 +318,10 @@ class StaffValidationTest extends TestCase
                 'email' => 'staff1@example.com',
             ]);
 
-        $response->assertSessionHasErrors(['email' => 'This email is already used by another staff member.']);
-        $this->assertEquals('staff2@example.com', $staff2->fresh()->email);
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('staff.index'));
+        $this->assertEquals('staff1@example.com', $staff2->fresh()->email);
+        $this->assertSame(2, Staff::where('email', 'staff1@example.com')->count());
     }
 
     /**

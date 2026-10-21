@@ -36,11 +36,7 @@
 
 <aside class="sidebar" id="sidebar-wrapper">
     <div class="sidebar-brand">
-        <div class="brand-mark"><i class='bx bx-calendar-star'></i></div>
-        <div>
-            <div class="brand-title">{{ \App\Models\BusinessSetting::where('key', 'business_name')->value('value') ?: 'Online Appointment' }}</div>
-            <div class="brand-subtitle">Business Management</div>
-        </div>
+        <img src="{{ asset('mrclinicpro-logo.png') }}" alt="MrClinicPro" class="brand-logo">
     </div>
 
     @auth('staff')

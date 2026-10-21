@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Staff Login</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -82,13 +83,7 @@
             <div class="col-lg-6 login-panel">
                 <div>
                     <div class="d-flex align-items-center gap-3 mb-5">
-                        <div class="brand-mark"><i class='bx bx-calendar-star'></i></div>
-                        <div>
-                            <div class="fw-bold fs-5">
-                                {{ config('app.name', 'Online Appointment') }}
-                            </div>
-                            {{-- <div class="text-white-50 small">Premium business operations suite</div> --}}
-                        </div>
+                        <img src="{{ asset('mrclinicpro-logo.png') }}" alt="MrClinicPro" class="login-brand-logo">
                     </div>
                     {{-- <span class="trust-pill"><i class='bx bx-lock-alt'></i> Secure staff workspace</span> --}}
                     <h1 class="display-6 fw-bold mt-4 mb-3">Welcome back</h1>

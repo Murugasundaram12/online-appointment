@@ -665,11 +665,13 @@ class StaffMultipleCategoriesTest extends TestCase
         ]);
         $failResponse->assertSessionHasErrors(['email' => 'Email is required.']);
 
-        // 3. Duplicate email fails
+        // 3. Duplicate email succeeds
         $dupResponse = $this->actingAs($this->admin, 'staff')->post(route('staff.store'), [
             'email' => 'only_email_req18@example.com',
         ]);
-        $dupResponse->assertSessionHasErrors(['email' => 'This email is already used by another staff member.']);
+        $dupResponse->assertSessionHasNoErrors();
+        $dupResponse->assertRedirect(route('staff.index'));
+        $this->assertSame(2, Staff::where('email', 'only_email_req18@example.com')->count());
 
         // 4. Invalid category ID in array fails
         $invalidCatResponse = $this->actingAs($this->admin, 'staff')->post(route('staff.store'), [
