@@ -50,8 +50,10 @@
             border: 1px solid #eef2f7;
             border-radius: 10px;
             padding: 0.35rem 0.75rem;
-            gap: 0.75rem;
+            gap: 0.5rem;
             box-shadow: 0 4px 14px rgba(24, 28, 50, 0.06);
+            max-width: 90vw;
+            z-index: 10;
         }
 
         .view-dropdown {
@@ -69,9 +71,10 @@
 
         .date-display {
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #181c32;
-            margin: 0 1.5rem;
+            margin: 0 0.5rem;
+            white-space: nowrap;
         }
 
         .nav-arrow {
@@ -408,6 +411,126 @@
         .calendar-appointment.is-extra-short .calendar-appointment-service,
         .calendar-appointment.is-extra-short .calendar-appointment-staff {
             display: none !important;
+        }
+
+        .calendar-appointment.is-overlapping {
+            z-index: 2;
+            padding: 3px 5px !important;
+            transition: box-shadow 0.15s ease, z-index 0.15s ease;
+        }
+
+        .calendar-appointment.is-overlapping:hover {
+            z-index: 12 !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+        }
+
+        .calendar-appointment.is-overlapping .calendar-appointment-client {
+            font-size: 11px !important;
+            font-weight: 750 !important;
+            line-height: 1.15 !important;
+            letter-spacing: -0.01em;
+            width: 100% !important;
+            min-width: 0 !important;
+            display: block !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .calendar-appointment.is-overlapping .calendar-appointment-service {
+            font-size: 9.5px !important;
+            line-height: 1.15 !important;
+            margin-bottom: 1px !important;
+            opacity: 0.88 !important;
+        }
+
+        .calendar-appointment.is-overlapping .calendar-appointment-staff {
+            font-size: 9px !important;
+            line-height: 1.15 !important;
+            margin-bottom: 1px !important;
+            opacity: 0.85 !important;
+        }
+
+        .calendar-appointment.is-overlapping .appointment-time,
+        .calendar-appointment.is-overlapping .calendar-appointment-time {
+            font-size: 0.65rem !important;
+            font-weight: 600 !important;
+            line-height: 1.15 !important;
+            opacity: 0.95 !important;
+        }
+
+        .calendar-appointment.is-overlapping .calendar-appointment-status {
+            font-size: 8px !important;
+            font-weight: 700 !important;
+            padding: 1px 3px !important;
+            line-height: 1 !important;
+            border-radius: 3px !important;
+        }
+
+        .calendar-appointment.is-compact-slot {
+            padding: 2px 3.5px !important;
+        }
+
+        .calendar-appointment.is-compact-slot .calendar-appointment-client {
+            font-size: 10px !important;
+            font-weight: 800 !important;
+            line-height: 1.1 !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            display: block !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .calendar-appointment.is-compact-slot .calendar-appointment-service {
+            font-size: 8.5px !important;
+            line-height: 1.1 !important;
+            opacity: 0.85 !important;
+        }
+
+        .calendar-appointment.is-compact-slot .calendar-appointment-staff {
+            font-size: 8px !important;
+            line-height: 1.1 !important;
+            opacity: 0.8 !important;
+        }
+
+        .calendar-appointment.is-compact-slot .appointment-time,
+        .calendar-appointment.is-compact-slot .calendar-appointment-time {
+            font-size: 0.58rem !important;
+            line-height: 1.1 !important;
+        }
+
+        .calendar-appointment.is-compact-slot .calendar-appointment-status {
+            font-size: 7.5px !important;
+            padding: 0.5px 2px !important;
+            line-height: 1 !important;
+            border-radius: 2px !important;
+        }
+
+        .daily-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #3f4254;
+            background: #f1f4f9;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid #e4e6ef;
+            white-space: nowrap;
+            user-select: none;
+            margin: 0 0.5rem;
+        }
+
+        .daily-count-badge .count-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #3699ff;
+            display: inline-block;
+            flex-shrink: 0;
         }
 
         /* Appointment modal */
@@ -850,6 +973,7 @@
                             {{-- <option value="year">Year View</option> --}}
                         </select>
                         <span class="date-display" id="current-date-header"></span>
+                        <span id="calendar-daily-count" class="daily-count-badge"><span class="count-dot"></span><span>0 Appointments · 0 Clients</span></span>
                         <div class="nav-arrows d-flex gap-2">
                             <i class='bx bx-chevron-left nav-arrow' id="prev-week"></i>
                             <i class='bx bx-chevron-right nav-arrow' id="next-week"></i>
@@ -1416,26 +1540,27 @@
                 }
             }
 
-            // Initialize week start (Monday) using Toronto local time
+            // Initialize view and date using Toronto local time
+            const viewSelect = document.getElementById('calendar-view-select');
+            let currentView = (viewSelect && viewSelect.value) ? viewSelect.value : 'week';
             let currentWeekStart = getTorontoNow();
-            const day = currentWeekStart.getDay();
-            const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1);
-            currentWeekStart.setDate(diff);
+            if (currentView !== 'day') {
+                const day = currentWeekStart.getDay();
+                const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1);
+                currentWeekStart.setDate(diff);
+            }
             currentWeekStart.setHours(0, 0, 0, 0);
-            let currentView = 'week';
             let visibleDays = 7;
 
             const header = document.getElementById('calendar-grid-header');
             const dateDisplay = document.getElementById('current-date-header');
             const gridBody = document.getElementById('calendar-grid-body');
             const timeCol = document.getElementById('calendar-time-col');
-            const viewSelect = document.getElementById('calendar-view-select');
             const appointmentDetailsCard = document.getElementById('appointment-details-card');
             const closeDetailsCardBtn = document.getElementById('close-appointment-details-card');
             const monthContainer = document.getElementById('calendar-month-container');
             const monthCalendarRoot = document.getElementById('staff-month-calendar');
             let monthCalendar = null;
-            if (viewSelect && viewSelect.value) currentView = viewSelect.value;
 
             function showPageNotice(message, type = 'danger', timeout = 5500) {
                 window.AppToast?.show({
@@ -1472,24 +1597,56 @@
                 return (yiq >= 150) ? '#181c32' : '#ffffff';
             }
 
+            function getCategoryOrServiceFallbackColor(categoryName, serviceName) {
+                const text = `${categoryName || ''} ${serviceName || ''}`.toLowerCase();
+                if (text.includes('massage')) {
+                    return '#0d9488'; // Distinguishable teal / green
+                }
+                if (text.includes('physio')) {
+                    return '#2563eb'; // Distinguishable vibrant blue
+                }
+                if (text.includes('acupunct')) {
+                    return '#d97706'; // Warm amber
+                }
+                if (text.includes('orthotic') || text.includes('pedorth') || text.includes('footwear')) {
+                    return '#7c3aed'; // Purple
+                }
+                if (text.includes('stocking') || text.includes('compression')) {
+                    return '#db2777'; // Rose / Pink
+                }
+                return '#3699ff'; // Default fallback
+            }
+
             function getAppointmentServiceColor(ev) {
-                if (ev && ev.serviceColor && String(ev.serviceColor).trim()) {
+                const isGenericOrInvalid = (c) => !c || typeof c !== 'string' || !c.trim() || c.trim().toLowerCase() === '#3699ff' || c.trim().toLowerCase() === '#f64e60';
+
+                // 1. Explicitly configured custom color on the event
+                if (ev && ev.serviceColor && !isGenericOrInvalid(ev.serviceColor)) {
                     return String(ev.serviceColor).trim();
                 }
+
+                // 2. Explicitly configured custom color on the matching service object
                 const serviceId = ev ? (ev.serviceId || ev.service_id) : null;
+                let matchedSvc = null;
                 if (serviceId && window.CALENDAR_DATA && Array.isArray(window.CALENDAR_DATA.services)) {
-                    const svc = window.CALENDAR_DATA.services.find(s => String(s.id) === String(serviceId));
-                    if (svc && svc.color && String(svc.color).trim()) {
-                        return String(svc.color).trim();
+                    matchedSvc = window.CALENDAR_DATA.services.find(s => String(s.id) === String(serviceId));
+                    if (matchedSvc && matchedSvc.color && !isGenericOrInvalid(matchedSvc.color)) {
+                        return String(matchedSvc.color).trim();
                     }
                 }
-                if (ev && ev.color && String(ev.color).trim() && ev.color !== '#f64e60') {
+
+                // 3. Explicitly configured custom color from general color props
+                if (ev && ev.color && !isGenericOrInvalid(ev.color)) {
                     return String(ev.color).trim();
                 }
-                if (ev && ev.backgroundColor && String(ev.backgroundColor).trim() && ev.backgroundColor !== '#f64e60') {
+                if (ev && ev.backgroundColor && !isGenericOrInvalid(ev.backgroundColor)) {
                     return String(ev.backgroundColor).trim();
                 }
-                return '#3699ff';
+
+                // 4. Fallback based on category or service name for distinguishable colors
+                const catName = ev?.serviceCategory || matchedSvc?.category?.name || '';
+                const svcName = ev?.service || ev?.serviceName || matchedSvc?.name || '';
+                return getCategoryOrServiceFallbackColor(catName, svcName);
             }
 
             function ensureMonthCalendar() {
@@ -1522,7 +1679,14 @@
                             color: sc,
                             backgroundColor: sc,
                             borderColor: sc,
-                            extendedProps: { staff: e.staff, status: e.status, serviceColor: sc, serviceId: e.serviceId || e.service_id }
+                            extendedProps: {
+                                staff: e.staff,
+                                status: e.status,
+                                serviceColor: sc,
+                                serviceId: e.serviceId || e.service_id,
+                                service: e.service,
+                                serviceCategory: e.serviceCategory
+                            }
                         };
                     }),
                     eventClassNames: () => ['fc-staff-appointment'],
@@ -1531,6 +1695,8 @@
                         const eventColor = getAppointmentServiceColor({
                             serviceColor: extProps.serviceColor,
                             serviceId: extProps.serviceId,
+                            service: extProps.service,
+                            serviceCategory: extProps.serviceCategory,
                             color: info.event.backgroundColor || info.event.borderColor
                         });
                         const textColor = getContrastColor(eventColor);
@@ -1583,6 +1749,9 @@
                 if (!cal) return;
                 cal.updateSize();
                 updateMonthHeader(cal.getDate());
+                if (typeof updateDailyCountDisplay === 'function') {
+                    updateDailyCountDisplay();
+                }
             }
 
             function showTimeGridView() {
@@ -2128,13 +2297,41 @@
                 return `${displayHour}:${m} ${ampm}`;
             }
 
-            function formatAppointmentTimeRange(startInput, endInput) {
+            function formatAppointmentTimeRange(startInput, endInput, compact = false) {
                 const startStr = formatAppointmentTime(startInput);
                 const endStr = formatAppointmentTime(endInput);
-                if (startStr && endStr) {
-                    return `${startStr} \u2013 ${endStr}`;
+                if (!compact) {
+                    if (startStr && endStr) {
+                        return `${startStr} \u2013 ${endStr}`;
+                    }
+                    return startStr || endStr || '';
                 }
-                return startStr || endStr || '';
+
+                // Compact format for narrow appointment cards
+                try {
+                    const d1 = startInput instanceof Date ? startInput : parseCalendarDate(startInput);
+                    const d2 = endInput instanceof Date ? endInput : parseCalendarDate(endInput);
+                    if (!d1 || Number.isNaN(d1.getTime()) || !d2 || Number.isNaN(d2.getTime())) {
+                        return (startStr && endStr) ? `${startStr} \u2013 ${endStr}` : (startStr || endStr || '');
+                    }
+
+                    const h1 = d1.getHours();
+                    const m1 = pad2(d1.getMinutes());
+                    const ampm1 = h1 >= 12 ? 'PM' : 'AM';
+                    const dispH1 = h1 % 12 || 12;
+
+                    const h2 = d2.getHours();
+                    const m2 = pad2(d2.getMinutes());
+                    const ampm2 = h2 >= 12 ? 'PM' : 'AM';
+                    const dispH2 = h2 % 12 || 12;
+
+                    if (ampm1 === ampm2) {
+                        return `${dispH1}:${m1}\u2013${dispH2}:${m2} ${ampm2}`;
+                    }
+                    return `${dispH1}:${m1} ${ampm1}\u2013${dispH2}:${m2} ${ampm2}`;
+                } catch (_) {
+                    return (startStr && endStr) ? `${startStr} \u2013 ${endStr}` : (startStr || endStr || '');
+                }
             }
 
             function formatTimeShort(dateStr) {
@@ -3326,6 +3523,109 @@
                 });
             }
 
+            // Update daily appointment & unique client counts near the calendar date
+            function updateDailyCountDisplay() {
+                const badge = document.getElementById('calendar-daily-count');
+                if (!badge) return;
+
+                const events = window._calendarEvents || [];
+                const statusFilter = document.getElementById('calendar-filter-status')?.value || '';
+
+                if (currentView === 'month') {
+                    const monthDate = monthCalendar ? monthCalendar.getDate() : currentWeekStart;
+                    const monthKey = monthKeyFromDate(monthDate);
+                    const monthEvents = events.filter(ev => {
+                        if (!ev || !ev.start) return false;
+                        const s = parseCalendarDate(ev.start);
+                        if (Number.isNaN(s.getTime())) return false;
+                        return monthKeyFromDate(s) === monthKey;
+                    });
+                    const countableMonth = monthEvents.filter(ev => {
+                        const st = (ev.status || 'booked').toLowerCase();
+                        return statusFilter ? true : st !== 'cancelled';
+                    });
+                    const totalMonthAppts = countableMonth.length;
+                    const uniqueClients = new Set();
+                    let unassigned = 0;
+                    countableMonth.forEach(ev => {
+                        const cid = ev.clientId || ev.client_id;
+                        if (cid) uniqueClients.add(String(cid));
+                        else unassigned++;
+                    });
+                    const totalClients = uniqueClients.size + unassigned;
+                    const apptWord = totalMonthAppts === 1 ? 'Appointment' : 'Appointments';
+                    const clientWord = totalClients === 1 ? 'Client' : 'Clients';
+                    badge.innerHTML = `<span class="count-dot"></span><span>${totalMonthAppts} ${apptWord} · ${totalClients} ${clientWord}</span>`;
+                    badge.style.display = 'inline-flex';
+                    badge.title = `Total for month: ${totalMonthAppts} active appointments, ${totalClients} unique clients`;
+                    return;
+                }
+
+                let targetDateKey = '';
+                if (currentView === 'day') {
+                    targetDateKey = toLocalDate(currentWeekStart);
+                } else {
+                    const activeCell = header?.querySelector('.header-cell.active-day');
+                    if (activeCell && activeCell.dataset.dayIndex !== undefined) {
+                        const idx = parseInt(activeCell.dataset.dayIndex, 10);
+                        if (!Number.isNaN(idx)) {
+                            const d = new Date(currentWeekStart);
+                            d.setDate(currentWeekStart.getDate() + idx);
+                            targetDateKey = toLocalDate(d);
+                        }
+                    }
+                    if (!targetDateKey) {
+                        const dayCells = Array.from(header?.querySelectorAll('.header-cell') || []);
+                        const idx = activeCell ? dayCells.indexOf(activeCell) : -1;
+                        if (idx >= 0) {
+                            const d = new Date(currentWeekStart);
+                            d.setDate(currentWeekStart.getDate() + idx);
+                            targetDateKey = toLocalDate(d);
+                        } else {
+                            targetDateKey = toLocalDate(currentWeekStart);
+                        }
+                    }
+                }
+
+                // Filter events matching the target day using Toronto wall-clock parser
+                const dayEvents = events.filter(ev => {
+                    if (!ev || !ev.start) return false;
+                    const s = parseCalendarDate(ev.start);
+                    if (Number.isNaN(s.getTime())) return false;
+                    return toLocalDate(s) === targetDateKey;
+                });
+
+                // Exclude cancelled appointments unless status filter is explicitly active
+                const countableEvents = dayEvents.filter(ev => {
+                    const st = (ev.status || 'booked').toLowerCase();
+                    if (statusFilter) {
+                        return true;
+                    }
+                    return st !== 'cancelled';
+                });
+
+                const totalAppts = countableEvents.length;
+                const uniqueClientIds = new Set();
+                let unassignedCount = 0;
+
+                countableEvents.forEach(ev => {
+                    const cid = ev.clientId || ev.client_id;
+                    if (cid) {
+                        uniqueClientIds.add(String(cid));
+                    } else {
+                        unassignedCount++;
+                    }
+                });
+
+                const totalClients = uniqueClientIds.size + unassignedCount;
+                const apptWord = totalAppts === 1 ? 'Appointment' : 'Appointments';
+                const clientWord = totalClients === 1 ? 'Client' : 'Clients';
+
+                badge.innerHTML = `<span class="count-dot"></span><span>${totalAppts} ${apptWord} · ${totalClients} ${clientWord}</span>`;
+                badge.style.display = 'inline-flex';
+                badge.title = `Counts for ${targetDateKey}: ${totalAppts} active appointments, ${totalClients} unique clients`;
+            }
+
             // Build header and day columns
             function buildWeekView() {
                 // Generate time column
@@ -3400,6 +3700,7 @@
                     }
 
                     dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
+                    updateDailyCountDisplay();
                 } else {
                     visibleDays = 7;
                     header.style.gridTemplateColumns = `80px repeat(${visibleDays}, minmax(130px, 1fr))`;
@@ -3415,10 +3716,23 @@
 
                         const headerCell = document.createElement('div');
                         headerCell.className = 'header-cell';
+                        headerCell.dataset.dayIndex = i;
                         if (isSameDay(date, getTorontoNow())) headerCell.classList.add('active-day');
 
                         const dayLabel = days[i];
                         headerCell.innerHTML = `<span class="day-label">${dayLabel}</span><span class="day-number">${date.getDate()}</span>`;
+                        headerCell.style.cursor = 'pointer';
+                        headerCell.title = `Click to select ${dayLabel}, ${date.getDate()} ${monthNames[date.getMonth()]}`;
+
+                        // Selecting a day in week view updates current-date-header and daily counts
+                        headerCell.addEventListener('click', function () {
+                            header.querySelectorAll('.header-cell').forEach(c => c.classList.remove('active-day'));
+                            headerCell.classList.add('active-day');
+                            const activeDate = new Date(currentWeekStart);
+                            activeDate.setDate(currentWeekStart.getDate() + i);
+                            dateDisplay.textContent = `${activeDate.getDate()} ${monthNames[activeDate.getMonth()]} ${activeDate.getFullYear()}`;
+                            updateDailyCountDisplay();
+                        });
 
                         // Add staff schedule display under the date
                         const scheduleContainer = document.createElement('div');
@@ -3434,6 +3748,16 @@
                         col.dataset.dayIndex = i;
                         col.addEventListener('dragover', ev => ev.preventDefault());
                         col.addEventListener('drop', handleDropOnColumn);
+                        col.addEventListener('click', function (e) {
+                            if (!e.target.closest('.calendar-appointment')) {
+                                header.querySelectorAll('.header-cell').forEach(c => c.classList.remove('active-day'));
+                                headerCell.classList.add('active-day');
+                                const activeDate = new Date(currentWeekStart);
+                                activeDate.setDate(currentWeekStart.getDate() + i);
+                                dateDisplay.textContent = `${activeDate.getDate()} ${monthNames[activeDate.getMonth()]} ${activeDate.getFullYear()}`;
+                                updateDailyCountDisplay();
+                            }
+                        });
                         col.addEventListener('click', handleColumnClick);
                         gridBody.appendChild(col);
                     }
@@ -3450,8 +3774,13 @@
                             dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
                         }
                     } else {
+                        // Default first day active if today not in week
+                        const firstCell = header.querySelector('.header-cell');
+                        if (firstCell) firstCell.classList.add('active-day');
                         dateDisplay.textContent = `${currentWeekStart.getDate()} ${monthNames[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
                     }
+
+                    updateDailyCountDisplay();
                 }
             }
 
@@ -3511,7 +3840,14 @@
                                 color: sc,
                                 backgroundColor: sc,
                                 borderColor: sc,
-                                extendedProps: { staff: ev.staff, status: ev.status, serviceColor: sc, serviceId: ev.serviceId || ev.service_id }
+                                extendedProps: {
+                                    staff: ev.staff,
+                                    status: ev.status,
+                                    serviceColor: sc,
+                                    serviceId: ev.serviceId || ev.service_id,
+                                    service: ev.service,
+                                    serviceCategory: ev.serviceCategory
+                                }
                             });
                         });
                     }
@@ -3568,22 +3904,20 @@
                 }
             }
 
-            // Render appointments into day columns
+            // Render appointments into day columns with overlap collision layout
             function renderAppointments() {
                 clearAppointments();
                 const cols = Array.from(document.querySelectorAll('.day-column'));
                 cols.forEach(c => c.style.minHeight = gridBody.clientHeight + 'px');
 
                 const events = window._calendarEvents || [];
+                const parsedEvents = [];
+
                 events.forEach(ev => {
                     try {
-                        // Parse with the same helper used across the view to keep
-                        // wall-clock rendering consistent with form/input times.
                         const startIso = parseCalendarDate(ev.start);
                         const endIso = parseCalendarDate(ev.end);
-
                         if (Number.isNaN(startIso.getTime()) || Number.isNaN(endIso.getTime())) return;
-
                         const eventDayKey = toLocalDate(startIso);
 
                         let col = null;
@@ -3605,70 +3939,200 @@
                             }
                         }
                         if (!col) return;
-                        const colHeight = col.clientHeight || 1200;
 
                         const minutesFromMidnight = startIso.getHours() * 60 + startIso.getMinutes();
-                        const durationMinutes = (endIso.getTime() - startIso.getTime()) / 60000;
+                        let durationMinutes = (endIso.getTime() - startIso.getTime()) / 60000;
+                        if (durationMinutes <= 0) durationMinutes = 15;
 
-                        const topPerc = minutesFromMidnight / (24 * 60);
-                        const heightPerc = Math.max(durationMinutes / (24 * 60), 0.02);
+                        parsedEvents.push({
+                            ev,
+                            col,
+                            startIso,
+                            endIso,
+                            startMinutes: minutesFromMidnight,
+                            endMinutes: minutesFromMidnight + durationMinutes,
+                            durationMinutes
+                        });
+                    } catch (err) {
+                        console.warn('Error parsing appointment for rendering', err);
+                    }
+                });
 
-                        const isShortAppointment = durationMinutes <= 35;
-                        const isExtraShortAppointment = durationMinutes < 25;
+                // Group parsed events by target column element
+                const colMap = new Map();
+                parsedEvents.forEach(item => {
+                    if (!colMap.has(item.col)) colMap.set(item.col, []);
+                    colMap.get(item.col).push(item);
+                });
 
-                        const el = document.createElement('div');
-                        el.className = `calendar-appointment${isShortAppointment ? ' is-short' : ''}${isExtraShortAppointment ? ' is-extra-short' : ''}`;
-                        const isCompletedEvent = (ev.status || '').toLowerCase() === 'completed';
-                        el.draggable = !isCompletedEvent;
-                        el.dataset.appointmentId = ev.id;
-                        el.style.position = 'absolute';
-                        el.style.left = '6px';
-                        el.style.right = '6px';
-                        el.style.top = (topPerc * colHeight) + 'px';
-                        el.style.height = (heightPerc * colHeight) + 'px';
-                        const apptColor = getAppointmentServiceColor(ev);
-                        const textColor = getContrastColor(apptColor);
-                        el.style.background = apptColor;
-                        el.style.border = `1px solid ${apptColor}`;
-                        el.style.color = textColor;
-                        el.style.padding = isShortAppointment ? '2.5px 6px' : '5px 8px';
-                        el.style.borderRadius = '6px';
-                        el.style.cursor = isCompletedEvent ? 'default' : 'grab';
-                        el.style.overflow = 'hidden';
-                        el.style.fontSize = isShortAppointment ? '11px' : '12px';
-                        el.style.boxSizing = 'border-box';
-                        el.style.display = 'flex';
-                        el.style.flexDirection = 'column';
-                        el.style.justifyContent = 'flex-start';
+                // Render each column's events with interval-based track layout
+                colMap.forEach((colItems, col) => {
+                    const colHeight = col.clientHeight || gridBody.clientHeight || (24 * 120);
 
-                        const clientTitle = ev.title || ev.clientName || 'Unassigned';
-                        const serviceName = ev.service || '';
-                        const staffName = ev.staff || '';
-                        const timeStr = formatAppointmentTimeRange(startIso, endIso);
-                        const statusLabel = ev.status || 'booked';
+                    // Sort: start time ascending, duration descending (longer events first)
+                    colItems.sort((a, b) => {
+                        if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
+                        if (b.durationMinutes !== a.durationMinutes) return b.durationMinutes - a.durationMinutes;
+                        return (a.ev.id || 0) - (b.ev.id || 0);
+                    });
 
-                        el.innerHTML = `
-                            <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
-                                <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                            </div>
-                            ${serviceName ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
-                            ${staffName ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
-                            <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
-                        `;
+                    // Cluster overlapping events in this column
+                    const clusters = [];
+                    let currentCluster = [];
+                    let clusterEnd = -1;
 
-                        el.addEventListener('dragstart', handleDragStart);
-                        el.addEventListener('click', function (e) {
-                            e.stopPropagation();
-                            if (String(ev.status || '').toLowerCase() === 'completed') {
-                                openCompletedAppointmentModal(ev.id, e);
-                            } else {
-                                openAppointmentModalForEdit(ev.id, e);
+                    colItems.forEach(item => {
+                        if (currentCluster.length === 0) {
+                            currentCluster.push(item);
+                            clusterEnd = item.endMinutes;
+                        } else if (item.startMinutes < clusterEnd) {
+                            currentCluster.push(item);
+                            if (item.endMinutes > clusterEnd) clusterEnd = item.endMinutes;
+                        } else {
+                            clusters.push(currentCluster);
+                            currentCluster = [item];
+                            clusterEnd = item.endMinutes;
+                        }
+                    });
+                    if (currentCluster.length > 0) clusters.push(currentCluster);
+
+                    // Assign concurrent sub-column tracks within each cluster
+                    clusters.forEach(cluster => {
+                        if (cluster.length === 1) {
+                            cluster[0].trackIndex = 0;
+                            cluster[0].totalTracks = 1;
+                            return;
+                        }
+
+                        const tracks = []; // holds end time of the active item in each track
+                        cluster.forEach(item => {
+                            let assignedTrack = -1;
+                            for (let t = 0; t < tracks.length; t++) {
+                                if (tracks[t] <= item.startMinutes) {
+                                    assignedTrack = t;
+                                    tracks[t] = item.endMinutes;
+                                    break;
+                                }
                             }
+                            if (assignedTrack === -1) {
+                                assignedTrack = tracks.length;
+                                tracks.push(item.endMinutes);
+                            }
+                            item.trackIndex = assignedTrack;
                         });
 
-                        col.appendChild(el);
-                    } catch (err) { console.warn('Error rendering event', err); }
+                        const totalTracks = tracks.length;
+                        cluster.forEach(item => {
+                            item.totalTracks = totalTracks;
+                        });
+                    });
+
+                    // Create DOM elements with side-by-side positioning for concurrent cards
+                    colItems.forEach(item => {
+                        try {
+                            const { ev, startIso, endIso, durationMinutes, startMinutes, trackIndex, totalTracks } = item;
+                            const topPerc = startMinutes / (24 * 60);
+                            const heightPerc = Math.max(durationMinutes / (24 * 60), 0.02);
+
+                            const isShortAppointment = durationMinutes <= 35;
+                            const isExtraShortAppointment = durationMinutes < 25;
+                            const isOverlapping = totalTracks > 1;
+                            const isCompactSlot = totalTracks >= 3;
+
+                            const el = document.createElement('div');
+                            el.className = `calendar-appointment${isShortAppointment ? ' is-short' : ''}${isExtraShortAppointment ? ' is-extra-short' : ''}${isOverlapping ? ' is-overlapping' : ''}${isCompactSlot ? ' is-compact-slot' : ''}`;
+                            const isCompletedEvent = (ev.status || '').toLowerCase() === 'completed';
+                            el.draggable = !isCompletedEvent;
+                            el.dataset.appointmentId = ev.id;
+                            el.style.position = 'absolute';
+
+                            if (totalTracks > 1) {
+                                const trackWidthPct = 100 / totalTracks;
+                                el.style.left = `calc(${trackIndex * trackWidthPct}% + 2px)`;
+                                el.style.width = `calc(${trackWidthPct}% - 4px)`;
+                                el.style.right = 'auto';
+                            } else {
+                                el.style.left = '6px';
+                                el.style.right = '6px';
+                                el.style.width = 'auto';
+                            }
+
+                            el.style.top = (topPerc * colHeight) + 'px';
+                            el.style.height = (heightPerc * colHeight) + 'px';
+                            const apptColor = getAppointmentServiceColor(ev);
+                            const textColor = getContrastColor(apptColor);
+                            el.style.background = apptColor;
+                            el.style.border = `1px solid ${apptColor}`;
+                            el.style.color = textColor;
+                            el.style.padding = isCompactSlot ? '2px 3.5px' : (isOverlapping ? '3px 5px' : (isShortAppointment ? '2.5px 6px' : '5px 8px'));
+                            el.style.borderRadius = '6px';
+                            el.style.cursor = isCompletedEvent ? 'default' : 'grab';
+                            el.style.overflow = 'hidden';
+                            el.style.fontSize = isCompactSlot ? '10px' : (isOverlapping ? '11px' : (isShortAppointment ? '11px' : '12px'));
+                            el.style.boxSizing = 'border-box';
+                            el.style.display = 'flex';
+                            el.style.flexDirection = 'column';
+                            el.style.justifyContent = 'flex-start';
+
+                            const clientTitle = ev.title || ev.clientName || 'Unassigned';
+                            const serviceName = ev.service || '';
+                            const staffName = ev.staff || '';
+                            const fullTimeStr = formatAppointmentTimeRange(startIso, endIso, false);
+                            const compactTimeStr = formatAppointmentTimeRange(startIso, endIso, true);
+                            const timeStr = isOverlapping ? compactTimeStr : fullTimeStr;
+                            const statusLabel = ev.status || 'booked';
+
+                            // Tooltip for full detail on hover (never using truncated client name)
+                            const tooltipService = serviceName ? ` • ${serviceName}` : '';
+                            const tooltipStaff = staffName ? ` • ${staffName}` : '';
+                            el.title = `${clientTitle}${tooltipService}${tooltipStaff} • ${fullTimeStr} [${String(statusLabel).toUpperCase()}]`;
+
+                            if (isOverlapping) {
+                                // Overlapping appointment card: prioritize client name with full available width on its own dedicated top line.
+                                // Secondary details (service, time, status badge) are rendered compactly without stealing horizontal width from client name.
+                                const showService = serviceName && !isExtraShortAppointment;
+                                const showStaff = staffName && !isExtraShortAppointment && currentView !== 'day' && (!isCompactSlot || durationMinutes >= 45);
+
+                                el.innerHTML = `
+                                    <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                        <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
+                                    </div>
+                                    ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
+                                    ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
+                                    <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
+                                        <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
+                                        <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                    </div>
+                                `;
+                            } else {
+                                // Non-overlapping appointment card: retain existing appearance with side-by-side status badge in header
+                                const showSecondary = !isExtraShortAppointment;
+                                el.innerHTML = `
+                                    <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                        <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                        <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                    </div>
+                                    ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                                    ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                                    <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
+                                `;
+                            }
+
+                            el.addEventListener('dragstart', handleDragStart);
+                            el.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                if (String(ev.status || '').toLowerCase() === 'completed') {
+                                    openCompletedAppointmentModal(ev.id, e);
+                                } else {
+                                    openAppointmentModalForEdit(ev.id, e);
+                                }
+                            });
+
+                            col.appendChild(el);
+                        } catch (err) {
+                            console.warn('Error rendering appointment card', err);
+                        }
+                    });
                 });
 
                 gridBody.querySelectorAll('.calendar-empty-notice').forEach(el => el.remove());
@@ -3687,6 +4151,9 @@
                     notice.textContent = 'No appointments match the current filters.';
                     gridBody.appendChild(notice);
                 }
+
+                // Update daily count badge
+                updateDailyCountDisplay();
             }
             let isSavingAppointment = false;
 

@@ -90,7 +90,7 @@ class CalendarController extends Controller
             'status' => $request->query('status'),
         ];
 
-        $monthAppointmentsQuery = Appointment::with(['staff', 'client', 'service'])
+        $monthAppointmentsQuery = Appointment::with(['staff', 'client', 'service.category'])
             ->whereBetween('start_time', [$monthStart, $monthEnd]);
 
         if ($request->filled('location_id')) {
@@ -113,9 +113,7 @@ class CalendarController extends Controller
             $clientName = $appointment->client ? $appointment->client->name : 'Unassigned';
             $serviceName = $appointment->service ? $appointment->service->name : '';
             $status = $appointment->status ?? 'booked';
-            $eventColor = $appointment->service && !empty($appointment->service->color)
-                ? $appointment->service->color
-                : '#3699ff';
+            $eventColor = self::resolveServiceColor($appointment->service);
 
             return [
                 'id' => $appointment->id,
@@ -129,7 +127,9 @@ class CalendarController extends Controller
                 'color' => $eventColor,
                 'backgroundColor' => $eventColor,
                 'borderColor' => $eventColor,
-                'serviceColor' => $appointment->service ? $appointment->service->color : null,
+                'serviceColor' => $eventColor,
+                'serviceCategoryId' => $appointment->service?->service_category_id,
+                'serviceCategory' => $appointment->service?->category?->name,
             ];
         })->values();
 
@@ -284,8 +284,14 @@ class CalendarController extends Controller
         $endDate = $end ? Carbon::parse($end)->endOfDay() : Carbon::now()->endOfWeek();
 
         // Get all appointments
-        $appointmentsQuery = Appointment::with(['client:id,name', 'service:id,name,color', 'staff:id,name', 'location:id,name,is_active', 'invoice:id,appointment_id,invoice_number'])
-            ->whereBetween('start_time', [$startDate, $endDate]);
+        $appointmentsQuery = Appointment::with([
+            'client:id,name',
+            'service:id,name,color,service_category_id',
+            'service.category:id,name',
+            'staff:id,name',
+            'location:id,name,is_active',
+            'invoice:id,appointment_id,invoice_number'
+        ])->whereBetween('start_time', [$startDate, $endDate]);
 
         if ($request->filled('staff_id')) {
             $appointmentsQuery->where('staff_id', $request->query('staff_id'));
@@ -303,13 +309,12 @@ class CalendarController extends Controller
         $appointments = $appointmentsQuery->get();
 
         $events = $appointments->map(function ($appointment) {
-            $eventColor = $appointment->service && !empty($appointment->service->color)
-                ? $appointment->service->color
-                : '#3699ff';
+            $eventColor = self::resolveServiceColor($appointment->service);
 
             return [
                 'id' => $appointment->id,
                 'title' => $appointment->client ? $appointment->client->name : 'Unassigned',
+                'clientName' => $appointment->client ? $appointment->client->name : 'Unassigned',
                 'staff' => $appointment->staff ? $appointment->staff->name : 'N/A',
                 'service' => $appointment->service ? $appointment->service->name : 'N/A',
                 'start' => $appointment->start_time->toIso8601String(),
@@ -324,7 +329,9 @@ class CalendarController extends Controller
                 'color' => $eventColor,
                 'backgroundColor' => $eventColor,
                 'borderColor' => $eventColor,
-                'serviceColor' => $appointment->service ? $appointment->service->color : null,
+                'serviceColor' => $eventColor,
+                'serviceCategoryId' => $appointment->service?->service_category_id,
+                'serviceCategory' => $appointment->service?->category?->name,
                 'notes' => $appointment->notes,
                 'invoiceId' => $appointment->invoice?->id,
                 'invoiceNumber' => $appointment->invoice?->invoice_number,
@@ -1325,7 +1332,7 @@ class CalendarController extends Controller
             'no_show'   => '#8b5cf6',
         ];
 
-        $appointment->loadMissing(['invoice.payments', 'client', 'service', 'staff', 'location']);
+        $appointment->loadMissing(['invoice.payments', 'client', 'service.category', 'staff', 'location']);
         $invoice = $appointment->invoice;
         $hasForms = $appointment->client_id ? \App\Models\FormRecord::where('client_id', $appointment->client_id)->exists() : false;
 
@@ -1347,9 +1354,7 @@ class CalendarController extends Controller
             ? (int) $appointment->service->duration_minutes
             : ($appointment->start_time && $appointment->end_time ? $appointment->start_time->diffInMinutes($appointment->end_time) : 0);
 
-        $eventColor = $appointment->service && !empty($appointment->service->color)
-            ? $appointment->service->color
-            : '#3699ff';
+        $eventColor = self::resolveServiceColor($appointment->service);
 
         return [
             'id' => $appointment->id,
@@ -1375,7 +1380,9 @@ class CalendarController extends Controller
             'color' => $eventColor,
             'backgroundColor' => $eventColor,
             'borderColor' => $eventColor,
-            'serviceColor' => $appointment->service ? $appointment->service->color : null,
+            'serviceColor' => $eventColor,
+            'serviceCategoryId' => $appointment->service?->service_category_id,
+            'serviceCategory' => $appointment->service?->category?->name,
             'notes' => $appointment->notes,
             'cancellationReason' => $appointment->cancellation_reason,
             'invoiceId' => $invoice?->id,
@@ -1444,5 +1451,42 @@ class CalendarController extends Controller
     private function autoCreateInvoiceIfCompleted(Appointment $appointment): void
     {
         $this->invoiceCreationService->createFromAppointment($appointment);
+    }
+
+    /**
+     * Resolve service color with distinguishable category fallbacks.
+     * Preserves custom configured service colors while falling back to
+     * distinguishable category colors when color is missing or generic (#3699ff).
+     */
+    public static function resolveServiceColor(?\App\Models\Service $service): string
+    {
+        $customColor = $service && !empty($service->color) ? trim((string) $service->color) : null;
+        $isGeneric = !$customColor || in_array(strtolower($customColor), ['#3699ff', '#f64e60'], true);
+
+        if (!$isGeneric) {
+            return $customColor;
+        }
+
+        $categoryName = strtolower((string) ($service?->category?->name ?? ''));
+        $serviceName = strtolower((string) ($service?->name ?? ''));
+        $text = $categoryName . ' ' . $serviceName;
+
+        if (str_contains($text, 'massage')) {
+            return '#0d9488'; // Distinguishable teal / green
+        }
+        if (str_contains($text, 'physio')) {
+            return '#2563eb'; // Distinguishable vibrant blue
+        }
+        if (str_contains($text, 'acupunct')) {
+            return '#d97706'; // Warm amber
+        }
+        if (str_contains($text, 'orthotic') || str_contains($text, 'pedorth') || str_contains($text, 'footwear')) {
+            return '#7c3aed'; // Purple
+        }
+        if (str_contains($text, 'stocking') || str_contains($text, 'compression')) {
+            return '#db2777'; // Rose / Pink
+        }
+
+        return '#3699ff'; // Default fallback
     }
 }
