@@ -17,7 +17,7 @@
             ['Locations', 'locations.index', 'locations.*', 'bx-map'],
         ],
         'Finance' => [
-            ['Quotations', 'quotations.create', 'quotations.*', 'bx-file-blank'],
+            ['Quotations', 'quotations.index', 'quotations.*', 'bx-file-blank'],
             ['Invoices', 'invoices.index', 'invoices.*', 'bx-receipt'],
             ['Payments', 'payment-records.index', 'payment-records.*', 'bx-credit-card'],
             ['Payroll', 'payroll.index', 'payroll.*', 'bx-wallet'],

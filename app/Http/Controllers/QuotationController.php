@@ -27,6 +27,48 @@ class QuotationController extends Controller
         $this->quotationConversionService = $quotationConversionService ?? app(QuotationConversionService::class);
     }
 
+    public function index(Request $request)
+    {
+        $staff = Auth::guard('staff')->user();
+
+        $quotations = Quotation::with(['client', 'staff.location', 'appointment.location'])
+            ->when($staff && !in_array($staff->access_level, ['admin', 'business_owner'], true) && !is_null($staff->location_id), function ($query) use ($staff) {
+                $query->where(function ($q) use ($staff) {
+                    $q->where('staff_id', $staff->id)
+                        ->orWhere('created_by', $staff->id)
+                        ->orWhereHas('staff', fn ($sq) => $sq->where('location_id', $staff->location_id))
+                        ->orWhereHas('appointment', fn ($aq) => $aq->where('location_id', $staff->location_id));
+                });
+            })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim((string) $request->input('search'));
+                $query->where(function ($q) use ($search) {
+                    $q->where('quotation_number', 'like', "%{$search}%")
+                        ->orWhere('id', is_numeric($search) ? (int) $search : 0)
+                        ->orWhereHas('client', function ($cq) use ($search) {
+                            $cq->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('staff', function ($sq) use ($search) {
+                            $sq->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhere('status', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->latest('issued_date')
+            ->latest('id')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
+
+        $currency = BusinessSetting::where('key', 'currency')->value('value') ?: '$';
+
+        return view('quotations.index', compact('quotations', 'currency'));
+    }
+
     public function create(Request $request)
     {
         $clients = Client::where('status', 'active')->orderBy('name')->get(['id', 'name', 'email', 'phone']);

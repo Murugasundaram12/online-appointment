@@ -129,6 +129,7 @@ Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('in
 Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 Route::get('invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
 
+Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
 Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
 Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
 Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');

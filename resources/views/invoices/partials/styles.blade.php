@@ -119,10 +119,137 @@
         .payment-history-cell { margin-bottom: 10px; }
     }
     @media print {
-        .no-print, .sidebar, .app-topbar, .topbar, .navbar, .app-toast-container { display: none !important; }
-        body, .invoice-preview-shell { background: #fff !important; padding: 0 !important; }
-        #page-content-wrapper { width: 100% !important; }
-        .invoice-document { box-shadow: none !important; border: 0 !important; margin: 0 !important; max-width: none !important; border-radius: 0 !important; padding: 4mm 6mm !important; }
-        @page { size: A4 portrait; margin: 6mm; }
+        @page {
+            size: A4 portrait;
+            margin: 6mm;
+        }
+        html, body {
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        #wrapper, .app-shell, #page-content-wrapper {
+            display: block !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        main, main.pb-5 {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .no-print, .sidebar, .app-topbar, .topbar, .navbar, .app-toast-container, .alert, .modal, .modal-backdrop {
+            display: none !important;
+        }
+        .invoice-preview-shell {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .invoice-document {
+            box-shadow: none !important;
+            border: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            page-break-inside: auto;
+            break-inside: auto;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        .invoice-header {
+            padding-bottom: 6px;
+        }
+        .clinic-name {
+            font-size: 15px;
+            margin: 0 0 2px;
+        }
+        .invoice-kicker {
+            font-size: 18px;
+        }
+        .invoice-number {
+            margin: 2px 0 3px;
+        }
+        .invoice-meta dl {
+            margin: 4px 0 0;
+        }
+        .invoice-panels-table {
+            margin-top: 6px;
+        }
+        .invoice-panel {
+            padding: 6px 8px;
+        }
+        .invoice-panel h2, .invoice-section h2, .invoice-notes h2 {
+            margin: 0 0 4px;
+            font-size: 10px;
+        }
+        .primary-line {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        .detail-grid-label, .detail-grid-value {
+            padding: 1px 0;
+            font-size: 10.5px;
+        }
+        .invoice-section {
+            margin-top: 6px;
+        }
+        .invoice-table th {
+            padding: 4px 6px;
+            font-size: 9.5px;
+        }
+        .invoice-table td {
+            padding: 4px 6px;
+            font-size: 10px;
+        }
+        .invoice-bottom-table {
+            margin-top: 6px;
+        }
+        .totals-card {
+            padding: 5px 8px;
+        }
+        .summary-row {
+            padding: 2px 0;
+            font-size: 10.5px;
+        }
+        .summary-row.balance {
+            font-size: 12px;
+            padding-top: 3px;
+        }
+        .payment-status-box {
+            margin-top: 4px;
+            padding: 4px 6px;
+        }
+        .invoice-notes {
+            margin-top: 6px;
+            padding: 4px 8px;
+        }
+        .invoice-notes p {
+            font-size: 9.5px;
+            margin: 0 0 2px;
+        }
+        .invoice-footer {
+            margin-top: 6px;
+            padding-top: 5px;
+            font-size: 9.5px;
+        }
+        .invoice-header, .invoice-panels-table, .invoice-bottom-table {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .invoice-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
     }
 </style>

@@ -17,6 +17,7 @@
                 <a href="{{ route('calendar.index') }}" class="btn btn-light border btn-sm">
                     <i class="bx bx-calendar me-1" aria-hidden="true"></i> Return to Calendar
                 </a>
+                <a href="{{ route('quotations.index') }}" class="btn btn-white border btn-sm text-muted">Back to quotations</a>
                 <a href="{{ route('quotations.create') }}" class="btn btn-white border btn-sm text-muted">
                     <i class="bx bx-plus me-1" aria-hidden="true"></i> Create New Quotation
                 </a>

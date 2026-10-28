@@ -63,7 +63,10 @@
                 <h2 class="fs-4 m-0 fw-bold">Create Quotation</h2>
                 <div class="text-muted small">Generate a pricing estimate or quotation for a client or prospective appointment.</div>
             </div>
-            <a href="{{ route('calendar.index') }}" class="btn btn-white border btn-sm text-muted">Back to Calendar</a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('quotations.index') }}" class="btn btn-white border btn-sm text-muted">Back to quotations</a>
+                <a href="{{ route('calendar.index') }}" class="btn btn-white border btn-sm text-muted">Back to Calendar</a>
+            </div>
         </div>
     </nav>
 
