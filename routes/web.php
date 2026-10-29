@@ -133,8 +133,12 @@ Route::get('quotations', [QuotationController::class, 'index'])->name('quotation
 Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
 Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
 Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
+Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
 Route::get('quotations/{quotation}/download', [QuotationController::class, 'download'])->name('quotations.download');
 Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
+Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
+Route::post('quotations/{quotation}/cancel', [QuotationController::class, 'cancel'])->name('quotations.cancel');
 
 Route::get('payment-records', [PaymentRecordController::class, 'index'])->name('payment-records.index');
 Route::post('payment-records', [PaymentRecordController::class, 'store'])->name('payment-records.store');

@@ -107,7 +107,7 @@
     .quotation-footer strong { display: block; color: var(--quotation-dark); margin-bottom: 2px; font-size: 10px; }
     .generated-at { margin-top: 3px; font-size: 9px; }
 
-    @media (max-width: 768px) {
+    @media screen and (max-width: 768px) {
         .quotation-preview-shell { padding: 10px; }
         .quotation-document { padding: 16px; border-radius: 10px; }
         .clinic-block, .quotation-meta, .quotation-panel-cell, .quotation-notes-cell, .totals-card-cell { display: block; width: 100%; text-align: left; padding: 0; }
@@ -117,10 +117,130 @@
         .quotation-notes-cell { margin-bottom: 10px; }
     }
     @media print {
-        .no-print, .sidebar, .app-topbar, .topbar, .navbar, .app-toast-container { display: none !important; }
-        body, .quotation-preview-shell { background: #fff !important; padding: 0 !important; }
-        #page-content-wrapper { width: 100% !important; }
-        .quotation-document { box-shadow: none !important; border: 0 !important; margin: 0 !important; max-width: none !important; border-radius: 0 !important; padding: 4mm 6mm !important; }
-        @page { size: A4 portrait; margin: 6mm; }
+        @page {
+            size: A4 portrait;
+            margin: 6mm;
+        }
+        html, body {
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
+        #wrapper, .app-shell, #page-content-wrapper {
+            display: block !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        main, main.pb-5 {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .no-print, .sidebar, .app-topbar, .topbar, .navbar, .app-toast-container, .alert, .modal, .modal-backdrop {
+            display: none !important;
+        }
+        .quotation-preview-shell {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .quotation-document {
+            box-shadow: none !important;
+            border: 1px solid var(--quotation-border) !important;
+            border-radius: 12px !important;
+            padding: 22px 26px !important;
+            margin: 0 auto !important;
+            max-width: none !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            page-break-inside: auto;
+            break-inside: auto;
+            font-family: Arial, Helvetica, sans-serif !important;
+            line-height: 1.35;
+        }
+        .quotation-header {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            padding-bottom: 10px !important;
+            border-bottom: 2px solid var(--quotation-border) !important;
+        }
+        .clinic-block {
+            display: table-cell !important;
+            vertical-align: top !important;
+            width: 62% !important;
+            text-align: left !important;
+        }
+        .quotation-meta {
+            display: table-cell !important;
+            vertical-align: top !important;
+            width: 38% !important;
+            text-align: right !important;
+            margin-top: 0 !important;
+        }
+        .quotation-panels-table {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            margin-top: 10px !important;
+        }
+        .quotation-panel-cell {
+            display: table-cell !important;
+            width: 50% !important;
+            vertical-align: top !important;
+        }
+        .quotation-panel-cell:first-child {
+            padding-right: 6px !important;
+            padding-left: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        .quotation-panel-cell:last-child {
+            padding-left: 6px !important;
+            padding-right: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        .table-responsive-wrapper {
+            overflow: visible !important;
+        }
+        .quotation-table {
+            width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
+        }
+        .quotation-bottom-table {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            margin-top: 10px !important;
+        }
+        .quotation-notes-cell {
+            display: table-cell !important;
+            width: 58% !important;
+            padding-right: 8px !important;
+            vertical-align: top !important;
+            margin-bottom: 0 !important;
+        }
+        .totals-card-cell {
+            display: table-cell !important;
+            width: 42% !important;
+            vertical-align: top !important;
+        }
+        .quotation-header, .quotation-panels-table, .quotation-bottom-table {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .quotation-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
     }
 </style>

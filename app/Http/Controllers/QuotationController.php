@@ -164,6 +164,16 @@ class QuotationController extends Controller
             }
         }
 
+        // Validate all item practitioners match the quotation-level practitioner
+        $quotationStaffId = (int) $validated['staff_id'];
+        foreach ($validated['items'] as $index => $item) {
+            if (!empty($item['staff_id']) && (int) $item['staff_id'] !== $quotationStaffId) {
+                throw ValidationException::withMessages([
+                    "items.{$index}.staff_id" => "All quotation items must belong to the selected practitioner.",
+                ]);
+            }
+        }
+
         try {
             $quotation = $this->quotationCreationService->createQuotation([
                 'client_id'      => (int) $validated['client_id'],
@@ -219,6 +229,152 @@ class QuotationController extends Controller
         }
 
         return view('quotations.show', $this->quotationViewData($quotation));
+    }
+
+    public function edit(Quotation $quotation)
+    {
+        $quotation = $this->quotationQuery()->findOrFail($quotation->id);
+        $this->authorizeQuotationAccess($quotation);
+
+        if ($quotation->status !== 'draft') {
+            abort(403, 'Only draft quotations can be edited.');
+        }
+
+        $clients = Client::where('status', 'active')->orderBy('name')->get(['id', 'name', 'email', 'phone']);
+        if ($clients->isEmpty()) {
+            $clients = Client::orderBy('name')->get(['id', 'name', 'email', 'phone']);
+        }
+        $staff = Staff::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email', 'location_id']);
+        $services = Service::where('is_active', true)->orderBy('name')->get();
+        $appointments = Appointment::with(['client:id,name', 'staff:id,name', 'service:id,name,price'])
+            ->where('status', '!=', 'cancelled')
+            ->latest('start_time')
+            ->limit(250)
+            ->get();
+        $currency = BusinessSetting::where('key', 'currency')->value('value') ?: '$';
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'quotation'    => $quotation,
+                'clients'      => $clients,
+                'staff'        => $staff,
+                'services'     => $services,
+                'appointments' => $appointments,
+                'currency'     => $currency,
+            ]);
+        }
+
+        return view('quotations.edit', [
+            'quotation'    => $quotation,
+            'clients'      => $clients,
+            'staff'        => $staff,
+            'services'     => $services,
+            'appointments' => $appointments,
+            'currency'     => $currency,
+        ]);
+    }
+
+    public function update(Request $request, Quotation $quotation)
+    {
+        $quotation = $this->quotationQuery()->findOrFail($quotation->id);
+        $this->authorizeQuotationAccess($quotation);
+
+        if ($quotation->status !== 'draft') {
+            abort(403, 'Only draft quotations can be edited.');
+        }
+
+        $currentStaff = Auth::guard('staff')->user();
+
+        $validated = $request->validate([
+            'client_id'      => 'required|exists:clients,id',
+            'staff_id'       => 'required|exists:staff,id',
+            'appointment_id' => 'nullable|exists:appointments,id',
+            'issued_date'    => 'required|date',
+            'valid_until'    => 'required|date|after_or_equal:issued_date',
+            'notes'          => 'nullable|string|max:2000',
+            'terms'          => 'nullable|string|max:2000',
+            'items'          => 'required|array|min:1',
+            'items.*.service_id'      => 'nullable|exists:services,id',
+            'items.*.staff_id'        => 'nullable|exists:staff,id',
+            'items.*.description'     => 'nullable|string|max:255',
+            'items.*.quantity'        => 'required|numeric|gt:0',
+            'items.*.unit_price'      => 'required|numeric|min:0',
+            'items.*.discount_amount' => 'nullable|numeric|min:0',
+            'items.*.tax_rate'        => 'nullable|numeric|min:0|max:100',
+        ], [
+            'client_id.required' => 'Client is required.',
+            'client_id.exists'   => 'The selected client is invalid.',
+            'staff_id.required'  => 'Practitioner is required.',
+            'staff_id.exists'    => 'The selected practitioner is invalid.',
+            'items.required'     => 'At least one quotation item is required.',
+            'items.min'          => 'At least one quotation item is required.',
+            'items.*.quantity.gt'=> 'Quantity must be greater than zero.',
+            'items.*.unit_price.min' => 'Unit price cannot be negative.',
+            'items.*.tax_rate.max'   => 'Tax rate cannot exceed 100%.',
+        ]);
+
+        $this->authorizeQuotationCreation($currentStaff, (int) $validated['staff_id'], !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null);
+
+        // Validate appointment belongs to client
+        if (!empty($validated['appointment_id'])) {
+            $appointment = Appointment::find($validated['appointment_id']);
+            if ($appointment && (int) $appointment->client_id !== (int) $validated['client_id']) {
+                throw ValidationException::withMessages([
+                    'appointment_id' => 'The selected appointment does not belong to the selected client.',
+                ]);
+            }
+        }
+
+        // Validate item-level discounts against line subtotals
+        foreach ($validated['items'] as $index => $item) {
+            $qty = (float) ($item['quantity'] ?? 1);
+            $price = (float) ($item['unit_price'] ?? 0);
+            $disc = (float) ($item['discount_amount'] ?? 0);
+            $lineSubtotal = round($qty * $price, 2);
+
+            if ($disc > $lineSubtotal) {
+                throw ValidationException::withMessages([
+                    "items.{$index}.discount_amount" => "Discount amount ({$disc}) cannot exceed line subtotal ({$lineSubtotal}).",
+                ]);
+            }
+        }
+
+        // Validate all item practitioners match the quotation-level practitioner
+        $quotationStaffId = (int) $validated['staff_id'];
+        foreach ($validated['items'] as $index => $item) {
+            if (!empty($item['staff_id']) && (int) $item['staff_id'] !== $quotationStaffId) {
+                throw ValidationException::withMessages([
+                    "items.{$index}.staff_id" => "All quotation items must belong to the selected practitioner.",
+                ]);
+            }
+        }
+
+        try {
+            $updatedQuotation = $this->quotationCreationService->updateDraftQuotation($quotation, [
+                'client_id'      => (int) $validated['client_id'],
+                'staff_id'       => (int) $validated['staff_id'],
+                'appointment_id' => !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null,
+                'issued_date'    => $validated['issued_date'],
+                'valid_until'    => $validated['valid_until'],
+                'notes'          => $validated['notes'] ?? null,
+                'terms'          => $validated['terms'] ?? null,
+                'items'          => $validated['items'],
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            throw ValidationException::withMessages([
+                'items' => $e->getMessage(),
+            ]);
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'   => true,
+                'message'   => 'Quotation updated successfully.',
+                'quotation' => $updatedQuotation->load(['items', 'client', 'staff']),
+            ], 200);
+        }
+
+        return redirect()->route('quotations.show', $quotation->id)->with('success', 'Quotation updated successfully.');
     }
 
     public function download(Quotation $quotation)
@@ -288,6 +444,100 @@ class QuotationController extends Controller
 
             return redirect()->route('quotations.show', $quotation->id)
                 ->with('error', 'An error occurred during quotation conversion. Please try again.');
+        }
+    }
+
+    public function accept(Quotation $quotation)
+    {
+        $quotation = $this->quotationQuery()->findOrFail($quotation->id);
+        $this->authorizeQuotationAccess($quotation);
+
+        try {
+            $updated = $this->quotationCreationService->acceptQuotation($quotation);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success'   => true,
+                    'message'   => "Quotation {$quotation->quotation_number} has been approved.",
+                    'quotation' => $updated,
+                ], 200);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('success', "Quotation {$quotation->quotation_number} has been approved.");
+        } catch (\InvalidArgumentException $e) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Quotation approval failed unexpectedly', [
+                'quotation_id'     => $quotation->id,
+                'quotation_number' => $quotation->quotation_number,
+                'error'            => $e->getMessage(),
+            ]);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred during quotation approval.',
+                ], 500);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('error', 'An error occurred during quotation approval. Please try again.');
+        }
+    }
+
+    public function cancel(Quotation $quotation)
+    {
+        $quotation = $this->quotationQuery()->findOrFail($quotation->id);
+        $this->authorizeQuotationAccess($quotation);
+
+        try {
+            $updated = $this->quotationCreationService->cancelQuotation($quotation);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success'   => true,
+                    'message'   => "Quotation {$quotation->quotation_number} has been cancelled.",
+                    'quotation' => $updated,
+                ], 200);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('success', "Quotation {$quotation->quotation_number} has been cancelled.");
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Quotation cancellation failed unexpectedly', [
+                'quotation_id'     => $quotation->id,
+                'quotation_number' => $quotation->quotation_number,
+                'error'            => $e->getMessage(),
+            ]);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred during quotation cancellation.',
+                ], 500);
+            }
+
+            return redirect()->route('quotations.show', $quotation->id)
+                ->with('error', 'An error occurred during quotation cancellation. Please try again.');
         }
     }
 
@@ -401,18 +651,19 @@ class QuotationController extends Controller
         $targetStaff = Staff::find($targetStaffId);
         $targetLocation = $targetStaff?->location_id;
 
-        $appointmentLocation = null;
+        $targetStaffMatches = ((int) $targetStaffId === (int) $currentStaff->id)
+            || ($targetLocation && (int) $targetLocation === (int) $currentStaff->location_id);
+
+        if (!$targetStaffMatches) {
+            abort(403, 'Unauthorized access to quotation at another location.');
+        }
+
         if ($appointmentId) {
             $appt = Appointment::find($appointmentId);
             $appointmentLocation = $appt?->location_id;
-        }
-
-        $matchesLocation = ($targetLocation && (int) $targetLocation === (int) $currentStaff->location_id)
-            || ($appointmentLocation && (int) $appointmentLocation === (int) $currentStaff->location_id)
-            || ((int) $targetStaffId === (int) $currentStaff->id);
-
-        if (!$matchesLocation) {
-            abort(403, 'Unauthorized access to quotation at another location.');
+            if ($appointmentLocation && (int) $appointmentLocation !== (int) $currentStaff->location_id) {
+                abort(403, 'Unauthorized access to quotation at another location.');
+            }
         }
     }
 }

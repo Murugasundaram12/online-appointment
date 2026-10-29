@@ -21,6 +21,28 @@
                 <a href="{{ route('quotations.create') }}" class="btn btn-white border btn-sm text-muted">
                     <i class="bx bx-plus me-1" aria-hidden="true"></i> Create New Quotation
                 </a>
+                @if($quotation->status === 'draft')
+                    <a href="{{ route('quotations.edit', $quotation) }}" class="btn btn-white border btn-sm">
+                        <i class="bx bx-edit me-1" aria-hidden="true"></i> Edit Quotation
+                    </a>
+                @endif
+                @if(in_array($quotation->status, ['draft', 'sent'], true))
+                    <form method="POST" action="{{ route('quotations.accept', $quotation) }}" class="d-inline m-0 p-0 no-print">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-sm px-3">
+                            <i class="bx bx-check-circle me-1" aria-hidden="true"></i> Approve Quotation
+                        </button>
+                    </form>
+                @endif
+                @if(in_array($quotation->status, ['draft', 'sent', 'accepted'], true) && $quotation->status !== 'converted' && !$quotation->invoices()->exists())
+                    <form method="POST" action="{{ route('quotations.cancel', $quotation) }}" class="d-inline m-0 p-0 no-print"
+                          onsubmit="return confirm('Are you sure you want to cancel quotation {{ $quotation->quotation_number }}?');">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                            <i class="bx bx-x-circle me-1" aria-hidden="true"></i> Cancel Quotation
+                        </button>
+                    </form>
+                @endif
                 <button type="button" onclick="window.print()" class="btn btn-white border btn-sm">
                     <i class="bx bx-printer me-1" aria-hidden="true"></i> Print Quotation
                 </button>
@@ -40,13 +62,13 @@
     </nav>
 
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show m-3 no-print" role="alert">
             <i class="bx bx-check-circle me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show m-3 no-print" role="alert">
             {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>

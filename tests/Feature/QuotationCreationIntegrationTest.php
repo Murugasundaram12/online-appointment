@@ -640,4 +640,161 @@ class QuotationCreationIntegrationTest extends TestCase
         $response->assertStatus(422)->assertJsonValidationErrors(['appointment_id']);
         $this->assertDatabaseCount('quotations', 0);
     }
+
+    /** Test 16 — Creation persists same practitioner on quotation and all items */
+    public function test_creation_persists_same_practitioner_on_quotation_and_all_items(): void
+    {
+        $payload = [
+            'client_id'   => $this->clientA->id,
+            'staff_id'    => $this->staffA->id,
+            'issued_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(14)->toDateString(),
+            'items'       => [
+                [
+                    'service_id'  => $this->serviceA->id,
+                    'staff_id'    => $this->staffA->id,
+                    'description' => 'Item 1',
+                    'quantity'    => 1.0,
+                    'unit_price'  => 50.00,
+                ],
+                [
+                    'service_id'  => $this->serviceB->id,
+                    'staff_id'    => null, // Null inherits quotation-level staff
+                    'description' => 'Item 2',
+                    'quantity'    => 1.0,
+                    'unit_price'  => 60.00,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin, 'staff')
+            ->postJson(route('quotations.store'), $payload);
+
+        $response->assertStatus(201);
+        $quotation = Quotation::with('items')->first();
+        $this->assertNotNull($quotation);
+        $this->assertEquals($this->staffA->id, $quotation->staff_id);
+        $this->assertCount(2, $quotation->items);
+        $this->assertEquals($this->staffA->id, $quotation->items[0]->staff_id);
+        $this->assertEquals($this->staffA->id, $quotation->items[1]->staff_id);
+    }
+
+    /** Test 17 — Creation rejects mismatched item practitioner via controller validation */
+    public function test_creation_rejects_mismatched_item_practitioner_via_controller(): void
+    {
+        $payload = [
+            'client_id'   => $this->clientA->id,
+            'staff_id'    => $this->staffA->id,
+            'issued_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(14)->toDateString(),
+            'items'       => [
+                [
+                    'service_id'  => $this->serviceA->id,
+                    'staff_id'    => $this->staffA->id,
+                    'description' => 'Item 1',
+                    'quantity'    => 1.0,
+                    'unit_price'  => 50.00,
+                ],
+                [
+                    'service_id'  => $this->serviceB->id,
+                    'staff_id'    => $this->admin->id, // Mismatch!
+                    'description' => 'Item 2',
+                    'quantity'    => 1.0,
+                    'unit_price'  => 60.00,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin, 'staff')
+            ->postJson(route('quotations.store'), $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['items.1.staff_id']);
+        $this->assertDatabaseCount('quotations', 0);
+    }
+
+    /** Test 18 — Creation rejects mismatched item practitioner via service layer */
+    public function test_creation_rejects_mismatched_item_practitioner_via_service(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('All quotation items must belong to the selected practitioner');
+
+        app(QuotationCreationService::class)->createQuotation([
+            'client_id'   => $this->clientA->id,
+            'staff_id'    => $this->staffA->id,
+            'issued_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(14)->toDateString(),
+            'items'       => [
+                [
+                    'service_id'  => $this->serviceA->id,
+                    'staff_id'    => $this->admin->id, // Mismatch!
+                    'description' => 'Item 1',
+                    'quantity'    => 1.0,
+                    'unit_price'  => 50.00,
+                ],
+            ],
+        ]);
+    }
+
+    /** Test 19 — Location-scoped staff cannot bypass cross-location practitioner restriction via appointment */
+    public function test_cross_location_practitioner_with_same_location_appointment_rejected_for_location_scoped_staff(): void
+    {
+        // staffA belongs to locationA, appointmentA belongs to locationA & clientA,
+        // but staffB belongs to locationB. Appointment location must NOT bypass practitioner location.
+        $payload = [
+            'client_id'      => $this->clientA->id,
+            'staff_id'       => $this->staffB->id, // Cross-location!
+            'appointment_id' => $this->appointmentA->id, // Same location as staffA
+            'issued_date'    => now()->toDateString(),
+            'valid_until'    => now()->addDays(30)->toDateString(),
+            'items'          => [
+                [
+                    'service_id' => $this->serviceA->id,
+                    'quantity'   => 1,
+                    'unit_price' => 50.00,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->postJson(route('quotations.store'), $payload);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseCount('quotations', 0);
+    }
+
+    /** Test 20 — Location-scoped staff can assign quotation to practitioner at same location */
+    public function test_same_location_practitioner_assignment_succeeds_for_location_scoped_staff(): void
+    {
+        $peerStaffA = Staff::create([
+            'location_id'  => $this->locationA->id,
+            'name'         => 'Peer Staff Location A',
+            'email'        => 'peer.staff@clinic.test',
+            'password'     => \Illuminate\Support\Facades\Hash::make('secret123'),
+            'access_level' => 'staff',
+            'is_active'    => true,
+        ]);
+
+        $payload = [
+            'client_id'      => $this->clientA->id,
+            'staff_id'       => $peerStaffA->id,
+            'appointment_id' => $this->appointmentA->id,
+            'issued_date'    => now()->toDateString(),
+            'valid_until'    => now()->addDays(30)->toDateString(),
+            'items'          => [
+                [
+                    'service_id' => $this->serviceA->id,
+                    'quantity'   => 1,
+                    'unit_price' => 50.00,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->postJson(route('quotations.store'), $payload);
+
+        $response->assertStatus(201);
+        $quotation = Quotation::first();
+        $this->assertEquals($peerStaffA->id, $quotation->staff_id);
+    }
 }

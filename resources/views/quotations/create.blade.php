@@ -563,6 +563,9 @@
                 }
                 if (selected.dataset.staffId && staff) {
                     staff.value = selected.dataset.staffId;
+                    itemsTableBody.querySelectorAll('.item-staff').forEach(select => {
+                        select.value = selected.dataset.staffId;
+                    });
                 }
 
                 // Populate or update the first item row if available
@@ -596,6 +599,10 @@
             function addItemRow() {
                 if (!template) return;
                 const clone = template.content.cloneNode(true);
+                const newItemStaff = clone.querySelector('.item-staff');
+                if (newItemStaff && staff?.value) {
+                    newItemStaff.value = staff.value;
+                }
                 itemsTableBody.appendChild(clone);
                 reindexRows();
                 recalculateTotals();
@@ -619,6 +626,16 @@
                         }
                     }
                     recalculateTotals();
+                } else if (target.classList.contains('item-staff')) {
+                    const selectedStaffId = target.value;
+                    if (selectedStaffId && staff) {
+                        staff.value = selectedStaffId;
+                    }
+                    itemsTableBody.querySelectorAll('.item-staff').forEach(select => {
+                        if (select !== target) {
+                            select.value = selectedStaffId;
+                        }
+                    });
                 } else if (target.classList.contains('item-qty') ||
                            target.classList.contains('item-price') ||
                            target.classList.contains('item-discount') ||
@@ -656,6 +673,12 @@
 
             btnAddItem?.addEventListener('click', addItemRow);
             appointment?.addEventListener('change', applyAppointment);
+            staff?.addEventListener('change', () => {
+                const newStaffId = staff.value;
+                itemsTableBody.querySelectorAll('.item-staff').forEach(select => {
+                    select.value = newStaffId;
+                });
+            });
 
             // Initialize on load
             reindexRows();

@@ -109,6 +109,10 @@
                                     <td class="small">{{ $quotation->staff?->name ?? '—' }}</td>
                                     <td class="pe-4 text-end">
                                         <div class="d-inline-flex gap-2 align-items-center">
+                                            @if($quotation->status === 'draft')
+                                                <a href="{{ route('quotations.edit', $quotation->id) }}"
+                                                    class="btn btn-link text-muted p-0" title="Edit Quotation"><i class='bx bx-pencil'></i></a>
+                                            @endif
                                             <a href="{{ route('quotations.show', $quotation->id) }}"
                                                 class="btn btn-link text-muted p-0" title="View Quotation"><i class='bx bx-show fs-5'></i></a>
                                             <a href="{{ route('quotations.download', $quotation->id) }}"

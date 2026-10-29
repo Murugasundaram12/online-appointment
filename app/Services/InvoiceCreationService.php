@@ -7,6 +7,7 @@ use App\Models\BusinessSetting;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\PaymentRecord;
+use App\Models\Quotation;
 use App\Models\Service;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -186,13 +187,31 @@ class InvoiceCreationService
             return null;
         }
 
+        // Defer auto-invoicing if an active quotation governs this appointment
+        if (Quotation::where('appointment_id', $appointment->id)
+            ->whereIn('status', ['draft', 'sent', 'accepted'])
+            ->exists()) {
+            return null;
+        }
+
         return DB::transaction(function () use ($appointment, $unitPrice) {
             $lockedAppt = Appointment::where('id', $appointment->id)->lockForUpdate()->first();
             if (!$lockedAppt) {
                 return null;
             }
 
+            if ($lockedAppt->status !== 'completed') {
+                return null;
+            }
+
             if (Invoice::where('appointment_id', $appointment->id)->exists()) {
+                return null;
+            }
+
+            // Re-check under lock inside transaction
+            if (Quotation::where('appointment_id', $appointment->id)
+                ->whereIn('status', ['draft', 'sent', 'accepted'])
+                ->exists()) {
                 return null;
             }
 

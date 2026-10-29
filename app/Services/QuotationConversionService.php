@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
 use App\Models\Invoice;
 use App\Models\Quotation;
 use Illuminate\Support\Facades\DB;
@@ -48,11 +49,23 @@ class QuotationConversionService
                 );
             }
 
-            // 4. Protect against appointment collision if appointment-linked
-            if ($lockedQuotation->appointment_id && Invoice::where('appointment_id', $lockedQuotation->appointment_id)->exists()) {
-                throw new InvalidArgumentException(
-                    "An invoice already exists for the appointment linked to quotation {$lockedQuotation->quotation_number}."
-                );
+            // 4. Synchronize on linked appointment row and protect against appointment collision
+            if ($lockedQuotation->appointment_id) {
+                $lockedAppointment = Appointment::where('id', $lockedQuotation->appointment_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$lockedAppointment) {
+                    throw new InvalidArgumentException(
+                        "The appointment linked to quotation {$lockedQuotation->quotation_number} does not exist."
+                    );
+                }
+
+                if (Invoice::where('appointment_id', $lockedQuotation->appointment_id)->exists()) {
+                    throw new InvalidArgumentException(
+                        "An invoice already exists for the appointment linked to quotation {$lockedQuotation->quotation_number}."
+                    );
+                }
             }
 
             // 5. Load and validate items
