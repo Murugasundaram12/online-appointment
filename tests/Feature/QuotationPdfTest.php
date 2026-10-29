@@ -564,4 +564,112 @@ class QuotationPdfTest extends TestCase
         $response->assertSee('window.print()', false);
         $response->assertSee(route('quotations.download', $quotation), false);
     }
+
+    /** Test 14 — Downloaded Quotation PDF preserves two-column layout and does not collapse to mobile */
+    public function test_pdf_renders_two_column_layout_without_mobile_collapse(): void
+    {
+        $quotation = $this->quotationService->createQuotation([
+            'client_id'   => $this->client->id,
+            'staff_id'    => $this->staffA->id,
+            'issued_date' => '2026-10-06',
+            'valid_until' => '2026-11-05',
+            'items'       => [
+                [
+                    'service_id'  => $this->serviceA->id,
+                    'description' => 'Two Column Test Item',
+                    'quantity'    => 1,
+                    'unit_price'  => 100.00,
+                ],
+            ],
+        ]);
+
+        $pdfResponse = $this->actingAs($this->admin, 'staff')
+            ->get(route('quotations.download', $quotation));
+
+        $pdfResponse->assertStatus(200);
+        $pdfContent = $pdfResponse->getContent();
+
+        // Extract BT ... Td coordinates for right-aligned card content
+        preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $pdfContent, $m);
+        $foundRightColumn = false;
+        foreach ($m[1] as $stream) {
+            $u = @gzuncompress($stream);
+            $s = $u !== false ? $u : $stream;
+            if (strpos($s, 'Total') !== false) {
+                if (preg_match('/BT\s+([\d\.]+)\s+([\d\.]+)\s+Td[^\n]*\(' . preg_quote('Total', '/') . '\)/', $s, $match)) {
+                    $xCoord = (float) $match[1];
+                    // On A4 page (~595 pt width), right column is positioned > 300 pt
+                    $this->assertGreaterThan(300.0, $xCoord, "Total should be positioned in right column (> 300 pt), got {$xCoord}");
+                    $foundRightColumn = true;
+                }
+            }
+        }
+
+        $this->assertTrue($foundRightColumn, 'Total coordinates were not located in PDF stream.');
+    }
+
+    /** Test 15 — Downloaded Quotation PDF content, headers, and tables remain within printable A4 boundaries without clipping */
+    public function test_pdf_fits_within_a4_page_boundaries_without_right_edge_clipping(): void
+    {
+        $quotation = $this->quotationService->createQuotation([
+            'client_id'   => $this->client->id,
+            'staff_id'    => $this->staffA->id,
+            'issued_date' => '2026-10-06',
+            'valid_until' => '2026-11-05',
+            'items'       => [
+                [
+                    'service_id'  => $this->serviceA->id,
+                    'description' => 'Boundary Test Item',
+                    'quantity'    => 1,
+                    'unit_price'  => 100.00,
+                ],
+            ],
+        ]);
+
+        $pdfResponse = $this->actingAs($this->admin, 'staff')
+            ->get(route('quotations.download', $quotation));
+
+        $pdfResponse->assertStatus(200);
+        $pdfContent = $pdfResponse->getContent();
+
+        preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $pdfContent, $m);
+        $foundQuotationKicker = false;
+        $foundAmountHeader = false;
+
+        foreach ($m[1] as $stream) {
+            $u = @gzuncompress($stream);
+            $s = $u !== false ? $u : $stream;
+
+            // Check document card rectangles do not exceed printable width (578.28 pt for 6mm margins)
+            preg_match_all('/([0-9\.]+)\s+([0-9\.]+)\s+([0-9\.]+)\s+([0-9\.]+)\s+re/', $s, $rects, PREG_SET_ORDER);
+            foreach ($rects as $r) {
+                $rx = (float) $r[1];
+                $rw = (float) $r[3];
+                $right = $rx + $rw;
+                // Exclude full page canvas background (w ~ 595.28)
+                if ($rw < 590.0) {
+                    $this->assertLessThanOrEqual(578.5, $right, "Document container rectangle right edge ({$right} pt) exceeds A4 printable boundary.");
+                }
+            }
+
+            // Check QUOTATION kicker position
+            if (preg_match('/BT\s+([\d\.]+)\s+([\d\.]+)\s+Td[^\n]*\(' . preg_quote('QUOTATION', '/') . '\)/', $s, $match)) {
+                $xCoord = (float) $match[1];
+                $this->assertGreaterThan(450.0, $xCoord, "QUOTATION title should be on the right side (> 450 pt), got {$xCoord}");
+                $this->assertLessThanOrEqual(525.0, $xCoord, "QUOTATION title X ({$xCoord} pt) must leave room for text width within 578 pt boundary.");
+                $foundQuotationKicker = true;
+            }
+
+            // Check AMOUNT column header position
+            if (preg_match('/BT\s+([\d\.]+)\s+([\d\.]+)\s+Td[^\n]*\(' . preg_quote('AMOUNT', '/') . '\)/', $s, $match)) {
+                $xCoord = (float) $match[1];
+                $this->assertGreaterThan(500.0, $xCoord, "AMOUNT column header should be on the right side (> 500 pt), got {$xCoord}");
+                $this->assertLessThanOrEqual(550.0, $xCoord, "AMOUNT column header X ({$xCoord} pt) must leave room for header width within 578 pt boundary.");
+                $foundAmountHeader = true;
+            }
+        }
+
+        $this->assertTrue($foundQuotationKicker, 'QUOTATION title was not located in PDF stream.');
+        $this->assertTrue($foundAmountHeader, 'AMOUNT column header was not located in PDF stream.');
+    }
 }

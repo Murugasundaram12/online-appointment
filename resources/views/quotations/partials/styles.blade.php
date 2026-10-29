@@ -107,7 +107,7 @@
     .quotation-footer strong { display: block; color: var(--quotation-dark); margin-bottom: 2px; font-size: 10px; }
     .generated-at { margin-top: 3px; font-size: 9px; }
 
-    @media screen and (max-width: 768px) {
+    @media not dompdf and screen and (max-width: 768px) {
         .quotation-preview-shell { padding: 10px; }
         .quotation-document { padding: 16px; border-radius: 10px; }
         .clinic-block, .quotation-meta, .quotation-panel-cell, .quotation-notes-cell, .totals-card-cell { display: block; width: 100%; text-align: left; padding: 0; }
@@ -116,7 +116,7 @@
         .quotation-panel-cell { margin-bottom: 10px; }
         .quotation-notes-cell { margin-bottom: 10px; }
     }
-    @media print {
+    @media print, dompdf {
         @page {
             size: A4 portrait;
             margin: 6mm;
@@ -160,7 +160,7 @@
             padding: 22px 26px !important;
             margin: 0 auto !important;
             max-width: none !important;
-            width: 100% !important;
+            width: auto !important;
             box-sizing: border-box !important;
             page-break-inside: auto;
             break-inside: auto;

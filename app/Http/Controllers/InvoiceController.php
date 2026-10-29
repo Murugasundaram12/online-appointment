@@ -159,9 +159,11 @@ class InvoiceController extends Controller
         $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
 
         try {
-            return Pdf::loadView('invoices.pdf', $data)
-                ->setPaper('a4', 'portrait')
-                ->download($filename);
+            $pdf = Pdf::loadView('invoices.pdf', $data)
+                ->setPaper('a4', 'portrait');
+            $pdf->getDomPDF()->getOptions()->setDefaultMediaType('print');
+
+            return $pdf->download($filename);
         } catch (\Throwable $exception) {
             Log::error('Invoice PDF generation failed', [
                 'invoice_id' => $invoice->id,

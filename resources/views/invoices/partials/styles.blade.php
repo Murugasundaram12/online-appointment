@@ -12,7 +12,12 @@
         --invoice-background: #ffffff;
         --invoice-soft: #f8fafc;
     }
-    .invoice-preview-shell { background: #eef2f7; padding: 20px; }
+
+    .invoice-preview-shell {
+        background: #eef2f7;
+        padding: 20px;
+    }
+
     .invoice-document {
         max-width: 900px;
         margin: 0 auto;
@@ -27,12 +32,44 @@
         page-break-inside: avoid;
         break-inside: avoid;
     }
-    .invoice-header { display: table; width: 100%; table-layout: fixed; padding-bottom: 10px; border-bottom: 2px solid var(--invoice-border); }
-    .clinic-block { display: table-cell; vertical-align: top; width: 62%; }
-    .invoice-meta { display: table-cell; vertical-align: top; width: 38%; text-align: right; }
-    .clinic-brand-table { display: table; width: 100%; }
-    .clinic-brand-cell { display: table-cell; vertical-align: top; }
-    .clinic-logo { max-height: 46px; max-width: 110px; margin-right: 10px; }
+
+    .invoice-header {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--invoice-border);
+    }
+
+    .clinic-block {
+        display: table-cell;
+        vertical-align: top;
+        width: 62%;
+    }
+
+    .invoice-meta {
+        display: table-cell;
+        vertical-align: top;
+        width: 38%;
+        text-align: right;
+    }
+
+    .clinic-brand-table {
+        display: table;
+        width: 100%;
+    }
+
+    .clinic-brand-cell {
+        display: table-cell;
+        vertical-align: top;
+    }
+
+    .clinic-logo {
+        max-height: 46px;
+        max-width: 110px;
+        margin-right: 10px;
+    }
+
     .clinic-mark {
         width: 42px;
         height: 42px;
@@ -45,85 +82,418 @@
         line-height: 42px;
         margin-right: 10px;
     }
-    .clinic-name { margin: 0 0 3px; color: var(--invoice-dark); font-size: 17px; font-weight: 800; line-height: 1.2; }
-    .muted { color: var(--invoice-muted); font-size: 11px; line-height: 1.3; }
-    .invoice-kicker { color: var(--invoice-primary); font-size: 20px; font-weight: 900; letter-spacing: 1px; line-height: 1; }
-    .invoice-number { color: var(--invoice-dark); font-weight: 800; font-size: 12px; margin: 3px 0 5px; }
-    .status-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-    .status-outstanding { background: #fef3c7; color: var(--invoice-warning); }
-    .status-partially_paid { background: var(--invoice-primary-soft); color: var(--invoice-primary); }
-    .status-paid { background: #dcfce7; color: var(--invoice-success); }
-    .status-void { background: #fee2e2; color: var(--invoice-danger); }
-    .invoice-meta dl { margin: 6px 0 0; }
-    .invoice-meta dl div { margin-top: 2px; }
-    .invoice-meta dt { display: inline; color: var(--invoice-muted); font-size: 11px; font-weight: 700; }
-    .invoice-meta dd { display: inline; margin: 0 0 0 4px; color: var(--invoice-dark); font-size: 11px; font-weight: 700; }
 
-    .invoice-panels-table { display: table; width: 100%; table-layout: fixed; margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }
-    .invoice-panel-cell { display: table-cell; width: 50%; vertical-align: top; }
-    .invoice-panel-cell:first-child { padding-right: 6px; }
-    .invoice-panel-cell:last-child { padding-left: 6px; }
-    .invoice-panel { background: var(--invoice-soft); border: 1px solid var(--invoice-border); border-radius: 8px; padding: 10px 12px; box-sizing: border-box; }
-    .invoice-panel h2, .invoice-section h2, .invoice-notes h2 { margin: 0 0 6px; color: var(--invoice-dark); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; font-weight: 800; }
-    .primary-line { color: var(--invoice-dark); font-size: 13px; font-weight: 800; margin-bottom: 2px; }
-    .mini-badge { display: inline-block; margin-top: 4px; background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 999px; font-size: 9px; font-weight: 800; }
-
-    .detail-grid { display: table; width: 100%; }
-    .detail-grid-row { display: table-row; }
-    .detail-grid-label, .detail-grid-value { display: table-cell; padding: 2px 0; font-size: 11px; vertical-align: top; }
-    .detail-grid-label { color: var(--invoice-muted); width: 44%; }
-    .detail-grid-value { color: var(--invoice-dark); font-weight: 700; }
-
-    .invoice-section { margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }
-    .invoice-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .invoice-table thead { display: table-header-group; }
-    .invoice-table tr { page-break-inside: avoid; break-inside: avoid; }
-    .invoice-table th { background: var(--invoice-soft); color: var(--invoice-muted); font-size: 10px; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--invoice-border); text-align: left; font-weight: 700; }
-    .invoice-table td { padding: 6px 8px; border-bottom: 1px solid var(--invoice-border); font-size: 11px; vertical-align: top; }
-    .invoice-table.compact td { padding: 5px 8px; }
-    .text-right { text-align: right !important; }
-    .text-center { text-align: center !important; }
-    .text-danger { color: var(--invoice-danger) !important; }
-    .text-muted { color: var(--invoice-muted) !important; }
-    .py-3 { padding-top: 10px !important; padding-bottom: 10px !important; }
-    .strong { color: var(--invoice-dark); font-weight: 800; }
-
-    .invoice-bottom-table { display: table; width: 100%; table-layout: fixed; margin-top: 10px; page-break-inside: avoid; break-inside: avoid; }
-    .payment-history-cell { display: table-cell; width: 58%; padding-right: 8px; vertical-align: top; }
-    .totals-card-cell { display: table-cell; width: 42%; vertical-align: top; }
-    .totals-card { background: var(--invoice-soft); border: 1px solid var(--invoice-border); border-radius: 8px; padding: 8px 10px; }
-    .summary-row { display: table; width: 100%; padding: 3px 0; border-bottom: 1px solid var(--invoice-border); font-size: 11px; }
-    .summary-row span, .summary-row strong { display: table-cell; }
-    .summary-row strong { text-align: right; color: var(--invoice-dark); }
-    .summary-row.balance { border-bottom: 0; color: var(--invoice-primary); font-size: 13px; font-weight: 900; padding-top: 4px; }
-    .summary-row.balance strong { color: var(--invoice-primary); }
-    .payment-status-box { margin-top: 6px; padding: 5px 8px; border-radius: 6px; background: #fff; border: 1px solid var(--invoice-border); }
-    .payment-status-box span { display: block; color: var(--invoice-muted); font-size: 10px; }
-    .payment-status-box strong { color: var(--invoice-dark); font-size: 11px; }
-    .empty-note { padding: 8px; border: 1px dashed var(--invoice-border); border-radius: 6px; background: var(--invoice-soft); margin: 0; font-size: 10px; }
-
-    .invoice-notes { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--invoice-border); border-radius: 8px; background: #fff; page-break-inside: avoid; break-inside: avoid; }
-    .invoice-notes p { margin: 0 0 3px; font-size: 10px; }
-
-    .invoice-footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--invoice-border); color: var(--invoice-muted); font-size: 10px; text-align: center; line-height: 1.3; page-break-inside: avoid; break-inside: avoid; }
-    .invoice-footer strong { display: block; color: var(--invoice-dark); margin-bottom: 2px; font-size: 10px; }
-    .generated-at { margin-top: 3px; font-size: 9px; }
-
-    @media (max-width: 768px) {
-        .invoice-preview-shell { padding: 10px; }
-        .invoice-document { padding: 16px; border-radius: 10px; }
-        .clinic-block, .invoice-meta, .invoice-panel-cell, .payment-history-cell, .totals-card-cell { display: block; width: 100%; text-align: left; padding: 0; }
-        .invoice-meta { margin-top: 16px; }
-        .invoice-panels-table, .invoice-bottom-table { display: block; margin-top: 10px; }
-        .invoice-panel-cell { margin-bottom: 10px; }
-        .payment-history-cell { margin-bottom: 10px; }
+    .clinic-name {
+        margin: 0 0 3px;
+        color: var(--invoice-dark);
+        font-size: 17px;
+        font-weight: 800;
+        line-height: 1.2;
     }
-    @media print {
+
+    .muted {
+        color: var(--invoice-muted);
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .invoice-kicker {
+        color: var(--invoice-primary);
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        line-height: 1;
+    }
+
+    .invoice-number {
+        color: var(--invoice-dark);
+        font-weight: 800;
+        font-size: 12px;
+        margin: 3px 0 5px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .status-outstanding {
+        background: #fef3c7;
+        color: var(--invoice-warning);
+    }
+
+    .status-partially_paid {
+        background: var(--invoice-primary-soft);
+        color: var(--invoice-primary);
+    }
+
+    .status-paid {
+        background: #dcfce7;
+        color: var(--invoice-success);
+    }
+
+    .status-void {
+        background: #fee2e2;
+        color: var(--invoice-danger);
+    }
+
+    .invoice-meta dl {
+        margin: 6px 0 0;
+    }
+
+    .invoice-meta dl div {
+        margin-top: 2px;
+    }
+
+    .invoice-meta dt {
+        display: inline;
+        color: var(--invoice-muted);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .invoice-meta dd {
+        display: inline;
+        margin: 0 0 0 4px;
+        color: var(--invoice-dark);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .invoice-panels-table {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        margin-top: 10px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .invoice-panel-cell {
+        display: table-cell;
+        width: 50%;
+        vertical-align: top;
+    }
+
+    .invoice-panel-cell:first-child {
+        padding-right: 6px;
+    }
+
+    .invoice-panel-cell:last-child {
+        padding-left: 6px;
+    }
+
+    .invoice-panel {
+        background: var(--invoice-soft);
+        border: 1px solid var(--invoice-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        box-sizing: border-box;
+    }
+
+    .invoice-panel h2,
+    .invoice-section h2,
+    .invoice-notes h2 {
+        margin: 0 0 6px;
+        color: var(--invoice-dark);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        font-weight: 800;
+    }
+
+    .primary-line {
+        color: var(--invoice-dark);
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .mini-badge {
+        display: inline-block;
+        margin-top: 4px;
+        background: #fef3c7;
+        color: #92400e;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .detail-grid {
+        display: table;
+        width: 100%;
+    }
+
+    .detail-grid-row {
+        display: table-row;
+    }
+
+    .detail-grid-label,
+    .detail-grid-value {
+        display: table-cell;
+        padding: 2px 0;
+        font-size: 11px;
+        vertical-align: top;
+    }
+
+    .detail-grid-label {
+        color: var(--invoice-muted);
+        width: 44%;
+    }
+
+    .detail-grid-value {
+        color: var(--invoice-dark);
+        font-weight: 700;
+    }
+
+    .invoice-section {
+        margin-top: 10px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .invoice-table thead {
+        display: table-header-group;
+    }
+
+    .invoice-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .invoice-table th {
+        background: var(--invoice-soft);
+        color: var(--invoice-muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--invoice-border);
+        text-align: left;
+        font-weight: 700;
+    }
+
+    .invoice-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--invoice-border);
+        font-size: 11px;
+        vertical-align: top;
+    }
+
+    .invoice-table.compact td {
+        padding: 5px 8px;
+    }
+
+    .text-right {
+        text-align: right !important;
+    }
+
+    .text-center {
+        text-align: center !important;
+    }
+
+    .text-danger {
+        color: var(--invoice-danger) !important;
+    }
+
+    .text-muted {
+        color: var(--invoice-muted) !important;
+    }
+
+    .py-3 {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+    }
+
+    .strong {
+        color: var(--invoice-dark);
+        font-weight: 800;
+    }
+
+    .invoice-bottom-table {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        margin-top: 10px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .payment-history-cell {
+        display: table-cell;
+        width: 58%;
+        padding-right: 8px;
+        vertical-align: top;
+    }
+
+    .totals-card-cell {
+        display: table-cell;
+        width: 42%;
+        vertical-align: top;
+    }
+
+    .totals-card {
+        background: var(--invoice-soft);
+        border: 1px solid var(--invoice-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+    }
+
+    .summary-row {
+        display: table;
+        width: 100%;
+        padding: 3px 0;
+        border-bottom: 1px solid var(--invoice-border);
+        font-size: 11px;
+    }
+
+    .summary-row span,
+    .summary-row strong {
+        display: table-cell;
+    }
+
+    .summary-row strong {
+        text-align: right;
+        color: var(--invoice-dark);
+    }
+
+    .summary-row.balance {
+        border-bottom: 0;
+        color: var(--invoice-primary);
+        font-size: 13px;
+        font-weight: 900;
+        padding-top: 4px;
+    }
+
+    .summary-row.balance strong {
+        color: var(--invoice-primary);
+    }
+
+    .payment-status-box {
+        margin-top: 6px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid var(--invoice-border);
+    }
+
+    .payment-status-box span {
+        display: block;
+        color: var(--invoice-muted);
+        font-size: 10px;
+    }
+
+    .payment-status-box strong {
+        color: var(--invoice-dark);
+        font-size: 11px;
+    }
+
+    .empty-note {
+        padding: 8px;
+        border: 1px dashed var(--invoice-border);
+        border-radius: 6px;
+        background: var(--invoice-soft);
+        margin: 0;
+        font-size: 10px;
+    }
+
+    .invoice-notes {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--invoice-border);
+        border-radius: 8px;
+        background: #fff;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .invoice-notes p {
+        margin: 0 0 3px;
+        font-size: 10px;
+    }
+
+    .invoice-footer {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--invoice-border);
+        color: var(--invoice-muted);
+        font-size: 10px;
+        text-align: center;
+        line-height: 1.3;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .invoice-footer strong {
+        display: block;
+        color: var(--invoice-dark);
+        margin-bottom: 2px;
+        font-size: 10px;
+    }
+
+    .generated-at {
+        margin-top: 3px;
+        font-size: 9px;
+    }
+
+    @media not dompdf and screen and (max-width: 768px) {
+        .invoice-preview-shell {
+            padding: 10px;
+        }
+
+        .invoice-document {
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .clinic-block,
+        .invoice-meta,
+        .invoice-panel-cell,
+        .payment-history-cell,
+        .totals-card-cell {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0;
+        }
+
+        .invoice-meta {
+            margin-top: 16px;
+        }
+
+        .invoice-panels-table,
+        .invoice-bottom-table {
+            display: block;
+            margin-top: 10px;
+        }
+
+        .invoice-panel-cell {
+            margin-bottom: 10px;
+        }
+
+        .payment-history-cell {
+            margin-bottom: 10px;
+        }
+    }
+
+    @media print, dompdf {
         @page {
             size: A4 portrait;
             margin: 6mm;
         }
-        html, body {
+
+        html,
+        body {
             background: #fff !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -132,8 +502,12 @@
             min-height: 0 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            font-family: Arial, Helvetica, sans-serif !important;
         }
-        #wrapper, .app-shell, #page-content-wrapper {
+
+        #wrapper,
+        .app-shell,
+        #page-content-wrapper {
             display: block !important;
             width: 100% !important;
             min-height: 0 !important;
@@ -141,112 +515,129 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        main, main.pb-5 {
+
+        main,
+        main.pb-5 {
             display: block !important;
             padding: 0 !important;
             margin: 0 !important;
         }
-        .no-print, .sidebar, .app-topbar, .topbar, .navbar, .app-toast-container, .alert, .modal, .modal-backdrop {
+
+        .no-print,
+        .sidebar,
+        .app-topbar,
+        .topbar,
+        .navbar,
+        .app-toast-container,
+        .alert,
+        .modal,
+        .modal-backdrop {
             display: none !important;
         }
+
         .invoice-preview-shell {
             background: transparent !important;
             padding: 0 !important;
             margin: 0 !important;
         }
+
         .invoice-document {
             box-shadow: none !important;
-            border: 0 !important;
-            margin: 0 !important;
+            border: 1px solid var(--invoice-border) !important;
+            border-radius: 12px !important;
+            padding: 22px 26px !important;
+            margin: 0 auto !important;
             max-width: none !important;
-            width: 100% !important;
-            border-radius: 0 !important;
-            padding: 0 !important;
+            width: auto !important;
+            box-sizing: border-box !important;
             page-break-inside: auto;
             break-inside: auto;
-            font-size: 11px;
-            line-height: 1.3;
+            font-family: Arial, Helvetica, sans-serif !important;
+            line-height: 1.35;
         }
+
         .invoice-header {
-            padding-bottom: 6px;
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            padding-bottom: 10px !important;
+            border-bottom: 2px solid var(--invoice-border) !important;
         }
-        .clinic-name {
-            font-size: 15px;
-            margin: 0 0 2px;
+
+        .clinic-block {
+            display: table-cell !important;
+            vertical-align: top !important;
+            width: 62% !important;
+            text-align: left !important;
         }
-        .invoice-kicker {
-            font-size: 18px;
+
+        .invoice-meta {
+            display: table-cell !important;
+            vertical-align: top !important;
+            width: 38% !important;
+            text-align: right !important;
+            margin-top: 0 !important;
         }
-        .invoice-number {
-            margin: 2px 0 3px;
-        }
-        .invoice-meta dl {
-            margin: 4px 0 0;
-        }
+
         .invoice-panels-table {
-            margin-top: 6px;
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            margin-top: 10px !important;
         }
-        .invoice-panel {
-            padding: 6px 8px;
+
+        .invoice-panel-cell {
+            display: table-cell !important;
+            width: 50% !important;
+            vertical-align: top !important;
         }
-        .invoice-panel h2, .invoice-section h2, .invoice-notes h2 {
-            margin: 0 0 4px;
-            font-size: 10px;
+
+        .invoice-panel-cell:first-child {
+            padding-right: 6px !important;
+            padding-left: 0 !important;
+            margin-bottom: 0 !important;
         }
-        .primary-line {
-            font-size: 12px;
-            margin-bottom: 2px;
+
+        .invoice-panel-cell:last-child {
+            padding-left: 6px !important;
+            padding-right: 0 !important;
+            margin-bottom: 0 !important;
         }
-        .detail-grid-label, .detail-grid-value {
-            padding: 1px 0;
-            font-size: 10.5px;
+
+        .invoice-table {
+            width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
         }
-        .invoice-section {
-            margin-top: 6px;
-        }
-        .invoice-table th {
-            padding: 4px 6px;
-            font-size: 9.5px;
-        }
-        .invoice-table td {
-            padding: 4px 6px;
-            font-size: 10px;
-        }
+
         .invoice-bottom-table {
-            margin-top: 6px;
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            margin-top: 10px !important;
         }
-        .totals-card {
-            padding: 5px 8px;
+
+        .payment-history-cell {
+            display: table-cell !important;
+            width: 58% !important;
+            padding-right: 8px !important;
+            vertical-align: top !important;
+            margin-bottom: 0 !important;
         }
-        .summary-row {
-            padding: 2px 0;
-            font-size: 10.5px;
+
+        .totals-card-cell {
+            display: table-cell !important;
+            width: 42% !important;
+            vertical-align: top !important;
         }
-        .summary-row.balance {
-            font-size: 12px;
-            padding-top: 3px;
-        }
-        .payment-status-box {
-            margin-top: 4px;
-            padding: 4px 6px;
-        }
-        .invoice-notes {
-            margin-top: 6px;
-            padding: 4px 8px;
-        }
-        .invoice-notes p {
-            font-size: 9.5px;
-            margin: 0 0 2px;
-        }
-        .invoice-footer {
-            margin-top: 6px;
-            padding-top: 5px;
-            font-size: 9.5px;
-        }
-        .invoice-header, .invoice-panels-table, .invoice-bottom-table {
+
+        .invoice-header,
+        .invoice-panels-table,
+        .invoice-bottom-table {
             page-break-inside: avoid;
             break-inside: avoid;
         }
+
         .invoice-table tr {
             page-break-inside: avoid;
             break-inside: avoid;

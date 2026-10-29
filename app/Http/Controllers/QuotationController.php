@@ -36,8 +36,8 @@ class QuotationController extends Controller
                 $query->where(function ($q) use ($staff) {
                     $q->where('staff_id', $staff->id)
                         ->orWhere('created_by', $staff->id)
-                        ->orWhereHas('staff', fn ($sq) => $sq->where('location_id', $staff->location_id))
-                        ->orWhereHas('appointment', fn ($aq) => $aq->where('location_id', $staff->location_id));
+                        ->orWhereHas('staff', fn($sq) => $sq->where('location_id', $staff->location_id))
+                        ->orWhereHas('appointment', fn($aq) => $aq->where('location_id', $staff->location_id));
                 });
             })
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -111,31 +111,31 @@ class QuotationController extends Controller
         $currentStaff = Auth::guard('staff')->user();
 
         $validated = $request->validate([
-            'client_id'      => 'required|exists:clients,id',
-            'staff_id'       => 'required|exists:staff,id',
+            'client_id' => 'required|exists:clients,id',
+            'staff_id' => 'required|exists:staff,id',
             'appointment_id' => 'nullable|exists:appointments,id',
-            'issued_date'    => 'required|date',
-            'valid_until'    => 'required|date|after_or_equal:issued_date',
-            'notes'          => 'nullable|string|max:2000',
-            'terms'          => 'nullable|string|max:2000',
-            'items'          => 'required|array|min:1',
-            'items.*.service_id'      => 'nullable|exists:services,id',
-            'items.*.staff_id'        => 'nullable|exists:staff,id',
-            'items.*.description'     => 'nullable|string|max:255',
-            'items.*.quantity'        => 'required|numeric|gt:0',
-            'items.*.unit_price'      => 'required|numeric|min:0',
+            'issued_date' => 'required|date',
+            'valid_until' => 'required|date|after_or_equal:issued_date',
+            'notes' => 'nullable|string|max:2000',
+            'terms' => 'nullable|string|max:2000',
+            'items' => 'required|array|min:1',
+            'items.*.service_id' => 'nullable|exists:services,id',
+            'items.*.staff_id' => 'nullable|exists:staff,id',
+            'items.*.description' => 'nullable|string|max:255',
+            'items.*.quantity' => 'required|numeric|gt:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'items.*.tax_rate'        => 'nullable|numeric|min:0|max:100',
+            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ], [
             'client_id.required' => 'Client is required.',
-            'client_id.exists'   => 'The selected client is invalid.',
-            'staff_id.required'  => 'Practitioner is required.',
-            'staff_id.exists'    => 'The selected practitioner is invalid.',
-            'items.required'     => 'At least one quotation item is required.',
-            'items.min'          => 'At least one quotation item is required.',
-            'items.*.quantity.gt'=> 'Quantity must be greater than zero.',
+            'client_id.exists' => 'The selected client is invalid.',
+            'staff_id.required' => 'Practitioner is required.',
+            'staff_id.exists' => 'The selected practitioner is invalid.',
+            'items.required' => 'At least one quotation item is required.',
+            'items.min' => 'At least one quotation item is required.',
+            'items.*.quantity.gt' => 'Quantity must be greater than zero.',
             'items.*.unit_price.min' => 'Unit price cannot be negative.',
-            'items.*.tax_rate.max'   => 'Tax rate cannot exceed 100%.',
+            'items.*.tax_rate.max' => 'Tax rate cannot exceed 100%.',
         ]);
 
         $this->authorizeQuotationCreation($currentStaff, (int) $validated['staff_id'], !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null);
@@ -176,16 +176,16 @@ class QuotationController extends Controller
 
         try {
             $quotation = $this->quotationCreationService->createQuotation([
-                'client_id'      => (int) $validated['client_id'],
-                'staff_id'       => (int) $validated['staff_id'],
-                'created_by'     => $currentStaff?->id,
+                'client_id' => (int) $validated['client_id'],
+                'staff_id' => (int) $validated['staff_id'],
+                'created_by' => $currentStaff?->id,
                 'appointment_id' => !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null,
-                'issued_date'    => $validated['issued_date'],
-                'valid_until'    => $validated['valid_until'],
-                'notes'          => $validated['notes'] ?? null,
-                'terms'          => $validated['terms'] ?? null,
-                'status'         => 'draft',
-                'items'          => $validated['items'],
+                'issued_date' => $validated['issued_date'],
+                'valid_until' => $validated['valid_until'],
+                'notes' => $validated['notes'] ?? null,
+                'terms' => $validated['terms'] ?? null,
+                'status' => 'draft',
+                'items' => $validated['items'],
             ]);
         } catch (\InvalidArgumentException $e) {
             throw ValidationException::withMessages([
@@ -195,8 +195,8 @@ class QuotationController extends Controller
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success'   => true,
-                'message'   => 'Quotation created successfully.',
+                'success' => true,
+                'message' => 'Quotation created successfully.',
                 'quotation' => $quotation->load(['items', 'client', 'staff']),
             ], 201);
         }
@@ -210,8 +210,8 @@ class QuotationController extends Controller
         }
 
         return response()->json([
-            'success'   => true,
-            'message'   => 'Quotation created successfully.',
+            'success' => true,
+            'message' => 'Quotation created successfully.',
             'quotation' => $quotation->load(['items', 'client', 'staff']),
         ], 201);
     }
@@ -223,7 +223,7 @@ class QuotationController extends Controller
 
         if (request()->wantsJson()) {
             return response()->json([
-                'success'   => true,
+                'success' => true,
                 'quotation' => $quotation,
             ]);
         }
@@ -255,22 +255,22 @@ class QuotationController extends Controller
 
         if (request()->wantsJson()) {
             return response()->json([
-                'quotation'    => $quotation,
-                'clients'      => $clients,
-                'staff'        => $staff,
-                'services'     => $services,
+                'quotation' => $quotation,
+                'clients' => $clients,
+                'staff' => $staff,
+                'services' => $services,
                 'appointments' => $appointments,
-                'currency'     => $currency,
+                'currency' => $currency,
             ]);
         }
 
         return view('quotations.edit', [
-            'quotation'    => $quotation,
-            'clients'      => $clients,
-            'staff'        => $staff,
-            'services'     => $services,
+            'quotation' => $quotation,
+            'clients' => $clients,
+            'staff' => $staff,
+            'services' => $services,
             'appointments' => $appointments,
-            'currency'     => $currency,
+            'currency' => $currency,
         ]);
     }
 
@@ -286,31 +286,31 @@ class QuotationController extends Controller
         $currentStaff = Auth::guard('staff')->user();
 
         $validated = $request->validate([
-            'client_id'      => 'required|exists:clients,id',
-            'staff_id'       => 'required|exists:staff,id',
+            'client_id' => 'required|exists:clients,id',
+            'staff_id' => 'required|exists:staff,id',
             'appointment_id' => 'nullable|exists:appointments,id',
-            'issued_date'    => 'required|date',
-            'valid_until'    => 'required|date|after_or_equal:issued_date',
-            'notes'          => 'nullable|string|max:2000',
-            'terms'          => 'nullable|string|max:2000',
-            'items'          => 'required|array|min:1',
-            'items.*.service_id'      => 'nullable|exists:services,id',
-            'items.*.staff_id'        => 'nullable|exists:staff,id',
-            'items.*.description'     => 'nullable|string|max:255',
-            'items.*.quantity'        => 'required|numeric|gt:0',
-            'items.*.unit_price'      => 'required|numeric|min:0',
+            'issued_date' => 'required|date',
+            'valid_until' => 'required|date|after_or_equal:issued_date',
+            'notes' => 'nullable|string|max:2000',
+            'terms' => 'nullable|string|max:2000',
+            'items' => 'required|array|min:1',
+            'items.*.service_id' => 'nullable|exists:services,id',
+            'items.*.staff_id' => 'nullable|exists:staff,id',
+            'items.*.description' => 'nullable|string|max:255',
+            'items.*.quantity' => 'required|numeric|gt:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'items.*.tax_rate'        => 'nullable|numeric|min:0|max:100',
+            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ], [
             'client_id.required' => 'Client is required.',
-            'client_id.exists'   => 'The selected client is invalid.',
-            'staff_id.required'  => 'Practitioner is required.',
-            'staff_id.exists'    => 'The selected practitioner is invalid.',
-            'items.required'     => 'At least one quotation item is required.',
-            'items.min'          => 'At least one quotation item is required.',
-            'items.*.quantity.gt'=> 'Quantity must be greater than zero.',
+            'client_id.exists' => 'The selected client is invalid.',
+            'staff_id.required' => 'Practitioner is required.',
+            'staff_id.exists' => 'The selected practitioner is invalid.',
+            'items.required' => 'At least one quotation item is required.',
+            'items.min' => 'At least one quotation item is required.',
+            'items.*.quantity.gt' => 'Quantity must be greater than zero.',
             'items.*.unit_price.min' => 'Unit price cannot be negative.',
-            'items.*.tax_rate.max'   => 'Tax rate cannot exceed 100%.',
+            'items.*.tax_rate.max' => 'Tax rate cannot exceed 100%.',
         ]);
 
         $this->authorizeQuotationCreation($currentStaff, (int) $validated['staff_id'], !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null);
@@ -351,14 +351,14 @@ class QuotationController extends Controller
 
         try {
             $updatedQuotation = $this->quotationCreationService->updateDraftQuotation($quotation, [
-                'client_id'      => (int) $validated['client_id'],
-                'staff_id'       => (int) $validated['staff_id'],
+                'client_id' => (int) $validated['client_id'],
+                'staff_id' => (int) $validated['staff_id'],
                 'appointment_id' => !empty($validated['appointment_id']) ? (int) $validated['appointment_id'] : null,
-                'issued_date'    => $validated['issued_date'],
-                'valid_until'    => $validated['valid_until'],
-                'notes'          => $validated['notes'] ?? null,
-                'terms'          => $validated['terms'] ?? null,
-                'items'          => $validated['items'],
+                'issued_date' => $validated['issued_date'],
+                'valid_until' => $validated['valid_until'],
+                'notes' => $validated['notes'] ?? null,
+                'terms' => $validated['terms'] ?? null,
+                'items' => $validated['items'],
             ]);
         } catch (\InvalidArgumentException $e) {
             throw ValidationException::withMessages([
@@ -368,8 +368,8 @@ class QuotationController extends Controller
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success'   => true,
-                'message'   => 'Quotation updated successfully.',
+                'success' => true,
+                'message' => 'Quotation updated successfully.',
                 'quotation' => $updatedQuotation->load(['items', 'client', 'staff']),
             ], 200);
         }
@@ -386,14 +386,16 @@ class QuotationController extends Controller
         $filename = 'quotation-' . $quotation->quotation_number . '.pdf';
 
         try {
-            return Pdf::loadView('quotations.pdf', $data)
-                ->setPaper('a4', 'portrait')
-                ->download($filename);
+            $pdf = Pdf::loadView('quotations.pdf', $data)
+                ->setPaper('a4', 'portrait');
+            $pdf->getDomPDF()->getOptions()->setDefaultMediaType('print');
+
+            return $pdf->download($filename);
         } catch (\Throwable $exception) {
             Log::error('Quotation PDF generation failed', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'exception'        => $exception->getMessage(),
+                'exception' => $exception->getMessage(),
             ]);
 
             return $this->htmlQuotationFallback($quotation, $data);
@@ -430,9 +432,9 @@ class QuotationController extends Controller
                 ->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Quotation conversion failed unexpectedly', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'error'            => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             if (request()->wantsJson() || request()->ajax()) {
@@ -457,8 +459,8 @@ class QuotationController extends Controller
 
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
-                    'success'   => true,
-                    'message'   => "Quotation {$quotation->quotation_number} has been approved.",
+                    'success' => true,
+                    'message' => "Quotation {$quotation->quotation_number} has been approved.",
                     'quotation' => $updated,
                 ], 200);
             }
@@ -477,9 +479,9 @@ class QuotationController extends Controller
                 ->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Quotation approval failed unexpectedly', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'error'            => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             if (request()->wantsJson() || request()->ajax()) {
@@ -504,8 +506,8 @@ class QuotationController extends Controller
 
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
-                    'success'   => true,
-                    'message'   => "Quotation {$quotation->quotation_number} has been cancelled.",
+                    'success' => true,
+                    'message' => "Quotation {$quotation->quotation_number} has been cancelled.",
                     'quotation' => $updated,
                 ], 200);
             }
@@ -524,9 +526,9 @@ class QuotationController extends Controller
                 ->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Quotation cancellation failed unexpectedly', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'error'            => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             if (request()->wantsJson() || request()->ajax()) {
@@ -561,13 +563,13 @@ class QuotationController extends Controller
         $settings['business_logo'] = $this->resolveQuotationLogo($settings['business_logo'] ?? ($settings['logo'] ?? null), $forPdf);
 
         return [
-            'quotation'  => $quotation,
-            'settings'   => $settings,
-            'currency'   => $currency,
-            'forPdf'     => $forPdf,
+            'quotation' => $quotation,
+            'settings' => $settings,
+            'currency' => $currency,
+            'forPdf' => $forPdf,
             'dateFormat' => $settings['date_format'] ?? 'd M Y',
             'timeFormat' => $settings['time_format'] ?? 'g:i A',
-            'timezone'   => $settings['timezone'] ?? config('app.timezone'),
+            'timezone' => $settings['timezone'] ?? config('app.timezone'),
         ];
     }
 
