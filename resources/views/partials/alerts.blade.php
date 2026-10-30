@@ -1,12 +1,10 @@
 <div class="container-fluid pt-3 d-none">
     @if(session('success'))
-        <div class="alert app-alert app-alert-success alert-success alert-dismissible fade show" role="alert"
+        <div class="d-none"
              data-app-alert-type="success"
              data-app-alert-title="Success"
              data-app-alert-message="{{ session('success') }}">
-            <i class="bx bx-check-circle" aria-hidden="true"></i>
             <div class="app-alert-message">{{ session('success') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 

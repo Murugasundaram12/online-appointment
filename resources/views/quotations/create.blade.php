@@ -71,13 +71,6 @@
     </nav>
 
     <div class="container-fluid px-4 pt-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class='bx bx-check-circle me-1'></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="row g-4">
             <div class="col-xl-8">
                 <div class="card shadow-sm border-0">

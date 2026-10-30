@@ -16,12 +16,6 @@
             </div>
         </div>
         <div id="payment-alert-container">
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
         </div>
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
@@ -418,15 +412,6 @@
                             title: 'Success',
                             message: savedPaymentMsg
                         });
-                    }
-                    const alertContainer = document.getElementById('payment-alert-container');
-                    if (alertContainer && !alertContainer.querySelector('.alert-success')) {
-                        alertContainer.innerHTML = `
-                            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                                <i class="bx bx-check-circle me-1"></i> ${savedPaymentMsg}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `;
                     }
                 }
 

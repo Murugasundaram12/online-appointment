@@ -87,14 +87,6 @@
 
 @section('content')
     <div class="container-fluid px-4 py-4">
-        <!-- Success / Error Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bx bx-check-circle me-1 fs-5 align-middle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <!-- Profile Header Bar -->
         <div class="card profile-card mb-4">
             <div class="card-body p-4">

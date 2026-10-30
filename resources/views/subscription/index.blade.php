@@ -7,14 +7,6 @@
         <h2 class="fs-4 m-0 fw-bold">Subscription</h2>
     </nav>
     <div class="container-fluid px-4 pt-4">
-        @if(session('success'))
-            <div class="alert app-alert app-alert-success alert-success alert-dismissible fade show" role="alert" data-app-alert-type="success" data-app-alert-title="Success">
-                <i class="bx bx-check-circle" aria-hidden="true"></i>
-                <div>{{ session('success') }}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="row g-3 mb-4">
             @foreach($plans as $plan)
                 <div class="col-md-6 col-xl-4">

@@ -71,12 +71,6 @@
     </nav>
 
     <div class="container-fluid px-4 pt-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class='bx bx-check-circle me-1'></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
         @if(session('error'))
             <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
                 <i class='bx bx-error-circle me-1'></i> {{ session('error') }}

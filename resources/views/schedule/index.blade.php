@@ -231,12 +231,6 @@ if (!function_exists('ordinalSuffix')) {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mx-4 mt-4 mb-0" role="alert">
-            <i class="bx bx-check-circle me-1 fs-5 align-middle"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
     <div class="d-flex h-100">
         <!-- Secondary Sidebar: Provider Selection -->
         <div class="secondary-sidebar">
