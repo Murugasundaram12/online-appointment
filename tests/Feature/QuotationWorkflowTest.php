@@ -448,5 +448,45 @@ class QuotationWorkflowTest extends TestCase
         $resRejected->assertDontSee('Cancel Quotation');
         $resRejected->assertDontSee('Convert to Invoice');
     }
+
+    /** 16. UI test verifies cancel quotation modal replaces browser confirm dialog */
+    public function test_ui_show_page_renders_cancel_quotation_modal_without_browser_confirm(): void
+    {
+        $draft = $this->createSampleQuotation('draft');
+
+        $response = $this->actingAs($this->admin, 'staff')
+            ->get(route('quotations.show', $draft->id));
+
+        $response->assertStatus(200);
+
+        // 1. Verify no native browser confirm() call is present on the page
+        $response->assertDontSee("confirm('Are you sure you want to cancel", false);
+        $response->assertDontSee('onsubmit="return confirm(', false);
+
+        // 2. Verify trigger button targets the custom modal
+        $response->assertSee('data-bs-toggle="modal"', false);
+        $response->assertSee('data-bs-target="#cancelQuotationModal"', false);
+        $response->assertSee('Cancel Quotation', false);
+
+        // 3. Verify modal structure, title, warning icon, and dynamic quotation number
+        $response->assertSee('id="cancelQuotationModal"', false);
+        $response->assertSee('Cancel Quotation');
+        $response->assertSee('bx-error-circle', false);
+        $response->assertSee('Are you sure you want to cancel quotation', false);
+        $response->assertSee($draft->quotation_number, false);
+
+        // 4. Verify dismissal button (Keep Quotation) closes modal without submitting
+        $response->assertSee('Keep Quotation', false);
+        $response->assertSee('data-bs-dismiss="modal"', false);
+
+        // 5. Verify confirmation button (Yes, Cancel Quotation) submits cancellation form
+        $response->assertSee('Yes, Cancel Quotation', false);
+        $response->assertSee('id="confirmCancelQuotationBtn"', false);
+        $response->assertSee(route('quotations.cancel', $draft->id), false);
+        $response->assertSee('id="cancel-quotation-form"', false);
+
+        // 6. Verify duplicate submission prevention logic is rendered
+        $response->assertSee('Cancelling...', false);
+    }
 }
 

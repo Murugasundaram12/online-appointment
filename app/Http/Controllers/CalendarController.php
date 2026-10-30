@@ -768,6 +768,14 @@ class CalendarController extends Controller
             ], 403);
         }
 
+        // Terminal status lock: completed appointments are strictly read-only
+        if ($appointment->status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Completed appointments cannot be modified.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id'
         ]);

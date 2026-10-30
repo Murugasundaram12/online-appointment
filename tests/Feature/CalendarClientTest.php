@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Location;
+use App\Models\PaymentRecord;
 use App\Models\Service;
 use App\Models\Staff;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -241,5 +243,164 @@ class CalendarClientTest extends TestCase
         $response->assertSee('setAppointmentClient', false);
         $response->assertSee('ensureClientSelectOption', false);
         $response->assertSee('id="appt-client"', false);
+    }
+
+    public function test_assign_client_is_rejected_for_completed_appointment(): void
+    {
+        $clientA = Client::create([
+            'first_name' => 'Alice',
+            'last_name' => 'Smith',
+            'name' => 'Alice Smith',
+            'email' => 'alice@example.com',
+            'phone' => '555-0101',
+        ]);
+
+        $clientB = Client::create([
+            'first_name' => 'Bob',
+            'last_name' => 'Jones',
+            'name' => 'Bob Jones',
+            'email' => 'bob@example.com',
+            'phone' => '555-0102',
+        ]);
+
+        $appointment = Appointment::create([
+            'staff_id' => $this->staffA->id,
+            'service_id' => $this->service->id,
+            'client_id' => $clientA->id,
+            'location_id' => $this->location->id,
+            'start_time' => now()->subDay()->setHour(10)->setMinute(0),
+            'end_time' => now()->subDay()->setHour(11)->setMinute(0),
+            'status' => 'completed',
+        ]);
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->postJson("/calendar/appointments/{$appointment->id}/assign-client", [
+                'client_id' => $clientB->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Completed appointments cannot be modified.',
+            ]);
+
+        $this->assertEquals($clientA->id, $appointment->fresh()->client_id);
+    }
+
+    public function test_assign_client_succeeds_for_eligible_non_completed_appointment(): void
+    {
+        $clientA = Client::create([
+            'first_name' => 'Alice',
+            'last_name' => 'Smith',
+            'name' => 'Alice Smith',
+            'email' => 'alice2@example.com',
+            'phone' => '555-0201',
+        ]);
+
+        $clientB = Client::create([
+            'first_name' => 'Bob',
+            'last_name' => 'Jones',
+            'name' => 'Bob Jones',
+            'email' => 'bob2@example.com',
+            'phone' => '555-0202',
+        ]);
+
+        $appointment = Appointment::create([
+            'staff_id' => $this->staffA->id,
+            'service_id' => $this->service->id,
+            'client_id' => $clientA->id,
+            'location_id' => $this->location->id,
+            'start_time' => now()->addDay()->setHour(10)->setMinute(0),
+            'end_time' => now()->addDay()->setHour(11)->setMinute(0),
+            'status' => 'confirmed',
+        ]);
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->postJson("/calendar/appointments/{$appointment->id}/assign-client", [
+                'client_id' => $clientB->id,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Client assigned successfully',
+            ]);
+
+        $this->assertEquals($clientB->id, $appointment->fresh()->client_id);
+    }
+
+    public function test_rejected_assign_client_leaves_appointment_invoice_and_payment_records_unchanged(): void
+    {
+        $clientA = Client::create([
+            'first_name' => 'Alice',
+            'last_name' => 'Smith',
+            'name' => 'Alice Smith',
+            'email' => 'alice3@example.com',
+            'phone' => '555-0301',
+        ]);
+
+        $clientB = Client::create([
+            'first_name' => 'Bob',
+            'last_name' => 'Jones',
+            'name' => 'Bob Jones',
+            'email' => 'bob3@example.com',
+            'phone' => '555-0302',
+        ]);
+
+        $appointment = Appointment::create([
+            'staff_id' => $this->staffA->id,
+            'service_id' => $this->service->id,
+            'client_id' => $clientA->id,
+            'location_id' => $this->location->id,
+            'start_time' => now()->subDay()->setHour(10)->setMinute(0),
+            'end_time' => now()->subDay()->setHour(11)->setMinute(0),
+            'status' => 'completed',
+        ]);
+
+        $invoice = Invoice::create([
+            'appointment_id'  => $appointment->id,
+            'client_id'       => $clientA->id,
+            'staff_id'        => $this->staffA->id,
+            'invoice_number'  => 'INV-REJECT-001',
+            'subtotal'        => 50.00,
+            'discount_amount' => 0.00,
+            'tax_amount'      => 0.00,
+            'total_amount'    => 50.00,
+            'paid_amount'     => 50.00,
+            'status'          => 'paid',
+            'issued_date'     => now()->toDateString(),
+        ]);
+
+        $payment = PaymentRecord::create([
+            'invoice_id'     => $invoice->id,
+            'amount'         => 50.00,
+            'payment_method' => 'cash',
+            'payment_date'   => now()->toDateString(),
+        ]);
+
+        $response = $this->actingAs($this->staffA, 'staff')
+            ->postJson("/calendar/appointments/{$appointment->id}/assign-client", [
+                'client_id' => $clientB->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Completed appointments cannot be modified.',
+            ]);
+
+        // Verify appointment was NOT modified
+        $this->assertEquals($clientA->id, $appointment->fresh()->client_id);
+
+        // Verify invoice was NOT modified
+        $freshInvoice = $invoice->fresh();
+        $this->assertEquals($clientA->id, $freshInvoice->client_id);
+        $this->assertEquals($appointment->id, $freshInvoice->appointment_id);
+        $this->assertEquals('paid', $freshInvoice->status);
+
+        // Verify payment record was NOT modified
+        $freshPayment = $payment->fresh();
+        $this->assertEquals($invoice->id, $freshPayment->invoice_id);
+        $this->assertEquals('50.00', number_format((float) $freshPayment->amount, 2, '.', ''));
     }
 }
