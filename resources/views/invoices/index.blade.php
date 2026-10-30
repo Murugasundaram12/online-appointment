@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Invoices</h1>
                 <p class="text-muted mb-0">Track billed amounts, payments and invoice status.</p>
             </div>
+            <div>
+                <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus-circle me-1"></i>Create Invoice</a>
+            </div>
         </div>
 
         <!-- Toolbar -->
@@ -29,9 +32,6 @@
                         <li><a class="dropdown-item" href="{{ route('invoices.index', array_merge(request()->except(['status', 'page']), ['status' => 'void'])) }}">Void</a></li>
                     </ul>
                 </div>
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus-circle me-1"></i>Create Invoice</a>
             </x-slot>
         </x-list-toolbar>
 

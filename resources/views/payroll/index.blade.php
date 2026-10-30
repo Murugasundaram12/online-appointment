@@ -28,6 +28,7 @@
             <div class="d-flex flex-wrap gap-2 no-print">
                 <a href="{{ route('payroll.report') }}" class="btn btn-light border"><i class='bx bx-bar-chart'></i> Reports</a>
                 <a href="{{ route('payroll.export.csv') }}" class="btn btn-light border"><i class='bx bx-download'></i> CSV</a>
+                <a href="{{ route('payroll.create') }}" class="btn btn-primary btn-sm"><i class='bx bx-plus me-1'></i> Create Payroll</a>
             </div>
         </div>
 
@@ -115,9 +116,6 @@
                         </a>
                     @endif
                 </div>
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('payroll.create') }}" class="btn btn-primary btn-sm"><i class='bx bx-plus'></i> Create Payroll</a>
             </x-slot>
         </x-list-toolbar>
 

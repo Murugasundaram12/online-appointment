@@ -9,9 +9,11 @@
                 <h1 class="fs-3 fw-bold mb-1">Service Categories</h1>
                 <p class="text-muted mb-0">Manage service category groups and classifications.</p>
             </div>
-            <!-- <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
+            <div>
+                <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
                     <i class="bx bx-plus me-1"></i>Add Category
-                </a> -->
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -28,11 +30,6 @@
                 <x-list-toolbar-filters :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('categories.index', ['per_page' => request('per_page', $categories->perPage())])"
                     clearLabel="Clear search" />
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('categories.create') }}" class="btn btn-primary btn-sm px-4">
-                    <i class="bx bx-plus me-1"></i>Add Category
-                </a>
             </x-slot>
         </x-list-toolbar>
 

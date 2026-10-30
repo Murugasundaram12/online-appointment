@@ -9,9 +9,11 @@
                 <h1 class="fs-3 fw-bold mb-1">Insurance Companies</h1>
                 <p class="text-muted mb-0">Manage insurance provider companies and organizations.</p>
             </div>
-            <!-- <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
+            <div>
+                <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
                     <i class="bx bx-plus me-1"></i>Add Insurance Company
-                </a> -->
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -33,11 +35,6 @@
             <x-slot name="filters">
                 <x-list-toolbar-filters :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('insurance-companies.index', ['per_page' => request('per_page', $insuranceCompanies->perPage())])" clearLabel="Clear search" />
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('insurance-companies.create') }}" class="btn btn-primary btn-sm px-4">
-                    <i class="bx bx-plus me-1"></i>Add Insurance Company
-                </a>
             </x-slot>
         </x-list-toolbar>
 

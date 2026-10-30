@@ -11,6 +11,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('categories.index') }}" class="btn btn-light border"><i class="bx bx-category me-1"></i>Category Manager</a>
+                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addServiceModal"><i class="bx bx-plus me-1"></i>Add Service</button>
             </div>
         </div>
 
@@ -31,9 +32,6 @@
                         @endforeach
                     </ul>
                 </div>
-            </x-slot>
-            <x-slot name="actions">
-                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addServiceModal"><i class="bx bx-plus me-1"></i>Add Service</button>
             </x-slot>
         </x-list-toolbar>
 

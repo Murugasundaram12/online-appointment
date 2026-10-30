@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Locations</h1>
                 <p class="text-muted mb-0">Manage business locations, addresses and contact details.</p>
             </div>
+            <div>
+                <a href="{{ route('locations.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add New Location</a>
+            </div>
         </div>
 
         <!-- Toolbar -->
@@ -18,9 +21,6 @@
                     :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('locations.index', ['per_page' => request('per_page', $locations->perPage())])"
                     clearLabel="Clear search" />
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('locations.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add New Location</a>
             </x-slot>
         </x-list-toolbar>
 

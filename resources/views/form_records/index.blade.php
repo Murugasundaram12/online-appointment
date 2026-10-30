@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Form Records</h1>
                 <p class="text-muted mb-0">Review submissions collected from your forms.</p>
             </div>
+            <div>
+                <a href="{{ route('form-records.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add Record</a>
+            </div>
         </div>
 
         <!-- Toolbar -->
@@ -18,9 +21,6 @@
                     :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('form-records.index', ['per_page' => request('per_page', $formRecords->perPage())])"
                     clearLabel="Clear search" />
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('form-records.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add Record</a>
             </x-slot>
         </x-list-toolbar>
 

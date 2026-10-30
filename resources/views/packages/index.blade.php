@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Packages</h1>
                 <p class="text-muted mb-0">Bundle services into packages for your clients.</p>
             </div>
+            <div>
+                <a href="{{ route('packages.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add New Package</a>
+            </div>
         </div>
 
         <!-- Toolbar -->
@@ -27,9 +30,6 @@
                         <li><a class="dropdown-item" href="{{ route('packages.index', array_merge(request()->except(['status', 'page']), ['status' => 'inactive'])) }}">Inactive</a></li>
                     </ul>
                 </div>
-            </x-slot>
-            <x-slot name="actions">
-                <a href="{{ route('packages.create') }}" class="btn btn-primary btn-sm px-4"><i class="bx bx-plus me-1"></i>Add New Package</a>
             </x-slot>
         </x-list-toolbar>
 

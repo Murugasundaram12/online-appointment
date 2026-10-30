@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Clients</h1>
                 <p class="text-muted mb-0">Manage your client directory and contact details.</p>
             </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addClientModal"><i class="bx bx-plus me-1"></i>Add New Client</button>
+            </div>
         </div>
 
         <!-- Stats Bar -->
@@ -29,9 +32,6 @@
                     :showClear="request()->has('search') && request('search') !== ''"
                     :clearUrl="route('clients.index', ['per_page' => request('per_page', $clients->perPage())])"
                     clearLabel="Clear search" />
-            </x-slot>
-            <x-slot name="actions">
-                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addClientModal"><i class="bx bx-plus me-1"></i>Add New Client</button>
             </x-slot>
         </x-list-toolbar>
 

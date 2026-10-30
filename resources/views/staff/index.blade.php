@@ -9,6 +9,9 @@
                 <h1 class="fs-3 fw-bold mb-1">Staff</h1>
                 <p class="text-muted mb-0">Manage team members, access levels and payroll settings.</p>
             </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addStaffModal"><i class="bx bx-plus me-1"></i>Add Staff</button>
+            </div>
         </div>
 
         <!-- Toolbar -->
@@ -39,9 +42,6 @@
                         @endforeach
                     </ul>
                 </div>
-            </x-slot>
-            <x-slot name="actions">
-                <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addStaffModal"><i class="bx bx-plus me-1"></i>Add Staff</button>
             </x-slot>
         </x-list-toolbar>
 
