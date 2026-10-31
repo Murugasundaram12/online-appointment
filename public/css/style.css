@@ -657,6 +657,36 @@ nav.navbar.navbar-expand-lg.navbar-light h1 {
     color: var(--text-secondary);
 }
 
+.modal-icon-danger {
+    background: var(--danger-soft, #fff5f5) !important;
+    color: var(--danger, #f64e60) !important;
+}
+
+.modal-icon-warning {
+    background: var(--warning-soft, #fff8dd) !important;
+    color: var(--warning, #ffa800) !important;
+}
+
+.modal-icon-info {
+    background: var(--primary-soft, #f5f3ff) !important;
+    color: var(--primary, #3699ff) !important;
+}
+
+.app-confirm-modal .modal-dialog {
+    max-width: 440px;
+}
+
+.app-confirm-record {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--surface-muted, #f8fafc);
+    border: 1px solid var(--border, #eef0f7);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary, #7e8299);
+}
+
 .app-toast-container {
     position: fixed !important;
     top: 1.25rem !important;

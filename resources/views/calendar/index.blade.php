@@ -1019,22 +1019,6 @@
                     <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
                 </div>
 
-                <!-- Staff Color Legend -->
-                <div
-                    class="calendar-staff-legend d-flex flex-wrap align-items-center gap-3 mb-3 px-3 py-2 bg-light rounded border small">
-                    <span class="text-muted fw-bold text-uppercase d-flex align-items-center" style="font-size: 0.72rem;">
-                        <i class='bx bx-user me-1 text-primary'></i> Staff Legend:
-                    </span>
-                    @foreach($staffs ?? [] as $st)
-                        @php $stCol = \App\Http\Controllers\CalendarController::resolveStaffColor($st); @endphp
-                        <span class="d-inline-flex align-items-center gap-1.5" title="{{ $st->name }}">
-                            <span class="d-inline-block rounded-circle flex-shrink-0"
-                                style="width: 10px; height: 10px; background-color: {{ $stCol }};"></span>
-                            <span class="text-dark fw-medium" style="font-size: 0.8rem;">{{ $st->name }}</span>
-                        </span>
-                    @endforeach
-                </div>
-
                 <!-- Calendar Content -->
                 <div class="grid-container">
                     <div class="grid-header" id="calendar-grid-header">
@@ -1293,9 +1277,9 @@
                                 <label class="form-label" for="appt-client-search">Client <span
                                         class="required-mark">*</span></label>
                                 <!-- <div class="input-group mb-2">
-                                        <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                        <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                    </div> -->
+                                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                            <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                        </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" name="client_id" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -4009,9 +3993,9 @@
                             item.style.setProperty('border-left', 'none', 'important');
                             item.style.setProperty('color', staffTextCol, 'important');
                             item.innerHTML = `
-                                    <div class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</div>
-                                    <div class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${startTime} – ${endTime}</div>
-                                `;
+                                        <div class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</div>
+                                        <div class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${startTime} – ${endTime}</div>
+                                    `;
                             container.appendChild(item);
                         });
                     });
@@ -4215,28 +4199,28 @@
                                 const showStaff = staffName && !isExtraShortAppointment && currentView !== 'day' && (!isCompactSlot || durationMinutes >= 45);
 
                                 el.innerHTML = `
-                                        <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                            <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
-                                        </div>
-                                        ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
-                                        ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
-                                        <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
-                                            <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
-                                            <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                        </div>
-                                    `;
+                                            <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
+                                            </div>
+                                            ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
+                                            ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
+                                            <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
+                                                <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
+                                                <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                            </div>
+                                        `;
                             } else {
                                 // Non-overlapping appointment card: retain existing appearance with side-by-side status badge in header
                                 const showSecondary = !isExtraShortAppointment;
                                 el.innerHTML = `
-                                        <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                            <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
-                                            <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                        </div>
-                                        ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
-                                        ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
-                                        <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
-                                    `;
+                                            <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                                <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                            </div>
+                                            ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                                            ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                                            <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
+                                        `;
                             }
 
                             el.addEventListener('dragstart', handleDragStart);

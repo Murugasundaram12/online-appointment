@@ -83,9 +83,8 @@ class ScheduleSingleStaffSelectionTest extends TestCase
         $this->assertFalse($isAllStaff);
 
         $content = $response->getContent();
-        // In the sidebar, default staff item is active while All Staff is not
+        // In the sidebar, default staff item is active
         $this->assertStringContainsString('data-staff-id="' . $this->admin->id . '"', $content);
-        $this->assertStringContainsString('All Staff', $content);
         $this->assertStringContainsString('selectStaffFilter', $content);
     }
 
@@ -167,10 +166,6 @@ class ScheduleSingleStaffSelectionTest extends TestCase
         $this->assertTrue($isAllStaff);
         $this->assertEquals('all', $currentStaffId);
         $this->assertCount(2, $schedules);
-
-        $content = $response->getContent();
-        // All Staff item has active class
-        $this->assertMatchesRegularExpression('/provider-item\s+active[^"]*"\s+data-staff-id="all"/', $content);
     }
 
     /**

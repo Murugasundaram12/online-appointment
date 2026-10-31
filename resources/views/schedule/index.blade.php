@@ -25,6 +25,7 @@
     <style>
         .secondary-sidebar {
             width: 280px;
+            min-width: 280px;
             background-color: #fff;
             border-right: 1px solid #eef0f7;
             display: flex;
@@ -34,10 +35,10 @@
 
         .schedule-container {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             background-color: #fff;
-            overflow: hidden;
         }
 
         .provider-item {
@@ -70,14 +71,15 @@
         }
 
         .calendar-grid {
-            flex: 1;
-            overflow: auto;
             position: relative;
+            overflow-x: auto;
+            overflow-y: visible;
         }
 
         .grid-header {
             display: grid;
             grid-template-columns: 80px repeat(7, 1fr);
+            min-width: 700px;
             border-bottom: 1px solid #eef0f7;
             position: sticky;
             top: 0;
@@ -107,7 +109,9 @@
         .grid-body {
             display: grid;
             grid-template-columns: 80px repeat(7, 1fr);
-            min-height: 1200px;
+            min-width: 700px;
+            height: auto;
+            border-bottom: 1px solid #eef0f7;
         }
 
         .time-cell {
@@ -238,6 +242,24 @@
             border-color: #3699ff;
             box-shadow: 0 4px 12px rgba(54, 153, 255, 0.25);
         }
+
+        .schedule-entries-card {
+            overflow: visible !important;
+        }
+
+        .schedule-entries-card:hover {
+            transform: none !important;
+        }
+
+        .schedule-entries-card .table-responsive {
+            min-height: 200px;
+        }
+
+        @media (min-width: 992px) {
+            .schedule-entries-card .table-responsive {
+                overflow: visible;
+            }
+        }
     </style>
 @endpush
 
@@ -248,7 +270,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-    <div class="d-flex h-100">
+    <div class="d-flex">
         <!-- Secondary Sidebar: Provider Selection -->
         <div class="secondary-sidebar">
             <div class="p-4 border-bottom">
@@ -257,17 +279,6 @@
                     <button class="btn btn-link text-muted p-0"><i class='bx bx-chevron-left fs-4'></i></button>
                 </div>
                 <div class="provider-list">
-                    <div class="provider-item {{ (!empty($isAllStaff) || ($currentStaffId === 'all')) ? 'active' : '' }}"
-                        data-staff-id="all"
-                        onclick="selectStaffFilter('all')">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
-                                style="width: 28px; height: 28px; font-size: 0.75rem; background-color: #475569;">
-                                <i class='bx bx-group fs-6'></i>
-                            </div>
-                            <span class="small text-dark fw-500">All Staff</span>
-                        </div>
-                    </div>
                     @foreach($staff as $member)
                         @php $col = $staffColors[$member->id] ?? '#2563eb'; @endphp
                         <div class="provider-item {{ empty($isAllStaff) && isset($currentStaff) && $currentStaff->id == $member->id ? 'active' : '' }}"
@@ -392,34 +403,6 @@
                 </div>
             </div>
 
-            <!-- Staff Color Legend -->
-            <div class="schedule-legend d-flex flex-wrap align-items-center gap-3 px-4 py-2 bg-white border-bottom small">
-                <span class="text-muted fw-bold text-uppercase d-flex align-items-center" style="font-size: 0.72rem;">
-                    <i class='bx bx-palette me-1 text-primary'></i> Staff Legend:
-                </span>
-                <a href="javascript:void(0)"
-                    onclick="selectStaffFilter('all')"
-                    class="legend-staff-item text-decoration-none d-inline-flex align-items-center gap-1.5 px-2 py-0.5 rounded {{ (!empty($isAllStaff) || ($currentStaffId === 'all')) ? 'bg-light border' : '' }}"
-                    data-staff-id="all"
-                    title="Filter to All Staff">
-                    <span class="d-inline-block rounded-circle flex-shrink-0"
-                        style="width: 10px; height: 10px; background-color: #475569;"></span>
-                    <span class="text-dark fw-medium" style="font-size: 0.78rem;">All Staff</span>
-                </a>
-                @foreach($staff as $member)
-                    @php $col = $staffColors[$member->id] ?? '#2563eb'; @endphp
-                    <a href="javascript:void(0)"
-                        onclick="selectStaffFilter({{ $member->id }})"
-                        class="legend-staff-item text-decoration-none d-inline-flex align-items-center gap-1.5 px-2 py-0.5 rounded {{ empty($isAllStaff) && isset($currentStaff) && $currentStaff->id == $member->id ? 'bg-light border' : '' }}"
-                        data-staff-id="{{ $member->id }}"
-                        title="Filter to {{ $member->name }}">
-                        <span class="d-inline-block rounded-circle flex-shrink-0"
-                            style="width: 10px; height: 10px; background-color: {{ $col }};"></span>
-                        <span class="text-dark fw-medium" style="font-size: 0.78rem;">{{ $member->name }}</span>
-                    </a>
-                @endforeach
-            </div>
-
             <!-- Calendar Grid -->
             <div class="calendar-grid">
                 <div class="grid-header" id="schedule-grid-header">
@@ -458,12 +441,12 @@
                 <p class="text-muted small mb-0">All schedules for the selected staff and date range.</p>
             </div>
         </div>
-        <div class="card border-0 shadow-sm rounded">
+        <div class="card border-0 shadow-sm rounded schedule-entries-card">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light text-muted small">
                         <tr>
-                            <th class="px-4">Staff</th>
+                            <th class="px-4" style="min-width: 220px;">Staff</th>
                             <th>Type</th>
                             <th>Recurrence</th>
                             <th>Working Date</th>
@@ -478,16 +461,60 @@
                     <tbody>
                         @forelse($schedules as $entry)
                             <tr class="schedule-entry-row" data-staff-id="{{ $entry['staff_id'] }}">
-                                <td class="px-4">
-                                    <div class="fw-semibold">{{ $entry['staff']['name'] ?? '—' }}</div>
-                                    @php
-                                        $entryCategories = !empty($entry['staff']['categories'])
-                                            ? collect($entry['staff']['categories'])->pluck('name')->join(', ')
-                                            : ($entry['staff']['category'] ?? '');
-                                    @endphp
-                                    @if(!empty($entryCategories))
-                                        <div class="small text-muted">{{ $entryCategories }}</div>
-                                    @endif
+                                <td class="px-4" style="min-width: 220px;">
+                                    <div class="d-flex align-items-center">
+                                        @php
+                                            $staffColor = $entry['staff_color'] ?? ($staffColors[$entry['staff_id']] ?? '#2563eb');
+                                            $staffName = $entry['staff']['name'] ?? '—';
+
+                                            $hex = ltrim($staffColor, '#');
+                                            if (strlen($hex) === 3) {
+                                                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                                            }
+                                            $avatarTextColor = '#ffffff';
+                                            if (strlen($hex) === 6 && ctype_xdigit($hex)) {
+                                                $r = hexdec(substr($hex, 0, 2));
+                                                $g = hexdec(substr($hex, 2, 2));
+                                                $b = hexdec(substr($hex, 4, 2));
+                                                $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+                                                $avatarTextColor = ($yiq >= 160) ? '#181c32' : '#ffffff';
+                                            }
+
+                                            $nameParts = array_filter(preg_split('/\s+/u', trim($staffName)));
+                                            if (count($nameParts) >= 2) {
+                                                $first = mb_substr(array_shift($nameParts), 0, 1, 'UTF-8');
+                                                $second = mb_substr(array_shift($nameParts), 0, 1, 'UTF-8');
+                                                $staffInitials = mb_strtoupper($first . $second, 'UTF-8');
+                                            } elseif (count($nameParts) === 1) {
+                                                $staffInitials = mb_strtoupper(mb_substr(reset($nameParts), 0, 2, 'UTF-8'), 'UTF-8');
+                                            } else {
+                                                $staffInitials = '—';
+                                            }
+
+                                            $entryCategories = !empty($entry['staff']['categories'])
+                                                ? collect($entry['staff']['categories'])->pluck('name')->join(', ')
+                                                : ($entry['staff']['category'] ?? '');
+
+                                            $entryOccurrenceDate = !empty($entry['working_date'])
+                                                ? \Carbon\Carbon::parse($entry['working_date'])->format('d M Y')
+                                                : (!empty($entry['start_date']) ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') : '—');
+
+                                            $entryGroupPeriod = !empty($entry['start_date'])
+                                                ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') . (!empty($entry['end_date']) ? ' – ' . \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '')
+                                                : '—';
+                                        @endphp
+                                        <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 shadow-sm"
+                                            style="width: 32px; height: 32px; font-size: 0.75rem; background-color: {{ $staffColor }}; color: {{ $avatarTextColor }};"
+                                            title="{{ $staffName }}">
+                                            {{ $staffInitials }}
+                                        </div>
+                                        <div class="min-w-0 flex-grow-1">
+                                            <div class="fw-semibold text-truncate" style="max-width: 180px;" title="{{ $staffName }}">{{ $staffName }}</div>
+                                            @if(!empty($entryCategories))
+                                                <div class="small text-muted text-truncate" style="max-width: 180px;" title="{{ $entryCategories }}">{{ $entryCategories }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                                 <td><span
                                         class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span>
@@ -513,7 +540,7 @@
                                         @if(($entry['recurrence_type'] ?? 'one_time') !== 'one_time' || !empty($entry['recurrence_group_id']))
                                             <div class="dropdown d-inline-block">
                                                 <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                                                     Edit
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
@@ -529,13 +556,20 @@
                                             </div>
                                             <div class="dropdown d-inline-block">
                                                 <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                                                     Delete
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                                     <li>
                                                         <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            onsubmit="return confirm('Delete this occurrence only?');">
+                                                            data-confirm="Are you sure you want to delete this schedule occurrence?"
+                                                            data-confirm-title="Confirm Schedule Deletion"
+                                                            data-confirm-subtitle="This action cannot be undone."
+                                                            data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
+                                                            data-confirm-text="Yes, Delete"
+                                                            data-confirm-class="btn-danger"
+                                                            data-confirm-type="danger"
+                                                            data-confirm-loading="Deleting...">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="occurrence">
@@ -546,7 +580,14 @@
                                                     </li>
                                                     <li>
                                                         <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            onsubmit="return confirm('Skip this occurrence? Staff will be unavailable on this date.');">
+                                                            data-confirm="Are you sure you want to skip this schedule occurrence? Staff will be unavailable on this date."
+                                                            data-confirm-title="Confirm Schedule Skip"
+                                                            data-confirm-subtitle="This will add an exception for this date."
+                                                            data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
+                                                            data-confirm-text="Yes, Skip"
+                                                            data-confirm-class="btn-warning"
+                                                            data-confirm-type="warning"
+                                                            data-confirm-loading="Skipping...">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="skip">
@@ -559,7 +600,14 @@
                                                     </li>
                                                     <li>
                                                         <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            onsubmit="return confirm('Delete entire recurring schedule group?');">
+                                                            data-confirm="Are you sure you want to delete the entire recurring schedule? All occurrences in this recurring group will be affected."
+                                                            data-confirm-title="Confirm Schedule Deletion"
+                                                            data-confirm-subtitle="This action cannot be undone."
+                                                            data-confirm-record="Staff: {{ $staffName }} | Period: {{ $entryGroupPeriod }}"
+                                                            data-confirm-text="Yes, Delete Entire Schedule"
+                                                            data-confirm-class="btn-danger"
+                                                            data-confirm-type="danger"
+                                                            data-confirm-loading="Deleting...">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="group">
@@ -574,7 +622,14 @@
                                             <a href="{{ route('schedule.edit', $entry['id']) }}"
                                                 class="btn btn-sm btn-light border">Edit</a>
                                             <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                onsubmit="return confirm('Delete this schedule?');">
+                                                data-confirm="Are you sure you want to delete this schedule?"
+                                                data-confirm-title="Confirm Schedule Deletion"
+                                                data-confirm-subtitle="This action cannot be undone."
+                                                data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
+                                                data-confirm-text="Yes, Delete"
+                                                data-confirm-class="btn-danger"
+                                                data-confirm-type="danger"
+                                                data-confirm-loading="Deleting...">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
@@ -617,7 +672,14 @@
                     <span class="badge bg-light border text-dark fs-6 fw-normal me-2 mb-2 px-3 py-2">
                         {{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}
                         <form action="{{ route('schedule.holidays.destroy', $holiday) }}" method="POST" class="d-inline"
-                            onsubmit="return confirm('Remove this holiday?');">
+                            data-confirm="Are you sure you want to remove this holiday?"
+                            data-confirm-title="Remove Holiday?"
+                            data-confirm-subtitle="Staff availability will be restored for this date."
+                            data-confirm-record="{{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}"
+                            data-confirm-text="Remove"
+                            data-confirm-class="btn-danger"
+                            data-confirm-type="danger"
+                            data-confirm-loading="Removing...">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1"><i
@@ -832,15 +894,6 @@
                         el.classList.add('active');
                     } else {
                         el.classList.remove('active');
-                    }
-                });
-
-                // Update legend .bg-light border class
-                document.querySelectorAll('.schedule-legend .legend-staff-item').forEach(el => {
-                    if (el.dataset.staffId === staffIdStr) {
-                        el.classList.add('bg-light', 'border');
-                    } else {
-                        el.classList.remove('bg-light', 'border');
                     }
                 });
 

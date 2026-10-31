@@ -299,7 +299,6 @@ class ScheduleStaffColorConsistencyTest extends TestCase
         $response->assertOk();
         $response->assertSee('badge bg-secondary', false);
         $response->assertSee('Off', false);
-        $response->assertSee('background-color: #475569', false); // All staff indicator
     }
 
     /**

@@ -142,8 +142,7 @@ class ScheduleOverlapAndStaffColorTest extends TestCase
         $this->assertNotNull($firstSchedule);
         $this->assertEquals('#8b5cf6', $firstSchedule['staff_color']);
 
-        // Verify HTML contains the staff legend and provider avatar with staff color
-        $response->assertSee('Staff Legend:');
+        // Verify HTML contains the provider avatar with staff color
         $response->assertSee('#8b5cf6');
         $response->assertSee('Dr. Custom Color');
     }
@@ -256,7 +255,6 @@ class ScheduleOverlapAndStaffColorTest extends TestCase
         $month = Carbon::parse($date)->format('Y-m');
         $resMonth = $this->actingAs($this->admin, 'staff')->get("/calendar?view=month&month={$month}");
         $resMonth->assertStatus(200);
-        $resMonth->assertSee('calendar-staff-legend');
         $resMonth->assertSee('#8b5cf6');
     }
 
