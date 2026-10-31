@@ -260,6 +260,348 @@
                 overflow: visible;
             }
         }
+
+        /* Schedule Entries Section & Card */
+        .schedule-entries-section {
+            background-color: #f8fafc;
+            border-top: 1px solid #eef0f7;
+        }
+
+        .schedule-entries-card {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05) !important;
+            background: #ffffff !important;
+            overflow: visible !important;
+        }
+
+        .schedule-entries-card .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            border-top-left-radius: 14px !important;
+            border-top-right-radius: 14px !important;
+        }
+
+        .schedule-entries-header-icon {
+            width: 38px;
+            height: 38px;
+            background-color: #eff6ff;
+            color: #3b82f6;
+            flex-shrink: 0;
+        }
+
+        .schedule-count-badge {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .schedule-search-input {
+            width: 250px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding-left: 2.2rem !important;
+            font-size: 0.82rem;
+            transition: all 0.15s ease;
+        }
+
+        .schedule-search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Schedule Table */
+        .schedule-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        .schedule-table thead th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 13px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            border-top: none;
+            white-space: nowrap;
+        }
+
+        .schedule-table tbody tr.schedule-entry-row {
+            transition: background-color 0.15s ease;
+        }
+
+        .schedule-table tbody tr.schedule-entry-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .schedule-table tbody td {
+            padding: 14px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.84rem;
+        }
+
+        .staff-row-name {
+            font-size: 0.88rem;
+            line-height: 1.25;
+            color: #1e293b;
+        }
+
+        .staff-row-cat {
+            font-size: 0.75rem;
+            line-height: 1.2;
+            margin-top: 2px;
+            color: #64748b;
+        }
+
+        .schedule-type-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 9px;
+            border-radius: 6px;
+            letter-spacing: 0.02em;
+        }
+
+        .type-badge-weekly {
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+            border: 1px solid #dbeafe !important;
+        }
+
+        .type-badge-monthly {
+            background-color: #f5f3ff !important;
+            color: #7c3aed !important;
+            border: 1px solid #ede9fe !important;
+        }
+
+        .type-badge-yearly {
+            background-color: #fffbeb !important;
+            color: #d97706 !important;
+            border: 1px solid #fef3c7 !important;
+        }
+
+        .type-badge-onetime {
+            background-color: #f1f5f9 !important;
+            color: #475569 !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .schedule-time-pill {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 7px;
+            border-radius: 6px;
+        }
+
+        .badge-status-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 4px 10px !important;
+            border-radius: 20px !important;
+            font-size: 0.74rem !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot-working {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: inline-block;
+        }
+
+        .status-dot-off {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: inline-block;
+        }
+
+        .btn-white-border {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 4px 10px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-white-border:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .btn-outline-danger-subtle {
+            background-color: #ffffff;
+            border: 1px solid #fecdd3;
+            color: #e11d48;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 4px 10px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-outline-danger-subtle:hover {
+            background-color: #fff1f2;
+            border-color: #fda4af;
+            color: #be123c;
+        }
+
+        /* Premium Custom Dropdown Component */
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .custom-dropdown-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.15s ease-in-out;
+            white-space: nowrap;
+        }
+
+        .custom-dropdown-trigger .bx-chevron-down {
+            font-size: 0.85rem;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .custom-dropdown.show>.custom-dropdown-trigger .bx-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        .custom-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 5px);
+            right: 0;
+            z-index: 1060;
+            min-width: 230px;
+            max-width: calc(100vw - 32px);
+            padding: 6px;
+            margin: 0;
+            background-color: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px) scale(0.98);
+            transform-origin: top right;
+            transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.16s ease;
+            pointer-events: none;
+        }
+
+        .custom-dropdown.show>.custom-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .custom-dropdown.dropup>.custom-dropdown-menu {
+            top: auto;
+            bottom: calc(100% + 5px);
+            transform: translateY(6px) scale(0.98);
+            transform-origin: bottom right;
+        }
+
+        .custom-dropdown.dropup.show>.custom-dropdown-menu {
+            transform: translateY(0) scale(1);
+        }
+
+        .custom-dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.83rem;
+            font-weight: 500;
+            color: #334155;
+            text-align: left;
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.14s ease, color 0.14s ease;
+            white-space: nowrap;
+            box-sizing: border-box;
+            gap: 8px;
+        }
+
+        .custom-dropdown-item i {
+            font-size: 1.1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .custom-dropdown-item span {
+            flex: 1;
+        }
+
+        .custom-dropdown-item-primary {
+            color: #1e293b;
+        }
+
+        .custom-dropdown-item-primary:hover,
+        .custom-dropdown-item-primary:focus {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            outline: none;
+        }
+
+        .custom-dropdown-item-warning {
+            color: #b45309;
+        }
+
+        .custom-dropdown-item-warning:hover,
+        .custom-dropdown-item-warning:focus {
+            background-color: #fffbeb;
+            color: #b45309;
+            outline: none;
+        }
+
+        .custom-dropdown-item-danger {
+            color: #e11d48;
+        }
+
+        .custom-dropdown-item-danger:hover,
+        .custom-dropdown-item-danger:focus {
+            background-color: #fff1f2;
+            color: #be123c;
+            outline: none;
+        }
+
+        .custom-dropdown-divider {
+            height: 0;
+            margin: 4px 6px;
+            overflow: hidden;
+            border-top: 1px solid #f1f5f9;
+        }
     </style>
 @endpush
 
@@ -282,8 +624,7 @@
                     @foreach($staff as $member)
                         @php $col = $staffColors[$member->id] ?? '#2563eb'; @endphp
                         <div class="provider-item {{ empty($isAllStaff) && isset($currentStaff) && $currentStaff->id == $member->id ? 'active' : '' }}"
-                            data-staff-id="{{ $member->id }}"
-                            onclick="selectStaffFilter({{ $member->id }})">
+                            data-staff-id="{{ $member->id }}" onclick="selectStaffFilter({{ $member->id }})">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
                                     style="width: 28px; height: 28px; font-size: 0.75rem; background-color: {{ $col }};">
@@ -342,7 +683,8 @@
                                 <option value="">All Locations</option>
                                 @foreach($locations ?? [] as $loc)
                                     <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>
-                                        {{ $loc->name }}</option>
+                                        {{ $loc->name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -434,42 +776,62 @@
     </div>
 
     <!-- Schedule Entries List -->
-    <div class="px-4 py-4 bg-light">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-            <div>
-                <h5 class="fw-bold mb-1">Schedule Entries</h5>
-                <p class="text-muted small mb-0">All schedules for the selected staff and date range.</p>
+    <div class="px-4 py-4 schedule-entries-section">
+        <div class="schedule-entries-card card">
+            <div class="card-header py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div
+                        class="schedule-entries-header-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="bx bx-calendar-check fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="fw-bold text-dark mb-0">Schedule Entries</h5>
+                            <span class="badge schedule-count-badge" id="schedule-entries-count">{{ count($schedules) }}
+                                total</span>
+                        </div>
+                        <p class="text-muted small mb-0">All schedules for the selected staff and date range.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="schedule-table-search position-relative">
+                        <i class="bx bx-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted"
+                            style="left: 12px;"></i>
+                        <input type="text" id="schedule-table-search-input"
+                            class="form-control form-control-sm schedule-search-input"
+                            placeholder="Search staff, category, type..." autocomplete="off">
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="card border-0 shadow-sm rounded schedule-entries-card">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="bg-light text-muted small">
+                <table class="table schedule-table mb-0 align-middle">
+                    <thead>
                         <tr>
-                            <th class="px-4" style="min-width: 220px;">Staff</th>
-                            <th>Type</th>
-                            <th>Recurrence</th>
-                            <th>Working Date</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Status</th>
-                            <th class="text-end px-4">Actions</th>
+                            <th class="ps-4" style="min-width: 230px;">Staff</th>
+                            <th style="min-width: 100px;">Type</th>
+                            <th style="min-width: 140px;">Recurrence</th>
+                            <th style="min-width: 130px;">Working Date</th>
+                            <th style="min-width: 90px;">Start Time</th>
+                            <th style="min-width: 90px;">End Time</th>
+                            <th style="min-width: 120px;">From Date</th>
+                            <th style="min-width: 120px;">To Date</th>
+                            <th class="text-center" style="min-width: 100px;">Status</th>
+                            <th class="text-end pe-4" style="min-width: 160px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($schedules as $entry)
-                            <tr class="schedule-entry-row" data-staff-id="{{ $entry['staff_id'] }}">
-                                <td class="px-4" style="min-width: 220px;">
-                                    <div class="d-flex align-items-center">
+                            <tr class="schedule-entry-row" data-staff-id="{{ $entry['staff_id'] }}"
+                                data-search-keywords="{{ strtolower(($entry['staff']['name'] ?? '') . ' ' . (!empty($entry['staff']['categories']) ? collect($entry['staff']['categories'])->pluck('name')->join(' ') : ($entry['staff']['category'] ?? '')) . ' ' . ($entry['summary']['type'] ?? $entry['recurrence_type'] ?? '') . ' ' . ($entry['summary']['recurrence'] ?? '') . ' ' . ($entry['is_working'] ? 'working' : 'off')) }}">
+                                <td class="ps-4" style="min-width: 230px;">
+                                    <div class="d-flex align-items-center gap-3">
                                         @php
                                             $staffColor = $entry['staff_color'] ?? ($staffColors[$entry['staff_id']] ?? '#2563eb');
                                             $staffName = $entry['staff']['name'] ?? '—';
 
                                             $hex = ltrim($staffColor, '#');
                                             if (strlen($hex) === 3) {
-                                                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                                                $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
                                             }
                                             $avatarTextColor = '#ffffff';
                                             if (strlen($hex) === 6 && ctype_xdigit($hex)) {
@@ -502,137 +864,190 @@
                                             $entryGroupPeriod = !empty($entry['start_date'])
                                                 ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') . (!empty($entry['end_date']) ? ' – ' . \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '')
                                                 : '—';
+
+                                            $rawType = $entry['recurrence_type'] ?? 'one_time';
+                                            $typeLabel = $entry['summary']['type'] ?? ucfirst($rawType);
+                                            $badgeClass = match ($rawType) {
+                                                'weekly' => 'type-badge-weekly',
+                                                'monthly' => 'type-badge-monthly',
+                                                'yearly' => 'type-badge-yearly',
+                                                default => 'type-badge-onetime',
+                                            };
                                         @endphp
-                                        <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 shadow-sm"
-                                            style="width: 32px; height: 32px; font-size: 0.75rem; background-color: {{ $staffColor }}; color: {{ $avatarTextColor }};"
+                                        <div class="avatar-initials rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 shadow-sm"
+                                            style="width: 36px; height: 36px; font-size: 0.8rem; background-color: {{ $staffColor }}; color: {{ $avatarTextColor }};"
                                             title="{{ $staffName }}">
                                             {{ $staffInitials }}
                                         </div>
                                         <div class="min-w-0 flex-grow-1">
-                                            <div class="fw-semibold text-truncate" style="max-width: 180px;" title="{{ $staffName }}">{{ $staffName }}</div>
+                                            <div class="fw-semibold text-truncate staff-row-name" style="max-width: 180px;"
+                                                title="{{ $staffName }}">{{ $staffName }}</div>
                                             @if(!empty($entryCategories))
-                                                <div class="small text-muted text-truncate" style="max-width: 180px;" title="{{ $entryCategories }}">{{ $entryCategories }}</div>
+                                                <div class="small text-truncate staff-row-cat" style="max-width: 180px;"
+                                                    title="{{ $entryCategories }}">{{ $entryCategories }}</div>
+                                            @else
+                                                <div class="small text-muted opacity-50">—</div>
                                             @endif
                                         </div>
                                     </div>
                                 </td>
-                                <td><span
-                                        class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span>
-                                </td>
-                                <td>{{ $entry['summary']['recurrence'] ?? '—' }}</td>
-                                <td>{{ !empty($entry['working_date']) ? \Carbon\Carbon::parse($entry['working_date'])->format('d M Y') : '—' }}
-                                </td>
-                                <td>{{ substr((string) $entry['start_time'], 0, 5) }}</td>
-                                <td>{{ substr((string) $entry['end_time'], 0, 5) }}</td>
-                                <td>{{ !empty($entry['start_date']) ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') : '—' }}
-                                </td>
-                                <td>{{ !empty($entry['end_date']) ? \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '—' }}
+                                <td>
+                                    <span class="badge schedule-type-badge {{ $badgeClass }}">{{ $typeLabel }}</span>
                                 </td>
                                 <td>
-                                    @if($entry['is_working'])
-                                        <span class="badge bg-success text-white">Working</span>
+                                    <span
+                                        class="text-secondary small fw-medium">{{ $entry['summary']['recurrence'] ?? '—' }}</span>
+                                </td>
+                                <td>
+                                    @if(!empty($entry['working_date']))
+                                        <span class="d-inline-flex align-items-center text-dark small fw-medium">
+                                            <i class="bx bx-calendar text-muted me-1.5 fs-6"></i>
+                                            {{ \Carbon\Carbon::parse($entry['working_date'])->format('d M Y') }}
+                                        </span>
                                     @else
-                                        <span class="badge bg-secondary text-white">Off</span>
+                                        <span class="text-muted opacity-50">—</span>
                                     @endif
                                 </td>
-                                <td class="text-end px-4">
-                                    <div class="d-flex justify-content-end gap-2">
+                                <td>
+                                    @if(!empty($entry['start_time']))
+                                        <span
+                                            class="badge schedule-time-pill">{{ substr((string) $entry['start_time'], 0, 5) }}</span>
+                                    @else
+                                        <span class="text-muted opacity-50">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!empty($entry['end_time']))
+                                        <span
+                                            class="badge schedule-time-pill">{{ substr((string) $entry['end_time'], 0, 5) }}</span>
+                                    @else
+                                        <span class="text-muted opacity-50">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!empty($entry['start_date']))
+                                        <span
+                                            class="text-secondary small">{{ \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') }}</span>
+                                    @else
+                                        <span class="text-muted opacity-50">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!empty($entry['end_date']))
+                                        <span
+                                            class="text-secondary small">{{ \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') }}</span>
+                                    @else
+                                        <span class="text-muted opacity-50">—</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if($entry['is_working'])
+                                        <span class="badge bg-success text-white badge-status-pill">
+                                            <span class="status-dot-working"></span>Working
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary text-white badge-status-pill">
+                                            <span class="status-dot-off"></span>Off
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end align-items-center gap-2">
                                         @if(($entry['recurrence_type'] ?? 'one_time') !== 'one_time' || !empty($entry['recurrence_group_id']))
-                                            <div class="dropdown d-inline-block">
-                                                <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
-                                                    Edit
+                                            <!-- Custom Edit Dropdown -->
+                                            <div class="custom-dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-white-border custom-dropdown-trigger" type="button"
+                                                    aria-haspopup="true" aria-expanded="false">
+                                                    <span>Edit</span>
+                                                    <i class="bx bx-chevron-down text-muted"></i>
                                                 </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                    <li><a class="dropdown-item small"
-                                                            href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'occurrence']) }}"><i
-                                                                class="bx bx-calendar-event me-2 text-primary"></i>Edit this
-                                                            occurrence only</a></li>
-                                                    <li><a class="dropdown-item small"
-                                                            href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'group']) }}"><i
-                                                                class="bx bx-repeat me-2 text-primary"></i>Edit entire recurring
-                                                            schedule</a></li>
-                                                </ul>
+                                                <div class="custom-dropdown-menu">
+                                                    <a class="custom-dropdown-item custom-dropdown-item-primary"
+                                                        href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'occurrence']) }}">
+                                                        <i class="bx bx-calendar-event text-primary"></i>
+                                                        <span>Edit this occurrence only</span>
+                                                    </a>
+                                                    <a class="custom-dropdown-item custom-dropdown-item-primary"
+                                                        href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'group']) }}">
+                                                        <i class="bx bx-repeat text-primary"></i>
+                                                        <span>Edit entire recurring schedule</span>
+                                                    </a>
+                                                </div>
                                             </div>
-                                            <div class="dropdown d-inline-block">
-                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
-                                                    Delete
+
+                                            <!-- Custom Delete Dropdown -->
+                                            <div class="custom-dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-danger-subtle custom-dropdown-trigger"
+                                                    type="button" aria-haspopup="true" aria-expanded="false">
+                                                    <span>Delete</span>
+                                                    <i class="bx bx-chevron-down"></i>
                                                 </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                    <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            data-confirm="Are you sure you want to delete this schedule occurrence?"
-                                                            data-confirm-title="Confirm Schedule Deletion"
-                                                            data-confirm-subtitle="This action cannot be undone."
-                                                            data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
-                                                            data-confirm-text="Yes, Delete"
-                                                            data-confirm-class="btn-danger"
-                                                            data-confirm-type="danger"
-                                                            data-confirm-loading="Deleting...">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <input type="hidden" name="scope" value="occurrence">
-                                                            <button type="submit" class="dropdown-item small text-danger"><i
-                                                                    class="bx bx-calendar-x me-2"></i>Delete this
-                                                                occurrence</button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            data-confirm="Are you sure you want to skip this schedule occurrence? Staff will be unavailable on this date."
-                                                            data-confirm-title="Confirm Schedule Skip"
-                                                            data-confirm-subtitle="This will add an exception for this date."
-                                                            data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
-                                                            data-confirm-text="Yes, Skip"
-                                                            data-confirm-class="btn-warning"
-                                                            data-confirm-type="warning"
-                                                            data-confirm-loading="Skipping...">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <input type="hidden" name="scope" value="skip">
-                                                            <button type="submit" class="dropdown-item small text-warning"><i
-                                                                    class="bx bx-block me-2"></i>Skip this occurrence</button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
-                                                            data-confirm="Are you sure you want to delete the entire recurring schedule? All occurrences in this recurring group will be affected."
-                                                            data-confirm-title="Confirm Schedule Deletion"
-                                                            data-confirm-subtitle="This action cannot be undone."
-                                                            data-confirm-record="Staff: {{ $staffName }} | Period: {{ $entryGroupPeriod }}"
-                                                            data-confirm-text="Yes, Delete Entire Schedule"
-                                                            data-confirm-class="btn-danger"
-                                                            data-confirm-type="danger"
-                                                            data-confirm-loading="Deleting...">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <input type="hidden" name="scope" value="group">
-                                                            <button type="submit"
-                                                                class="dropdown-item small text-danger fw-semibold"><i
-                                                                    class="bx bx-trash me-2"></i>Delete entire schedule</button>
-                                                        </form>
-                                                    </li>
-                                                </ul>
+                                                <div class="custom-dropdown-menu">
+                                                    <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                        data-confirm="Are you sure you want to delete this schedule occurrence?"
+                                                        data-confirm-title="Confirm Schedule Deletion"
+                                                        data-confirm-subtitle="This action cannot be undone."
+                                                        data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
+                                                        data-confirm-text="Yes, Delete" data-confirm-class="btn-danger"
+                                                        data-confirm-type="danger" data-confirm-loading="Deleting...">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="scope" value="occurrence">
+                                                        <button type="submit"
+                                                            class="custom-dropdown-item custom-dropdown-item-danger">
+                                                            <i class="bx bx-calendar-x text-danger"></i>
+                                                            <span>Delete this occurrence</span>
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                        data-confirm="Are you sure you want to skip this schedule occurrence? Staff will be unavailable on this date."
+                                                        data-confirm-title="Confirm Schedule Skip"
+                                                        data-confirm-subtitle="This will add an exception for this date."
+                                                        data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
+                                                        data-confirm-text="Yes, Skip" data-confirm-class="btn-warning"
+                                                        data-confirm-type="warning" data-confirm-loading="Skipping...">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="scope" value="skip">
+                                                        <button type="submit"
+                                                            class="custom-dropdown-item custom-dropdown-item-warning">
+                                                            <i class="bx bx-block text-warning"></i>
+                                                            <span>Skip this occurrence</span>
+                                                        </button>
+                                                    </form>
+                                                    <div class="custom-dropdown-divider"></div>
+                                                    <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                        data-confirm="Are you sure you want to delete the entire recurring schedule? All occurrences in this recurring group will be affected."
+                                                        data-confirm-title="Confirm Schedule Deletion"
+                                                        data-confirm-subtitle="This action cannot be undone."
+                                                        data-confirm-record="Staff: {{ $staffName }} | Period: {{ $entryGroupPeriod }}"
+                                                        data-confirm-text="Yes, Delete Entire Schedule"
+                                                        data-confirm-class="btn-danger" data-confirm-type="danger"
+                                                        data-confirm-loading="Deleting...">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="scope" value="group">
+                                                        <button type="submit"
+                                                            class="custom-dropdown-item custom-dropdown-item-danger fw-semibold">
+                                                            <i class="bx bx-trash text-danger"></i>
+                                                            <span>Delete entire schedule</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         @else
                                             <a href="{{ route('schedule.edit', $entry['id']) }}"
-                                                class="btn btn-sm btn-light border">Edit</a>
+                                                class="btn btn-sm btn-white-border">Edit</a>
                                             <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
                                                 data-confirm="Are you sure you want to delete this schedule?"
                                                 data-confirm-title="Confirm Schedule Deletion"
                                                 data-confirm-subtitle="This action cannot be undone."
                                                 data-confirm-record="Staff: {{ $staffName }} | Date: {{ $entryOccurrenceDate }}"
-                                                data-confirm-text="Yes, Delete"
-                                                data-confirm-class="btn-danger"
-                                                data-confirm-type="danger"
-                                                data-confirm-loading="Deleting...">
+                                                data-confirm-text="Yes, Delete" data-confirm-class="btn-danger"
+                                                data-confirm-type="danger" data-confirm-loading="Deleting...">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger-subtle">Delete</button>
                                             </form>
                                         @endif
                                     </div>
@@ -640,12 +1055,31 @@
                             </tr>
                         @empty
                             <tr id="no-schedules-server-row">
-                                <td colspan="10" class="text-center text-muted py-4">No schedules found for the selected
-                                    filters.</td>
+                                <td colspan="10" class="text-center py-5">
+                                    <div class="py-4">
+                                        <div class="empty-state-icon mb-3 mx-auto rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 54px; height: 54px; background-color: #f1f5f9; color: #94a3b8;">
+                                            <i class="bx bx-calendar-x fs-2"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-1">No schedules found</h6>
+                                        <p class="text-muted small mb-0">No schedules match the selected filters or date range.
+                                        </p>
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                         <tr id="no-staff-schedules-row" style="display: none;">
-                            <td colspan="10" class="text-center text-muted py-4">No schedules found for this staff member in the selected date range.</td>
+                            <td colspan="10" class="text-center py-5">
+                                <div class="py-4">
+                                    <div class="empty-state-icon mb-3 mx-auto rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width: 54px; height: 54px; background-color: #f1f5f9; color: #94a3b8;">
+                                        <i class="bx bx-search fs-2"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">No matching schedules</h6>
+                                    <p class="text-muted small mb-0">No schedules match the current search or staff filter.
+                                    </p>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -672,13 +1106,10 @@
                     <span class="badge bg-light border text-dark fs-6 fw-normal me-2 mb-2 px-3 py-2">
                         {{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}
                         <form action="{{ route('schedule.holidays.destroy', $holiday) }}" method="POST" class="d-inline"
-                            data-confirm="Are you sure you want to remove this holiday?"
-                            data-confirm-title="Remove Holiday?"
+                            data-confirm="Are you sure you want to remove this holiday?" data-confirm-title="Remove Holiday?"
                             data-confirm-subtitle="Staff availability will be restored for this date."
                             data-confirm-record="{{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}"
-                            data-confirm-text="Remove"
-                            data-confirm-class="btn-danger"
-                            data-confirm-type="danger"
+                            data-confirm-text="Remove" data-confirm-class="btn-danger" data-confirm-type="danger"
                             data-confirm-loading="Removing...">
                             @csrf
                             @method('DELETE')
@@ -884,7 +1315,7 @@
 
             let activeStaffFilter = isAllStaff ? 'all' : (currentStaffId || (firstStaffId ? String(firstStaffId) : 'all'));
 
-            window.selectStaffFilter = function(staffId) {
+            window.selectStaffFilter = function (staffId) {
                 activeStaffFilter = staffId;
                 const staffIdStr = String(staffId);
 
@@ -913,7 +1344,7 @@
                         const url = new URL(a.href, window.location.origin);
                         url.searchParams.set('staff_id', staffIdStr);
                         a.href = url.pathname + url.search;
-                    } catch(e) {}
+                    } catch (e) { }
                 });
 
                 // Update browser URL query string without reloading page
@@ -921,7 +1352,7 @@
                     const url = new URL(window.location.href);
                     url.searchParams.set('staff_id', staffIdStr);
                     window.history.pushState({ staff_id: staffIdStr }, '', url.toString());
-                } catch (e) {}
+                } catch (e) { }
 
                 // Filter table rows to match active staff
                 filterScheduleTableRows();
@@ -931,20 +1362,43 @@
             };
 
             function filterScheduleTableRows() {
-                const filter = String(activeStaffFilter || 'all');
+                const staffFilter = String(activeStaffFilter || 'all');
+                const searchInput = document.getElementById('schedule-table-search-input');
+                const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
                 let visibleCount = 0;
+
                 document.querySelectorAll('.schedule-entry-row').forEach(row => {
-                    if (filter === 'all' || row.dataset.staffId === filter) {
+                    const matchesStaff = (staffFilter === 'all' || row.dataset.staffId === staffFilter);
+                    const keywords = (row.dataset.searchKeywords || row.textContent).toLowerCase();
+                    const matchesSearch = !searchQuery || keywords.includes(searchQuery);
+
+                    if (matchesStaff && matchesSearch) {
                         row.style.display = '';
                         visibleCount++;
                     } else {
                         row.style.display = 'none';
                     }
                 });
+
+                const countBadge = document.getElementById('schedule-entries-count');
+                if (countBadge) {
+                    const totalRows = document.querySelectorAll('.schedule-entry-row').length;
+                    if (searchQuery || staffFilter !== 'all') {
+                        countBadge.textContent = `${visibleCount} of ${totalRows}`;
+                    } else {
+                        countBadge.textContent = `${totalRows} total`;
+                    }
+                }
+
                 const emptyRow = document.getElementById('no-staff-schedules-row');
                 if (emptyRow) {
                     emptyRow.style.display = (visibleCount === 0 && document.querySelectorAll('.schedule-entry-row').length > 0) ? '' : 'none';
                 }
+            }
+
+            const tableSearchInput = document.getElementById('schedule-table-search-input');
+            if (tableSearchInput) {
+                tableSearchInput.addEventListener('input', filterScheduleTableRows);
             }
 
             const currentStaffCategory = @json(
@@ -1235,14 +1689,14 @@
 
                         if (totalTracks >= 3 || blockHeight < 28) {
                             block.innerHTML = `
-                                    <div class="fw-bold text-truncate w-100" style="font-size: 0.65rem; line-height: 1.1;">${escapeHtml(staffName)}</div>
-                                    <div class="text-truncate w-100 opacity-90" style="font-size: 0.6rem; line-height: 1;">${timeText}</div>
-                                `;
+                                        <div class="fw-bold text-truncate w-100" style="font-size: 0.65rem; line-height: 1.1;">${escapeHtml(staffName)}</div>
+                                        <div class="text-truncate w-100 opacity-90" style="font-size: 0.6rem; line-height: 1;">${timeText}</div>
+                                    `;
                         } else {
                             block.innerHTML = `
-                                    <div class="fw-bold text-truncate w-100" style="font-size: 0.72rem; line-height: 1.2;">${escapeHtml(staffName)}</div>
-                                    <div class="text-truncate w-100 opacity-90" style="font-size: 0.65rem; line-height: 1.1;">${timeText}</div>
-                                `;
+                                        <div class="fw-bold text-truncate w-100" style="font-size: 0.72rem; line-height: 1.2;">${escapeHtml(staffName)}</div>
+                                        <div class="text-truncate w-100 opacity-90" style="font-size: 0.65rem; line-height: 1.1;">${timeText}</div>
+                                    `;
                         }
 
                         block.addEventListener('click', (e) => {
@@ -1522,6 +1976,105 @@
                 qs.set('week_date', weekDate);
                 window.location.href = '{{ route("schedule.index") }}' + `?${qs.toString()}`;
             });
+
+            // Custom Dropdowns for Schedule Entries
+            function initCustomDropdowns() {
+                let activeDropdown = null;
+
+                function closeActive() {
+                    if (!activeDropdown) return;
+                    const trigger = activeDropdown.querySelector('.custom-dropdown-trigger');
+                    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                    activeDropdown.classList.remove('show', 'dropup');
+                    activeDropdown = null;
+                }
+
+                function openDropdown(dropdown, trigger) {
+                    if (activeDropdown && activeDropdown !== dropdown) {
+                        closeActive();
+                    }
+
+                    const menu = dropdown.querySelector('.custom-dropdown-menu');
+                    if (!menu) return;
+
+                    const triggerRect = trigger.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                    const spaceBelow = viewportHeight - triggerRect.bottom;
+                    const spaceAbove = triggerRect.top;
+
+                    const menuHeight = menu.offsetHeight || 160;
+
+                    // Check space inside table scroll container if present
+                    const tableContainer = dropdown.closest('.table-responsive');
+                    let containerSpaceBelow = spaceBelow;
+                    if (tableContainer) {
+                        const containerRect = tableContainer.getBoundingClientRect();
+                        containerSpaceBelow = Math.min(spaceBelow, containerRect.bottom - triggerRect.bottom);
+                    }
+
+                    // Choose upward (dropup) placement if space below is limited and space above is greater
+                    if ((spaceBelow < menuHeight + 15 || containerSpaceBelow < menuHeight + 15) && spaceAbove > menuHeight) {
+                        dropdown.classList.add('dropup');
+                    } else {
+                        dropdown.classList.remove('dropup');
+                    }
+
+                    dropdown.classList.add('show');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    activeDropdown = dropdown;
+                }
+
+                // Delegated click on trigger
+                document.addEventListener('click', function (e) {
+                    const trigger = e.target.closest('.custom-dropdown-trigger');
+                    if (trigger) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const dropdown = trigger.closest('.custom-dropdown');
+                        if (!dropdown) return;
+
+                        if (dropdown === activeDropdown) {
+                            closeActive();
+                        } else {
+                            openDropdown(dropdown, trigger);
+                        }
+                        return;
+                    }
+
+                    if (activeDropdown) {
+                        // If click is on a link or button inside the active menu, close menu
+                        if (activeDropdown.contains(e.target)) {
+                            const actionItem = e.target.closest('a, button[type="submit"]');
+                            if (actionItem) {
+                                closeActive();
+                            }
+                            return;
+                        }
+                        // Click outside closes the dropdown
+                        closeActive();
+                    }
+                });
+
+                // Close on Escape key and return focus to trigger
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && activeDropdown) {
+                        const trigger = activeDropdown.querySelector('.custom-dropdown-trigger');
+                        closeActive();
+                        if (trigger && typeof trigger.focus === 'function') {
+                            trigger.focus();
+                        }
+                    }
+                });
+
+                // Close on window resize or table scroll
+                window.addEventListener('resize', closeActive, { passive: true });
+                const tableResponsive = document.querySelector('.schedule-entries-card .table-responsive');
+                if (tableResponsive) {
+                    tableResponsive.addEventListener('scroll', closeActive, { passive: true });
+                }
+            }
+
+            initCustomDropdowns();
         });
     </script>
 @endpush
