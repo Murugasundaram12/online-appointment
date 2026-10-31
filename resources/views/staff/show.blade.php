@@ -18,9 +18,10 @@
             <div class="col-lg-4">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
+                        @php $resolvedColor = \App\Http\Controllers\CalendarController::resolveStaffColor($staff); @endphp
                         <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                                style="width: 56px; height: 56px; background: {{ $staff->color ?: '#4f46e5' }};">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                style="width: 56px; height: 56px; background-color: {{ $resolvedColor }};">
                                 {{ strtoupper(substr($staff->name ?: ($staff->email ?: 'ST'), 0, 2)) }}
                             </div>
                             <div>
@@ -36,6 +37,13 @@
                             <dd class="col-7">{{ $staff->email }}</dd>
                             <dt class="col-5 text-muted">Phone</dt>
                             <dd class="col-7">{{ $staff->phone ?: '-' }}</dd>
+                            <dt class="col-5 text-muted">Staff Color</dt>
+                            <dd class="col-7">
+                                <span class="d-inline-flex align-items-center gap-1.5">
+                                    <span class="d-inline-block rounded-circle border shadow-sm" style="width: 13px; height: 13px; background-color: {{ $resolvedColor }};"></span>
+                                    <span class="font-monospace small">{{ $staff->color ?: ($resolvedColor . ' (Auto)') }}</span>
+                                </span>
+                            </dd>
                             <dt class="col-5 text-muted">Location</dt>
                             <dd class="col-7">{{ $staff->location->name ?? '-' }}</dd>
                             <dt class="col-5 text-muted">Access</dt>

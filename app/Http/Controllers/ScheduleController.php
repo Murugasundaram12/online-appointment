@@ -19,8 +19,10 @@ class ScheduleController extends Controller
     private function authorizeScheduleAccess(int $staffId): bool
     {
         $user = Auth::guard('staff')->user();
-        if (!$user) return false;
-        if (in_array($user->access_level, ['admin', 'business_owner'])) return true;
+        if (!$user)
+            return false;
+        if (in_array($user->access_level, ['admin', 'business_owner']))
+            return true;
         return (int) $user->id === $staffId;
     }
     public function index(Request $request)
@@ -31,7 +33,7 @@ class ScheduleController extends Controller
         $selectedRange = $request->query('range', 'this_week');
         $fromDate = $request->query('from_date');
         $toDate = $request->query('to_date');
-        $currentStaffId = $request->query('staff_id');
+        $rawStaffId = $request->query('staff_id');
         $locationId = $request->query('location_id');
         $statusFilter = $request->query('status'); // 'working', 'off', or null
 
@@ -41,6 +43,7 @@ class ScheduleController extends Controller
 
         // Resolve date range based on filter
         switch ($selectedRange) {
+            case 'day':
             case 'today':
                 $start = $now->copy()->startOfDay();
                 $end = $now->copy()->endOfDay();
@@ -49,6 +52,7 @@ class ScheduleController extends Controller
                 $start = $now->copy()->addDay()->startOfDay();
                 $end = $now->copy()->addDay()->endOfDay();
                 break;
+            case 'month':
             case 'this_month':
                 $start = $now->copy()->startOfMonth();
                 $end = $now->copy()->endOfMonth();
@@ -69,10 +73,25 @@ class ScheduleController extends Controller
         }
 
         $query = StaffSchedule::with(['staff', 'staff.location', 'staff.categories'])
-            ->whereBetween('working_date', [$start->toDateString(), $end->toDateString()]);
+            ->whereBetween('working_date', [$start->copy()->startOfDay()->toDateTimeString(), $end->copy()->endOfDay()->toDateTimeString()]);
 
-        if ($currentStaffId) {
-            $query->where('staff_id', $currentStaffId);
+        // Determine staff selection:
+        // 1. Explicit 'all' -> show all staff
+        // 2. Explicit valid staff_id -> show that staff
+        // 3. Initial load (no staff_id parameter) -> default to first active staff member
+        $isAllStaff = $rawStaffId === 'all';
+        $firstActiveStaff = $staff->firstWhere('is_active', true) ?? $staff->first();
+
+        if ($isAllStaff) {
+            $currentStaffId = 'all';
+            $currentStaff = null;
+        } elseif ($rawStaffId && $staff->contains('id', (int) $rawStaffId)) {
+            $currentStaff = $staff->firstWhere('id', (int) $rawStaffId);
+            $currentStaffId = $currentStaff->id;
+        } else {
+            // Default single staff selection on initial load
+            $currentStaff = $firstActiveStaff;
+            $currentStaffId = $currentStaff ? $currentStaff->id : null;
         }
 
         if ($locationId) {
@@ -89,14 +108,28 @@ class ScheduleController extends Controller
 
         $schedules = $query->orderBy('working_date')->orderBy('start_time')->get();
 
-        // Attach human-readable recurrence summaries (server-side, keeps Blade lean).
-        $schedules = $schedules->map(function ($s) {
+        $currentStaff = ($currentStaffId && $currentStaffId !== 'all') ? $staff->find($currentStaffId) : ($isAllStaff ? null : $firstActiveStaff);
+        $currentStaffColor = $currentStaff ? CalendarController::resolveStaffColor($currentStaff) : null;
+
+        // Attach human-readable recurrence summaries and resolved staff colors (server-side, keeps Blade lean).
+        $schedules = $schedules->map(function ($s) use ($staff, $currentStaff, $currentStaffColor) {
             $data = $s->toArray();
             $data['summary'] = $this->describeSchedule($s);
+            $staffMember = $s->staff ?? ($currentStaff && $currentStaff->id == $s->staff_id ? $currentStaff : $staff->firstWhere('id', $s->staff_id));
+            $resolvedColor = $staffMember ? CalendarController::resolveStaffColor($staffMember) : ($currentStaffColor ?? '#2563eb');
+            $data['staff_color'] = $resolvedColor;
+            $data['color'] = $resolvedColor;
+            $data['backgroundColor'] = $resolvedColor;
+            $data['borderColor'] = $resolvedColor;
+            $data['staffColor'] = $resolvedColor;
             return $data;
         });
 
-        $currentStaff = $currentStaffId ? $staff->find($currentStaffId) : $staff->first();
+        $staffColors = [];
+        foreach ($staff as $st) {
+            $staffColors[$st->id] = CalendarController::resolveStaffColor($st);
+        }
+
         $weekStart = $start;
         $weekEnd = $end;
 
@@ -106,13 +139,16 @@ class ScheduleController extends Controller
             'staff',
             'locations',
             'currentStaff',
+            'currentStaffColor',
             'schedules',
+            'staffColors',
             'weekStart',
             'weekEnd',
             'selectedRange',
             'fromDate',
             'toDate',
             'currentStaffId',
+            'isAllStaff',
             'locationId',
             'statusFilter',
             'holidays'
@@ -143,7 +179,7 @@ class ScheduleController extends Controller
     {
         $holidays = $this->holidayDates();
         $date = Carbon::parse($date)->toDateString();
-        $holidays = array_values(array_filter($holidays, fn ($d) => $d !== $date));
+        $holidays = array_values(array_filter($holidays, fn($d) => $d !== $date));
 
         if (empty($holidays)) {
             BusinessSetting::where('key', 'holiday_dates')->delete();
@@ -179,7 +215,7 @@ class ScheduleController extends Controller
 
         return view('schedule.create', compact('staff', 'locations', 'selectedStaff', 'selectedLocationId', 'editing', 'schedule'));
     }
-// Creates staff schedule entries
+    // Creates staff schedule entries
     public function store(StoreScheduleRequest $request)
     {
         $validated = $request->validated();
@@ -299,11 +335,12 @@ class ScheduleController extends Controller
 
             if ($isEdit && !empty($oldGroupIds)) {
                 $oldRows = StaffSchedule::whereIn('id', $oldGroupIds)->get();
-                $targetDateStrings = collect($targetDates)->map(fn ($d) => $d->toDateString())->all();
+                $targetDateStrings = collect($targetDates)->map(fn($d) => $d->toDateString())->all();
 
                 foreach ($oldRows as $oldRow) {
                     $oldDate = $oldRow->working_date ? $oldRow->working_date->toDateString() : null;
-                    if (!$oldDate) continue;
+                    if (!$oldDate)
+                        continue;
 
                     if (!in_array($oldDate, $targetDateStrings, true) || $isDayOff) {
                         $conflict = $this->checkAppointmentConflictForSchedule($oldRow->staff_id, [$oldDate], null, null, null, true);
@@ -321,7 +358,7 @@ class ScheduleController extends Controller
                 StaffSchedule::whereIn('id', $oldGroupIds)->delete();
             }
 
-            $targetDateStrings = collect($targetDates)->map(fn ($d) => $d->toDateString())->all();
+            $targetDateStrings = collect($targetDates)->map(fn($d) => $d->toDateString())->all();
             StaffSchedule::where('staff_id', $staffId)
                 ->whereIn('working_date', $targetDateStrings)
                 ->where('is_working', $isDayOff)
@@ -420,7 +457,7 @@ class ScheduleController extends Controller
                 $endTime = $data['end_time'] ?? null;
 
                 $existing = StaffSchedule::where('staff_id', $staff->id)
-                    ->where('day_of_week', (string)$day)
+                    ->where('day_of_week', (string) $day)
                     ->whereNull('working_date')
                     ->first();
 
@@ -436,7 +473,14 @@ class ScheduleController extends Controller
                     $groupId = (string) Str::uuid();
 
                     $targetDates = $this->calculateTargetDates(
-                        'weekly', null, $startDate, $endDate, [(int)$day], null, null, null
+                        'weekly',
+                        null,
+                        $startDate,
+                        $endDate,
+                        [(int) $day],
+                        null,
+                        null,
+                        null
                     );
 
                     $inserts = [];
@@ -622,7 +666,7 @@ class ScheduleController extends Controller
             return response()->json(['message' => 'Unauthorized action.'], 403);
         }
         $workingDate = $validated['working_date'];
-        $isDayOff = $request->has('is_working') ? !(bool)$validated['is_working'] : false;
+        $isDayOff = $request->has('is_working') ? !(bool) $validated['is_working'] : false;
         $startTime = $isDayOff ? null : $validated['start_time'];
         $endTime = $isDayOff ? null : $validated['end_time'];
 
@@ -810,16 +854,34 @@ class ScheduleController extends Controller
             'yearly' => 'Yearly',
         ];
         $weekdayNames = [
-            '0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday',
-            '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday',
-            'sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday',
-            'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday',
+            '0' => 'Sunday',
+            '1' => 'Monday',
+            '2' => 'Tuesday',
+            '3' => 'Wednesday',
+            '4' => 'Thursday',
+            '5' => 'Friday',
+            '6' => 'Saturday',
+            'sunday' => 'Sunday',
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
             'saturday' => 'Saturday',
         ];
         $monthNames = [
-            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
-            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
-            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+            1 => 'January',
+            2 => 'February',
+            3 => 'March',
+            4 => 'April',
+            5 => 'May',
+            6 => 'June',
+            7 => 'July',
+            8 => 'August',
+            9 => 'September',
+            10 => 'October',
+            11 => 'November',
+            12 => 'December',
         ];
 
         $type = $s->recurrence_type ?: 'one_time';
@@ -850,7 +912,7 @@ class ScheduleController extends Controller
             case 'weekly':
                 if (is_array($weeklyDays) && count($weeklyDays)) {
                     $names = collect($weeklyDays)
-                        ->map(fn ($d) => $weekdayNames[(string) (((int) $d) % 7)] ?? 'Day ' . $d)
+                        ->map(fn($d) => $weekdayNames[(string) (((int) $d) % 7)] ?? 'Day ' . $d)
                         ->join(' + ');
                     $recurrence = 'Every ' . $names;
                 } else {
@@ -880,9 +942,12 @@ class ScheduleController extends Controller
     {
         if (!in_array(($num % 100), [11, 12, 13])) {
             switch ($num % 10) {
-                case 1:  return 'st';
-                case 2:  return 'nd';
-                case 3:  return 'rd';
+                case 1:
+                    return 'st';
+                case 2:
+                    return 'nd';
+                case 3:
+                    return 'rd';
             }
         }
         return 'th';

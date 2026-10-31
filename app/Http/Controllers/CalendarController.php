@@ -45,7 +45,7 @@ class CalendarController extends Controller
     {
         $staffs = Staff::where('is_active', true)
             ->with('categories:id,name')
-            ->get(['id', 'name', 'location_id', 'category']);
+            ->get(['id', 'name', 'location_id', 'category', 'color']);
 
         $staffs->each(function ($s) {
             $categoryIds = $s->categories->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
@@ -53,6 +53,11 @@ class CalendarController extends Controller
             $categoryNames = $s->categories->pluck('name')->all();
             if (!empty($categoryNames)) {
                 $s->category = implode(' • ', $categoryNames);
+            }
+            $resolvedStaffColor = self::resolveStaffColor($s);
+            $s->setAttribute('staff_color', $resolvedStaffColor);
+            if (empty($s->color)) {
+                $s->color = $resolvedStaffColor;
             }
         });
         $clients = Client::orderByDesc('updated_at')->limit(100)->get(['id', 'name', 'email', 'phone']);
@@ -114,6 +119,7 @@ class CalendarController extends Controller
             $serviceName = $appointment->service ? $appointment->service->name : '';
             $status = $appointment->status ?? 'booked';
             $eventColor = self::resolveServiceColor($appointment->service);
+            $staffColor = self::resolveStaffColor($appointment->staff);
 
             return [
                 'id' => $appointment->id,
@@ -128,6 +134,8 @@ class CalendarController extends Controller
                 'backgroundColor' => $eventColor,
                 'borderColor' => $eventColor,
                 'serviceColor' => $eventColor,
+                'staffColor' => $staffColor,
+                'staff_color' => $staffColor,
                 'serviceCategoryId' => $appointment->service?->service_category_id,
                 'serviceCategory' => $appointment->service?->category?->name,
             ];
@@ -288,7 +296,7 @@ class CalendarController extends Controller
             'client:id,name',
             'service:id,name,color,service_category_id',
             'service.category:id,name',
-            'staff:id,name',
+            'staff:id,name,color',
             'location:id,name,is_active',
             'invoice:id,appointment_id,invoice_number'
         ])->whereBetween('start_time', [$startDate, $endDate]);
@@ -310,6 +318,7 @@ class CalendarController extends Controller
 
         $events = $appointments->map(function ($appointment) {
             $eventColor = self::resolveServiceColor($appointment->service);
+            $staffColor = self::resolveStaffColor($appointment->staff);
 
             return [
                 'id' => $appointment->id,
@@ -330,6 +339,8 @@ class CalendarController extends Controller
                 'backgroundColor' => $eventColor,
                 'borderColor' => $eventColor,
                 'serviceColor' => $eventColor,
+                'staffColor' => $staffColor,
+                'staff_color' => $staffColor,
                 'serviceCategoryId' => $appointment->service?->service_category_id,
                 'serviceCategory' => $appointment->service?->category?->name,
                 'notes' => $appointment->notes,
@@ -406,10 +417,13 @@ class CalendarController extends Controller
                 $cursor->addDay();
             }
 
+            $staffColor = self::resolveStaffColor($s);
+
             return [
                 'id' => $s->id,
                 'name' => $s->name,
-                'color' => $s->color ?? null,
+                'color' => $staffColor,
+                'staff_color' => $staffColor,
                 'schedules' => $schedules,
                 'schedules_by_date' => $effectiveSchedulesByDate
             ];
@@ -1363,6 +1377,7 @@ class CalendarController extends Controller
             : ($appointment->start_time && $appointment->end_time ? $appointment->start_time->diffInMinutes($appointment->end_time) : 0);
 
         $eventColor = self::resolveServiceColor($appointment->service);
+        $staffColor = self::resolveStaffColor($appointment->staff);
 
         return [
             'id' => $appointment->id,
@@ -1389,6 +1404,8 @@ class CalendarController extends Controller
             'backgroundColor' => $eventColor,
             'borderColor' => $eventColor,
             'serviceColor' => $eventColor,
+            'staffColor' => $staffColor,
+            'staff_color' => $staffColor,
             'serviceCategoryId' => $appointment->service?->service_category_id,
             'serviceCategory' => $appointment->service?->category?->name,
             'notes' => $appointment->notes,
@@ -1496,5 +1513,42 @@ class CalendarController extends Controller
         }
 
         return '#3699ff'; // Default fallback
+    }
+
+    /**
+     * Resolve staff color with a consistent, deterministic fallback palette.
+     * Preserves custom configured staff colors while generating stable,
+     * distinguishable palette colors when color is missing or empty.
+     */
+    public static function resolveStaffColor(?\App\Models\Staff $staff): string
+    {
+        if ($staff && !empty($staff->color)) {
+            $custom = trim((string) $staff->color);
+            if (!empty($custom)) {
+                return $custom;
+            }
+        }
+
+        $palette = [
+            '#2563eb', // Royal Blue
+            '#0d9488', // Teal
+            '#7c3aed', // Purple
+            '#d97706', // Amber
+            '#dc2626', // Red
+            '#059669', // Emerald
+            '#ea580c', // Orange
+            '#4f46e5', // Indigo
+            '#0891b2', // Cyan
+            '#c026d3', // Fuchsia
+            '#475569', // Slate
+            '#0284c7', // Sky Blue
+        ];
+
+        if (!$staff || empty($staff->id)) {
+            return $palette[0];
+        }
+
+        $index = abs((int) $staff->id) % count($palette);
+        return $palette[$index];
     }
 }

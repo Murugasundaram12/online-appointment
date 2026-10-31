@@ -67,9 +67,10 @@
                                 <tr>
                                     <td class="ps-4 py-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-initials bg-light-danger text-danger me-2 rounded-circle d-flex align-items-center justify-content-center"
-                                                style="width: 25px; height: 25px; font-size: 0.7rem;">
-                                                <i class='bx bx-user'></i>
+                                            @php $stColor = \App\Http\Controllers\CalendarController::resolveStaffColor($staff); @endphp
+                                            <div class="avatar-initials text-white me-2 rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                                                style="width: 26px; height: 26px; font-size: 0.72rem; background-color: {{ $stColor }};">
+                                                {{ strtoupper(substr($staff->name ?: 'S', 0, 1)) }}
                                             </div>
                                             <span class="small text-dark fw-500">{{ $staff->name ?: '-' }}</span>
                                         </div>
@@ -315,10 +316,34 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="field-group mb-0">
+                                    <div class="field-icon"><i class='bx bx-palette'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label" for="add-staff-color">Staff Color</label>
+                                        @error('color')
+                                            <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="color" class="form-control form-control-color p-1 border rounded" id="add-modal-color-picker"
+                                                value="{{ old('color', '#2563eb') }}" style="width: 44px; height: 38px; cursor: pointer;">
+                                            <input type="text" class="form-control font-monospace" id="add-staff-color" name="color"
+                                                value="{{ old('color') }}" placeholder="#2563eb (Optional)" maxlength="7">
+                                            <div id="add-modal-color-preview" class="border rounded shadow-sm flex-shrink-0"
+                                                style="width: 38px; height: 38px; background-color: {{ old('color') ?: '#e2e8f0' }};"></div>
+                                        </div>
+                                        <div class="form-text text-muted small">Choose a hex color or leave blank for automatic palette.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <input type="hidden" name="is_active" value="1">
                         <input type="hidden" name="phone" value="">
                         <input type="hidden" name="bio" value="">
-                        <input type="hidden" name="color" value="">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -478,10 +503,29 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="field-group mb-0">
+                                    <div class="field-icon"><i class='bx bx-palette'></i></div>
+                                    <div class="field-content">
+                                        <label class="form-label" for="edit-staff-color">Staff Color</label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="color" class="form-control form-control-color p-1 border rounded" id="edit-modal-color-picker"
+                                                value="#2563eb" style="width: 44px; height: 38px; cursor: pointer;">
+                                            <input type="text" class="form-control font-monospace" id="edit-staff-color" name="color"
+                                                value="" placeholder="Auto fallback" maxlength="7">
+                                            <div id="edit-modal-color-preview" class="border rounded shadow-sm flex-shrink-0"
+                                                style="width: 38px; height: 38px; background-color: #2563eb;"></div>
+                                        </div>
+                                        <div class="form-text text-muted small">Custom color for schedule/calendar blocks. Clear to restore automatic palette.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <input type="hidden" name="is_active" id="edit-staff-is-active" value="1">
                         <input type="hidden" name="phone" id="edit-staff-phone" value="">
                         <input type="hidden" name="bio" id="edit-staff-bio" value="">
-                        <input type="hidden" name="color" id="edit-staff-color" value="">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -549,8 +593,53 @@
                         document.getElementById('edit-staff-is-active').value = btn.dataset.is_active || '0';
                         document.getElementById('edit-staff-phone').value = btn.dataset.phone || '';
                         document.getElementById('edit-staff-bio').value = btn.dataset.bio || '';
-                        document.getElementById('edit-staff-color').value = btn.dataset.color || '';
+                        const colorVal = btn.dataset.color || '';
+                        document.getElementById('edit-staff-color').value = colorVal;
+                        const editColorPickerEl = document.getElementById('edit-modal-color-picker');
+                        const editColorPreviewEl = document.getElementById('edit-modal-color-preview');
+                        if (editColorPickerEl) editColorPickerEl.value = colorVal || '#2563eb';
+                        if (editColorPreviewEl) editColorPreviewEl.style.backgroundColor = colorVal || '#e2e8f0';
                     });
+                });
+            }
+
+            // Add Modal Color Sync
+            const addColorPicker = document.getElementById('add-modal-color-picker');
+            const addColorInput = document.getElementById('add-staff-color');
+            const addColorPreview = document.getElementById('add-modal-color-preview');
+            if (addColorPicker && addColorInput && addColorPreview) {
+                addColorPicker.addEventListener('input', () => {
+                    addColorInput.value = addColorPicker.value.toLowerCase();
+                    addColorPreview.style.backgroundColor = addColorPicker.value;
+                });
+                addColorInput.addEventListener('input', () => {
+                    const val = addColorInput.value.trim();
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        addColorPicker.value = val;
+                        addColorPreview.style.backgroundColor = val;
+                    } else if (!val) {
+                        addColorPreview.style.backgroundColor = '#e2e8f0';
+                    }
+                });
+            }
+
+            // Edit Modal Color Sync
+            const editColorPicker = document.getElementById('edit-modal-color-picker');
+            const editColorInput = document.getElementById('edit-staff-color');
+            const editColorPreview = document.getElementById('edit-modal-color-preview');
+            if (editColorPicker && editColorInput && editColorPreview) {
+                editColorPicker.addEventListener('input', () => {
+                    editColorInput.value = editColorPicker.value.toLowerCase();
+                    editColorPreview.style.backgroundColor = editColorPicker.value;
+                });
+                editColorInput.addEventListener('input', () => {
+                    const val = editColorInput.value.trim();
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        editColorPicker.value = val;
+                        editColorPreview.style.backgroundColor = val;
+                    } else if (!val) {
+                        editColorPreview.style.backgroundColor = '#e2e8f0';
+                    }
                 });
             }
 

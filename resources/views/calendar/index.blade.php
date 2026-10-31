@@ -318,7 +318,6 @@
             text-overflow: ellipsis;
             overflow: hidden;
             border-radius: 5px;
-            background-color: rgb(11, 128, 67);
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             text-align: center;
@@ -973,7 +972,8 @@
                             {{-- <option value="year">Year View</option> --}}
                         </select>
                         <span class="date-display" id="current-date-header"></span>
-                        <span id="calendar-daily-count" class="daily-count-badge"><span class="count-dot"></span><span>0 Appointments · 0 Clients</span></span>
+                        <span id="calendar-daily-count" class="daily-count-badge"><span class="count-dot"></span><span>0
+                                Appointments · 0 Clients</span></span>
                         <div class="nav-arrows d-flex gap-2">
                             <i class='bx bx-chevron-left nav-arrow' id="prev-week"></i>
                             <i class='bx bx-chevron-right nav-arrow' id="next-week"></i>
@@ -981,7 +981,8 @@
                         <button class="btn-today" id="btn-today">Today</button>
                     </div>
                     <div class="nav-right d-flex">
-                        <i class='bx bx-plus icon-btn' id="btn-new-appointment" title="New Appointment" style="cursor: pointer;"></i>
+                        <i class='bx bx-plus icon-btn' id="btn-new-appointment" title="New Appointment"
+                            style="cursor: pointer;"></i>
                         <i class='bx bx-time-five icon-btn'></i>
                     </div>
                 </div>
@@ -1016,6 +1017,22 @@
                         </option>
                     </select>
                     <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
+                </div>
+
+                <!-- Staff Color Legend -->
+                <div
+                    class="calendar-staff-legend d-flex flex-wrap align-items-center gap-3 mb-3 px-3 py-2 bg-light rounded border small">
+                    <span class="text-muted fw-bold text-uppercase d-flex align-items-center" style="font-size: 0.72rem;">
+                        <i class='bx bx-user me-1 text-primary'></i> Staff Legend:
+                    </span>
+                    @foreach($staffs ?? [] as $st)
+                        @php $stCol = \App\Http\Controllers\CalendarController::resolveStaffColor($st); @endphp
+                        <span class="d-inline-flex align-items-center gap-1.5" title="{{ $st->name }}">
+                            <span class="d-inline-block rounded-circle flex-shrink-0"
+                                style="width: 10px; height: 10px; background-color: {{ $stCol }};"></span>
+                            <span class="text-dark fw-medium" style="font-size: 0.8rem;">{{ $st->name }}</span>
+                        </span>
+                    @endforeach
                 </div>
 
                 <!-- Calendar Content -->
@@ -1245,7 +1262,8 @@
                                 <p class="modal-subtitle">Manage patient, staff, service, schedule, and status details.</p>
                             </div>
                         </div>
-                        <a id="appt-invoice-action-btn" href="#" class="btn btn-outline-primary btn-sm ms-auto me-2 d-none" target="_blank"></a>
+                        <a id="appt-invoice-action-btn" href="#" class="btn btn-outline-primary btn-sm ms-auto me-2 d-none"
+                            target="_blank"></a>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -1272,11 +1290,12 @@
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label" for="appt-client-search">Client <span class="required-mark">*</span></label>
+                                <label class="form-label" for="appt-client-search">Client <span
+                                        class="required-mark">*</span></label>
                                 <!-- <div class="input-group mb-2">
-                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                    <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                </div> -->
+                                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                        <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                    </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" name="client_id" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -1317,11 +1336,13 @@
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
                                     <label class="form-label">Start <span class="required-mark">*</span></label>
-                                    <input type="datetime-local" id="appt-start" name="start_time" class="form-control" required />
+                                    <input type="datetime-local" id="appt-start" name="start_time" class="form-control"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">End <span class="required-mark">*</span></label>
-                                    <input type="datetime-local" id="appt-end" name="end_time" class="form-control" required />
+                                    <input type="datetime-local" id="appt-end" name="end_time" class="form-control"
+                                        required />
                                 </div>
                             </div>
 
@@ -1337,7 +1358,8 @@
 
                             <div class="mb-2 d-none" id="cancellation-reason-wrapper">
                                 <label class="form-label">Cancellation Reason <span class="required-mark">*</span></label>
-                                <textarea id="appt-cancellation-reason" name="cancellation_reason" class="form-control" rows="2" placeholder="Enter reason for cancellation..."></textarea>
+                                <textarea id="appt-cancellation-reason" name="cancellation_reason" class="form-control"
+                                    rows="2" placeholder="Enter reason for cancellation..."></textarea>
                             </div>
 
                             <div class="mb-2">
@@ -1350,11 +1372,14 @@
                             <div class="card border-0 bg-light p-3 mb-2" style="border-radius: 10px;">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <span id="readonly-status-badge" class="badge bg-success px-3 py-2 fs-6 fw-bold"><i class="bx bx-check-circle me-1"></i> COMPLETED</span>
+                                        <span id="readonly-status-badge" class="badge bg-success px-3 py-2 fs-6 fw-bold"><i
+                                                class="bx bx-check-circle me-1"></i> COMPLETED</span>
                                         <span id="readonly-payment-badge" class="badge px-3 py-2 fs-6 fw-bold ms-2"></span>
                                     </div>
-                                    <a id="readonly-invoice-link" href="#" class="btn btn-sm btn-outline-primary fw-semibold d-none" target="_blank">
-                                        <i class="bx bx-receipt me-1"></i> View Invoice <span id="readonly-invoice-num"></span>
+                                    <a id="readonly-invoice-link" href="#"
+                                        class="btn btn-sm btn-outline-primary fw-semibold d-none" target="_blank">
+                                        <i class="bx bx-receipt me-1"></i> View Invoice <span
+                                            id="readonly-invoice-num"></span>
                                     </a>
                                 </div>
                                 <div class="row g-3">
@@ -1370,7 +1395,8 @@
                                     <div class="col-md-6">
                                         <div class="text-muted small">Service</div>
                                         <div class="fw-bold text-dark fs-6" id="readonly-service"></div>
-                                        <div class="small text-muted">Duration: <span id="readonly-duration" class="fw-medium text-dark"></span></div>
+                                        <div class="small text-muted">Duration: <span id="readonly-duration"
+                                                class="fw-medium text-dark"></span></div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="text-muted small">Date & Time</div>
@@ -1378,9 +1404,12 @@
                                     </div>
                                 </div>
 
-                                <div id="readonly-cancellation-reason-row" class="mt-3 p-2 bg-danger-subtle text-danger rounded border border-danger-subtle d-none">
-                                    <div class="fw-bold small me-1"><i class="bx bx-error-circle me-1"></i>Cancellation Reason:</div>
-                                    <div class="small text-danger fw-semibold" id="readonly-cancellation-reason-text">-</div>
+                                <div id="readonly-cancellation-reason-row"
+                                    class="mt-3 p-2 bg-danger-subtle text-danger rounded border border-danger-subtle d-none">
+                                    <div class="fw-bold small me-1"><i class="bx bx-error-circle me-1"></i>Cancellation
+                                        Reason:</div>
+                                    <div class="small text-danger fw-semibold" id="readonly-cancellation-reason-text">-
+                                    </div>
                                 </div>
 
                                 <div id="readonly-invoice-section">
@@ -1649,6 +1678,76 @@
                 return getCategoryOrServiceFallbackColor(catName, svcName);
             }
 
+            function getAppointmentStaffColor(ev) {
+                const isValidHex = (c) => typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c.trim());
+
+                // 1. Direct staffColor or staff_color property on the event
+                if (ev && isValidHex(ev.staffColor)) {
+                    return ev.staffColor.trim();
+                }
+                if (ev && isValidHex(ev.staff_color)) {
+                    return ev.staff_color.trim();
+                }
+
+                // 2. Look up matching staff in CALENDAR_DATA.staffs by staffId / staff_id or staff name
+                const staffId = ev ? (ev.staffId || ev.staff_id) : null;
+                const staffName = ev ? (ev.staff || ev.staffName) : null;
+
+                let matchedStaff = null;
+                if (window.CALENDAR_DATA && Array.isArray(window.CALENDAR_DATA.staffs)) {
+                    if (staffId) {
+                        matchedStaff = window.CALENDAR_DATA.staffs.find(s => String(s.id) === String(staffId));
+                    }
+                    if (!matchedStaff && staffName && typeof staffName === 'string') {
+                        matchedStaff = window.CALENDAR_DATA.staffs.find(s => s.name && s.name.trim().toLowerCase() === staffName.trim().toLowerCase());
+                    }
+                }
+
+                if (matchedStaff) {
+                    if (isValidHex(matchedStaff.color)) {
+                        return matchedStaff.color.trim();
+                    }
+                    if (isValidHex(matchedStaff.staff_color)) {
+                        return matchedStaff.staff_color.trim();
+                    }
+                }
+
+                // Deterministic fallback palette (matches CalendarController::resolveStaffColor)
+                const palette = [
+                    '#2563eb', // Royal Blue
+                    '#0d9488', // Teal
+                    '#7c3aed', // Purple
+                    '#d97706', // Amber
+                    '#dc2626', // Red
+                    '#059669', // Emerald
+                    '#ea580c', // Orange
+                    '#4f46e5', // Indigo
+                    '#0891b2', // Cyan
+                    '#c026d3', // Fuchsia
+                    '#475569', // Slate
+                    '#0284c7'  // Sky Blue
+                ];
+
+                const effectiveId = staffId || (matchedStaff ? matchedStaff.id : null);
+                if (effectiveId && !isNaN(parseInt(effectiveId, 10))) {
+                    const idx = Math.abs(parseInt(effectiveId, 10)) % palette.length;
+                    return palette[idx];
+                }
+
+                if (staffName && typeof staffName === 'string' && staffName.trim().toLowerCase() !== 'n/a' && staffName.trim().toLowerCase() !== 'unassigned') {
+                    let hash = 0;
+                    for (let i = 0; i < staffName.length; i++) {
+                        hash = (hash << 5) - hash + staffName.charCodeAt(i);
+                        hash |= 0;
+                    }
+                    const idx = Math.abs(hash) % palette.length;
+                    return palette[idx];
+                }
+
+                // 3. Safe neutral fallback only when no Staff is assigned
+                return '#64748b';
+            }
+
             function ensureMonthCalendar() {
                 if (monthCalendar || !monthCalendarRoot) return monthCalendar;
                 if (typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
@@ -1670,19 +1769,21 @@
                     showNonCurrentDates: true,
                     dayMaxEventRows: 4,
                     events: events.map(e => {
-                        const sc = getAppointmentServiceColor(e);
+                        const staffColor = getAppointmentStaffColor(e);
                         return {
                             id: e.id,
                             title: e.title,
                             start: e.start ? toApiDateTime(parseCalendarDate(e.start)) : null,
                             end: e.end ? toApiDateTime(parseCalendarDate(e.end)) : null,
-                            color: sc,
-                            backgroundColor: sc,
-                            borderColor: sc,
+                            color: staffColor,
+                            backgroundColor: staffColor,
+                            borderColor: staffColor,
                             extendedProps: {
                                 staff: e.staff,
                                 status: e.status,
-                                serviceColor: sc,
+                                serviceColor: e.serviceColor,
+                                staffColor: staffColor,
+                                staff_color: staffColor,
                                 serviceId: e.serviceId || e.service_id,
                                 service: e.service,
                                 serviceCategory: e.serviceCategory
@@ -1692,18 +1793,22 @@
                     eventClassNames: () => ['fc-staff-appointment'],
                     eventDidMount: function (info) {
                         const extProps = info.event.extendedProps || {};
-                        const eventColor = getAppointmentServiceColor({
-                            serviceColor: extProps.serviceColor,
-                            serviceId: extProps.serviceId,
-                            service: extProps.service,
-                            serviceCategory: extProps.serviceCategory,
+                        const staffColor = getAppointmentStaffColor({
+                            staffColor: extProps.staffColor,
+                            staff_color: extProps.staff_color,
+                            staffId: extProps.staffId || extProps.staff_id,
+                            staff: extProps.staff,
                             color: info.event.backgroundColor || info.event.borderColor
                         });
-                        const textColor = getContrastColor(eventColor);
-                        info.el.style.backgroundColor = eventColor;
-                        info.el.style.borderColor = eventColor;
-                        info.el.style.borderLeft = `4px solid rgba(0,0,0,0.25)`;
+                        const textColor = getContrastColor(staffColor);
+                        info.el.style.backgroundColor = staffColor;
+                        info.el.style.borderColor = staffColor;
                         info.el.style.color = textColor;
+                        info.el.style.setProperty('background', staffColor, 'important');
+                        info.el.style.setProperty('background-color', staffColor, 'important');
+                        info.el.style.setProperty('border-color', staffColor, 'important');
+                        info.el.style.setProperty('border-left', `1px solid ${staffColor}`, 'important');
+                        info.el.style.setProperty('color', textColor, 'important');
                     },
                     eventContent: function (arg) {
                         const client = arg.event.title || (arg.event.extendedProps && arg.event.extendedProps.client) || 'Unassigned';
@@ -2730,7 +2835,7 @@
                             if (Array.isArray(parsed)) {
                                 staffCategoryIds = parsed.map(Number).filter(n => Number.isFinite(n) && n > 0);
                             }
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     if (!staffCategoryStr && opt && opt.dataset.category) {
                         staffCategoryStr = opt.dataset.category;
@@ -3831,19 +3936,21 @@
                     if (currentView === 'month' && monthCalendar) {
                         monthCalendar.removeAllEvents();
                         window._calendarEvents.forEach(ev => {
-                            const sc = getAppointmentServiceColor(ev);
+                            const staffColor = getAppointmentStaffColor(ev);
                             monthCalendar.addEvent({
                                 id: ev.id,
                                 title: ev.title,
                                 start: ev.start ? toApiDateTime(parseCalendarDate(ev.start)) : null,
                                 end: ev.end ? toApiDateTime(parseCalendarDate(ev.end)) : null,
-                                color: sc,
-                                backgroundColor: sc,
-                                borderColor: sc,
+                                color: staffColor,
+                                backgroundColor: staffColor,
+                                borderColor: staffColor,
                                 extendedProps: {
                                     staff: ev.staff,
                                     status: ev.status,
-                                    serviceColor: sc,
+                                    serviceColor: ev.serviceColor,
+                                    staffColor: staffColor,
+                                    staff_color: staffColor,
                                     serviceId: ev.serviceId || ev.service_id,
                                     service: ev.service,
                                     serviceCategory: ev.serviceCategory
@@ -3894,10 +4001,17 @@
                             item.className = 'staff-schedule-item';
                             const startTime = format12Hour(sch.start_time);
                             const endTime = format12Hour(sch.end_time);
+                            const staffCol = staff.staff_color || staff.color || '#2563eb';
+                            const staffTextCol = getContrastColor(staffCol);
+                            item.style.setProperty('background', staffCol, 'important');
+                            item.style.setProperty('background-color', staffCol, 'important');
+                            item.style.setProperty('border-color', staffCol, 'important');
+                            item.style.setProperty('border-left', 'none', 'important');
+                            item.style.setProperty('color', staffTextCol, 'important');
                             item.innerHTML = `
-                                <div class="staff-schedule-name">${escapeHtml(staff.name)}</div>
-                                <div class="staff-schedule-hours">${startTime} – ${endTime}</div>
-                            `;
+                                    <div class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</div>
+                                    <div class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${startTime} – ${endTime}</div>
+                                `;
                             container.appendChild(item);
                         });
                     });
@@ -4059,11 +4173,18 @@
 
                             el.style.top = (topPerc * colHeight) + 'px';
                             el.style.height = (heightPerc * colHeight) + 'px';
-                            const apptColor = getAppointmentServiceColor(ev);
-                            const textColor = getContrastColor(apptColor);
-                            el.style.background = apptColor;
-                            el.style.border = `1px solid ${apptColor}`;
+                            const staffColor = getAppointmentStaffColor(ev);
+                            const textColor = getContrastColor(staffColor);
+                            el.style.background = staffColor;
+                            el.style.backgroundColor = staffColor;
+                            el.style.border = `1px solid ${staffColor}`;
+                            el.style.borderColor = staffColor;
                             el.style.color = textColor;
+                            el.style.setProperty('background', staffColor, 'important');
+                            el.style.setProperty('background-color', staffColor, 'important');
+                            el.style.setProperty('border-color', staffColor, 'important');
+                            el.style.setProperty('border-left', `1px solid ${staffColor}`, 'important');
+                            el.style.setProperty('color', textColor, 'important');
                             el.style.padding = isCompactSlot ? '2px 3.5px' : (isOverlapping ? '3px 5px' : (isShortAppointment ? '2.5px 6px' : '5px 8px'));
                             el.style.borderRadius = '6px';
                             el.style.cursor = isCompletedEvent ? 'default' : 'grab';
@@ -4094,28 +4215,28 @@
                                 const showStaff = staffName && !isExtraShortAppointment && currentView !== 'day' && (!isCompactSlot || durationMinutes >= 45);
 
                                 el.innerHTML = `
-                                    <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                        <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
-                                    </div>
-                                    ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
-                                    ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
-                                    <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
-                                        <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
-                                        <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                    </div>
-                                `;
+                                        <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                            <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
+                                        </div>
+                                        ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
+                                        ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
+                                        <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
+                                            <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
+                                            <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                        </div>
+                                    `;
                             } else {
                                 // Non-overlapping appointment card: retain existing appearance with side-by-side status badge in header
                                 const showSecondary = !isExtraShortAppointment;
                                 el.innerHTML = `
-                                    <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                        <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
-                                        <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                    </div>
-                                    ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
-                                    ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
-                                    <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
-                                `;
+                                        <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                            <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                            <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                        </div>
+                                        ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                                        ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                                        <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
+                                    `;
                             }
 
                             el.addEventListener('dragstart', handleDragStart);
@@ -4286,10 +4407,13 @@
                     if (resData && resData.appointment) {
                         const appt = resData.appointment;
                         const svcColor = getAppointmentServiceColor(appt) || (serviceId ? getAppointmentServiceColor({ serviceId }) : '#3699ff');
+                        const staffColor = getAppointmentStaffColor(appt);
                         appt.serviceColor = svcColor;
-                        appt.color = svcColor;
-                        appt.backgroundColor = svcColor;
-                        appt.borderColor = svcColor;
+                        appt.staffColor = staffColor;
+                        appt.staff_color = staffColor;
+                        appt.color = staffColor;
+                        appt.backgroundColor = staffColor;
+                        appt.borderColor = staffColor;
 
                         window._calendarEvents = window._calendarEvents || [];
                         const existingIdx = window._calendarEvents.findIndex(ev => String(ev.id) === String(appt.id));
@@ -4302,7 +4426,6 @@
                         renderAppointments();
 
                         if (currentView === 'month' && monthCalendar) {
-                            const sc = svcColor;
                             const existingMonthEv = monthCalendar.getEventById(String(appt.id));
                             if (existingMonthEv) existingMonthEv.remove();
                             monthCalendar.addEvent({
@@ -4310,10 +4433,19 @@
                                 title: appt.title,
                                 start: appt.start ? toApiDateTime(parseCalendarDate(appt.start)) : null,
                                 end: appt.end ? toApiDateTime(parseCalendarDate(appt.end)) : null,
-                                color: sc,
-                                backgroundColor: sc,
-                                borderColor: sc,
-                                extendedProps: { staff: appt.staff, status: appt.status, serviceColor: sc, serviceId: appt.serviceId || appt.service_id }
+                                color: staffColor,
+                                backgroundColor: staffColor,
+                                borderColor: staffColor,
+                                extendedProps: {
+                                    staff: appt.staff,
+                                    status: appt.status,
+                                    serviceColor: svcColor,
+                                    staffColor: staffColor,
+                                    staff_color: staffColor,
+                                    serviceId: appt.serviceId || appt.service_id,
+                                    service: appt.service,
+                                    serviceCategory: appt.serviceCategory
+                                }
                             });
                         }
                     }

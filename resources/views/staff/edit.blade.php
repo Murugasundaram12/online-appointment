@@ -148,6 +148,42 @@
                                     aria-label="Show password"><i class="bx bx-show"></i></button>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <label for="color" class="form-label">Staff Color</label>
+                            @error('color')
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            @php
+                                $currentColor = old('color', $staff->color);
+                                $fallbackColor = \App\Http\Controllers\CalendarController::resolveStaffColor($staff);
+                                $pickerValue = $currentColor ?: $fallbackColor;
+                            @endphp
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color"
+                                       class="form-control form-control-color p-1 border rounded @error('color') is-invalid @enderror"
+                                       id="edit_staff_color_picker"
+                                       value="{{ $pickerValue }}"
+                                       title="Choose staff color"
+                                       style="width: 48px; height: 38px; cursor: pointer;">
+                                <input type="text"
+                                       class="form-control font-monospace @error('color') is-invalid @enderror"
+                                       id="color"
+                                       name="color"
+                                       value="{{ $currentColor }}"
+                                       placeholder="{{ $fallbackColor }} (Auto fallback)"
+                                       maxlength="7"
+                                       style="max-width: 220px;">
+                                <div id="edit_staff_color_preview"
+                                     class="border rounded shadow-sm flex-shrink-0"
+                                     style="width: 38px; height: 38px; background-color: {{ $currentColor ?: $fallbackColor }};"
+                                     title="Selected color preview"></div>
+                            </div>
+                            <div class="form-text text-muted small">
+                                Custom color for schedule blocks and calendar indicators. Clear this field to restore the auto-palette color ({{ $fallbackColor }}).
+                            </div>
+                        </div>
                         <div class="col-12">
                             <label for="bio" class="form-label">Bio / Notes</label>
                             @error('bio')
@@ -179,3 +215,31 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const colorPicker = document.getElementById('edit_staff_color_picker');
+            const colorInput = document.getElementById('color');
+            const colorPreview = document.getElementById('edit_staff_color_preview');
+            const fallbackColor = @json($fallbackColor);
+
+            if (colorPicker && colorInput && colorPreview) {
+                colorPicker.addEventListener('input', function () {
+                    colorInput.value = colorPicker.value.toLowerCase();
+                    colorPreview.style.backgroundColor = colorPicker.value;
+                });
+
+                colorInput.addEventListener('input', function () {
+                    const val = colorInput.value.trim();
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        colorPicker.value = val;
+                        colorPreview.style.backgroundColor = val;
+                    } else if (!val) {
+                        colorPreview.style.backgroundColor = fallbackColor;
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

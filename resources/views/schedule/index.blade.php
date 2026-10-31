@@ -3,18 +3,22 @@
 @section('title', 'Schedule')
 
 @php
-if (!function_exists('ordinalSuffix')) {
-    function ordinalSuffix($num) {
-        if (!in_array(($num % 100), [11, 12, 13])) {
-            switch ($num % 10) {
-                case 1:  return 'st';
-                case 2:  return 'nd';
-                case 3:  return 'rd';
+    if (!function_exists('ordinalSuffix')) {
+        function ordinalSuffix($num)
+        {
+            if (!in_array(($num % 100), [11, 12, 13])) {
+                switch ($num % 10) {
+                    case 1:
+                        return 'st';
+                    case 2:
+                        return 'nd';
+                    case 3:
+                        return 'rd';
+                }
             }
+            return 'th';
         }
-        return 'th';
     }
-}
 @endphp
 
 @push('styles')
@@ -107,19 +111,28 @@ if (!function_exists('ordinalSuffix')) {
         }
 
         .time-cell {
-            padding: 1.5rem 0.5rem;
+            height: 50px;
+            box-sizing: border-box;
+            padding: 4px 8px 0 0;
+            line-height: 1;
             text-align: right;
             border-right: 1px solid #eef0f7;
             border-bottom: 1px solid #f8f9fa;
-            font-size: 0.7rem;
-            color: #a1a5b7;
-            height: 50px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: #7e8299;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
         }
 
         .slot-cell {
+            height: 50px;
+            min-height: 50px;
+            max-height: 50px;
+            box-sizing: border-box;
             border-right: 1px solid #f8f9fa;
             border-bottom: 1px solid #f8f9fa;
-            min-height: 50px;
             position: relative;
             background-color: #fff;
             cursor: pointer;
@@ -147,32 +160,36 @@ if (!function_exists('ordinalSuffix')) {
         /* Schedule block styling */
         .schedule-block {
             position: absolute;
-            left: 4px;
-            right: 4px;
-            background: linear-gradient(135deg, #3699ff 0%, #2580d0 100%);
-            color: white;
-            padding: 4px 6px;
+            box-sizing: border-box;
+            padding: 3px 6px;
             border-radius: 4px;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             font-weight: 600;
             overflow: hidden;
-            cursor: grab;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left;
             white-space: nowrap;
+            text-overflow: ellipsis;
             z-index: 5;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            line-height: 1.2;
         }
 
         .schedule-block:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             transform: scale(1.02);
+            z-index: 10;
         }
 
         .schedule-block.weekend {
-            background: linear-gradient(135deg, #b5b5c3 0%, #a1a1b7 100%);
+            /* Weekend shifts preserve the staff color vibrancy */
+            opacity: 0.98;
         }
 
         .time-col {
@@ -215,7 +232,7 @@ if (!function_exists('ordinalSuffix')) {
             transition: all 0.2s ease;
         }
 
-        .weekday-checkbox-btn input[type="checkbox"]:checked + label {
+        .weekday-checkbox-btn input[type="checkbox"]:checked+label {
             background-color: #3699ff;
             color: #ffffff;
             border-color: #3699ff;
@@ -239,50 +256,73 @@ if (!function_exists('ordinalSuffix')) {
                     <h2 class="fs-6 m-0 fw-bold">Schedule list</h2>
                     <button class="btn btn-link text-muted p-0"><i class='bx bx-chevron-left fs-4'></i></button>
                 </div>
-            <div class="provider-list">
-                @foreach($staff as $member)
-                    <div class="provider-item {{ isset($currentStaff) && $currentStaff->id == $member->id ? 'active' : '' }}"
-                        onclick="window.location='{{ route('schedule.index', ['staff_id' => $member->id]) }}'">
+                <div class="provider-list">
+                    <div class="provider-item {{ (!empty($isAllStaff) || ($currentStaffId === 'all')) ? 'active' : '' }}"
+                        data-staff-id="all"
+                        onclick="selectStaffFilter('all')">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-initials bg-light-danger text-danger me-2 rounded-circle d-flex align-items-center justify-content-center"
-                                style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                {{ substr($member->name, 0, 2) }}
+                            <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                style="width: 28px; height: 28px; font-size: 0.75rem; background-color: #475569;">
+                                <i class='bx bx-group fs-6'></i>
                             </div>
-                            <span class="small text-dark fw-500">{{ $member->name }}</span>
+                            <span class="small text-dark fw-500">All Staff</span>
                         </div>
                     </div>
-                @endforeach
+                    @foreach($staff as $member)
+                        @php $col = $staffColors[$member->id] ?? '#2563eb'; @endphp
+                        <div class="provider-item {{ empty($isAllStaff) && isset($currentStaff) && $currentStaff->id == $member->id ? 'active' : '' }}"
+                            data-staff-id="{{ $member->id }}"
+                            onclick="selectStaffFilter({{ $member->id }})">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-initials me-2 rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                    style="width: 28px; height: 28px; font-size: 0.75rem; background-color: {{ $col }};">
+                                    {{ strtoupper(substr($member->name, 0, 2)) }}
+                                </div>
+                                <span class="small text-dark fw-500">{{ $member->name }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
-    </div>
 
         <!-- Main Schedule Content -->
         <div class="schedule-container">
             <!-- Top Navbar for Schedule Filters -->
             <nav class="navbar navbar-light py-3 px-4 border-bottom bg-light">
                 <form action="{{ route('schedule.index') }}" method="GET" class="w-100" id="scheduleFilterForm">
-                    <input type="hidden" name="staff_id" value="{{ $currentStaff->id ?? '' }}">
+                    <input type="hidden" name="staff_id" value="{{ $currentStaffId ?? '' }}">
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-sm-6 col-md-auto">
                             <label class="small text-muted fw-bold d-block mb-1">Quick Range</label>
-                            <select name="range" class="form-select form-select-sm" id="filter-range" onchange="this.form.submit()">
+                            <select name="range" class="form-select form-select-sm" id="filter-range"
+                                onchange="this.form.submit()">
                                 <option value="today" {{ ($selectedRange ?? '') == 'today' ? 'selected' : '' }}>Today</option>
-                                <option value="tomorrow" {{ ($selectedRange ?? '') == 'tomorrow' ? 'selected' : '' }}>Tomorrow</option>
-                                <option value="this_week" {{ ($selectedRange ?? '') == 'this_week' ? 'selected' : '' }}>This Week</option>
-                                <option value="this_month" {{ ($selectedRange ?? '') == 'this_month' ? 'selected' : '' }}>This Month</option>
-                                <option value="this_year" {{ ($selectedRange ?? '') == 'this_year' ? 'selected' : '' }}>This Year</option>
-                                <option value="custom" {{ ($selectedRange ?? '') == 'custom' ? 'selected' : '' }}>Custom</option>
+                                <option value="tomorrow" {{ ($selectedRange ?? '') == 'tomorrow' ? 'selected' : '' }}>Tomorrow
+                                </option>
+                                <option value="this_week" {{ ($selectedRange ?? '') == 'this_week' ? 'selected' : '' }}>This
+                                    Week</option>
+                                <option value="this_month" {{ ($selectedRange ?? '') == 'this_month' ? 'selected' : '' }}>This
+                                    Month</option>
+                                <option value="this_year" {{ ($selectedRange ?? '') == 'this_year' ? 'selected' : '' }}>This
+                                    Year</option>
+                                <option value="custom" {{ ($selectedRange ?? '') == 'custom' ? 'selected' : '' }}>Custom
+                                </option>
                             </select>
                         </div>
 
-                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}" id="custom-date-from">
+                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}"
+                            id="custom-date-from">
                             <label class="small text-muted fw-bold d-block mb-1">From Date</label>
-                            <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate ?? '' }}" onchange="this.form.submit()">
+                            <input type="date" name="from_date" class="form-control form-control-sm"
+                                value="{{ $fromDate ?? '' }}" onchange="this.form.submit()">
                         </div>
 
-                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}" id="custom-date-to">
+                        <div class="col-6 col-md-auto {{ ($selectedRange ?? '') == 'custom' ? '' : 'd-none' }}"
+                            id="custom-date-to">
                             <label class="small text-muted fw-bold d-block mb-1">To Date</label>
-                            <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate ?? '' }}" onchange="this.form.submit()">
+                            <input type="date" name="to_date" class="form-control form-control-sm"
+                                value="{{ $toDate ?? '' }}" onchange="this.form.submit()">
                         </div>
 
                         <div class="col-12 col-sm-6 col-md-auto">
@@ -290,7 +330,8 @@ if (!function_exists('ordinalSuffix')) {
                             <select name="location_id" class="form-select form-select-sm" onchange="this.form.submit()">
                                 <option value="">All Locations</option>
                                 @foreach($locations ?? [] as $loc)
-                                    <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>
+                                        {{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -299,22 +340,25 @@ if (!function_exists('ordinalSuffix')) {
                             <label class="small text-muted fw-bold d-block mb-1">Status</label>
                             <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                 <option value="">All Statuses</option>
-                                <option value="working" {{ ($statusFilter ?? '') == 'working' ? 'selected' : '' }}>Working</option>
-                                <option value="off" {{ ($statusFilter ?? '') == 'off' ? 'selected' : '' }}>Off / Unavailable</option>
+                                <option value="working" {{ ($statusFilter ?? '') == 'working' ? 'selected' : '' }}>Working
+                                </option>
+                                <option value="off" {{ ($statusFilter ?? '') == 'off' ? 'selected' : '' }}>Off / Unavailable
+                                </option>
                             </select>
                         </div>
 
                         @if(($selectedRange ?? 'this_week') !== 'this_week' || !empty($fromDate) || !empty($toDate) || !empty($locationId) || !empty($statusFilter))
                             <div class="col-12 col-sm-6 col-md-auto">
                                 <label class="small text-muted fw-bold d-block mb-1">&nbsp;</label>
-                                <a href="{{ route('schedule.index', array_filter(['staff_id' => $currentStaff->id ?? null])) }}" class="btn btn-outline-secondary btn-sm">
+                                <a href="{{ route('schedule.index', array_filter(['staff_id' => $currentStaffId ?? null])) }}"
+                                    class="btn btn-outline-secondary btn-sm">
                                     <i class="bx bx-x me-1"></i>Reset
                                 </a>
                             </div>
                         @endif
 
                         <div class="col-12 col-md-auto ms-auto text-end">
-                            <a href="{{ route('schedule.create', ['staff_id' => $currentStaff->id ?? '']) }}"
+                            <a href="{{ route('schedule.create', array_filter(['staff_id' => ($currentStaffId !== 'all' ? ($currentStaffId ?? null) : null)])) }}"
                                 class="btn btn-primary btn-sm px-4 fw-semibold rounded-pill">+ New Schedule</a>
                         </div>
                     </div>
@@ -324,9 +368,12 @@ if (!function_exists('ordinalSuffix')) {
             <!-- Calendar Toolbar -->
             <div class="px-4 py-3 d-flex align-items-center justify-content-between border-bottom">
                 <div class="view-toggle btn-group btn-group-sm">
-                    <button class="btn">Day</button>
-                    <button class="btn active">Week</button>
-                    <button class="btn">Month</button>
+                    <a href="{{ route('schedule.index', array_merge(request()->all(), ['range' => 'today', 'staff_id' => $currentStaffId ?? ''])) }}"
+                        class="btn {{ in_array(($selectedRange ?? ''), ['today', 'day']) ? 'active' : '' }}">Day</a>
+                    <a href="{{ route('schedule.index', array_merge(request()->all(), ['range' => 'this_week', 'staff_id' => $currentStaffId ?? ''])) }}"
+                        class="btn {{ !in_array(($selectedRange ?? ''), ['today', 'day', 'this_month', 'month']) ? 'active' : '' }}">Week</a>
+                    <a href="{{ route('schedule.index', array_merge(request()->all(), ['range' => 'this_month', 'staff_id' => $currentStaffId ?? ''])) }}"
+                        class="btn {{ in_array(($selectedRange ?? ''), ['this_month', 'month']) ? 'active' : '' }}">Month</a>
                 </div>
 
                 <div class="d-flex align-items-center gap-4">
@@ -343,6 +390,34 @@ if (!function_exists('ordinalSuffix')) {
                         <button class="btn border" id="btn-next-week"><i class='bx bx-chevron-right fs-5'></i></button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Staff Color Legend -->
+            <div class="schedule-legend d-flex flex-wrap align-items-center gap-3 px-4 py-2 bg-white border-bottom small">
+                <span class="text-muted fw-bold text-uppercase d-flex align-items-center" style="font-size: 0.72rem;">
+                    <i class='bx bx-palette me-1 text-primary'></i> Staff Legend:
+                </span>
+                <a href="javascript:void(0)"
+                    onclick="selectStaffFilter('all')"
+                    class="legend-staff-item text-decoration-none d-inline-flex align-items-center gap-1.5 px-2 py-0.5 rounded {{ (!empty($isAllStaff) || ($currentStaffId === 'all')) ? 'bg-light border' : '' }}"
+                    data-staff-id="all"
+                    title="Filter to All Staff">
+                    <span class="d-inline-block rounded-circle flex-shrink-0"
+                        style="width: 10px; height: 10px; background-color: #475569;"></span>
+                    <span class="text-dark fw-medium" style="font-size: 0.78rem;">All Staff</span>
+                </a>
+                @foreach($staff as $member)
+                    @php $col = $staffColors[$member->id] ?? '#2563eb'; @endphp
+                    <a href="javascript:void(0)"
+                        onclick="selectStaffFilter({{ $member->id }})"
+                        class="legend-staff-item text-decoration-none d-inline-flex align-items-center gap-1.5 px-2 py-0.5 rounded {{ empty($isAllStaff) && isset($currentStaff) && $currentStaff->id == $member->id ? 'bg-light border' : '' }}"
+                        data-staff-id="{{ $member->id }}"
+                        title="Filter to {{ $member->name }}">
+                        <span class="d-inline-block rounded-circle flex-shrink-0"
+                            style="width: 10px; height: 10px; background-color: {{ $col }};"></span>
+                        <span class="text-dark fw-medium" style="font-size: 0.78rem;">{{ $member->name }}</span>
+                    </a>
+                @endforeach
             </div>
 
             <!-- Calendar Grid -->
@@ -402,7 +477,7 @@ if (!function_exists('ordinalSuffix')) {
                     </thead>
                     <tbody>
                         @forelse($schedules as $entry)
-                            <tr>
+                            <tr class="schedule-entry-row" data-staff-id="{{ $entry['staff_id'] }}">
                                 <td class="px-4">
                                     <div class="fw-semibold">{{ $entry['staff']['name'] ?? '—' }}</div>
                                     @php
@@ -414,13 +489,18 @@ if (!function_exists('ordinalSuffix')) {
                                         <div class="small text-muted">{{ $entryCategories }}</div>
                                     @endif
                                 </td>
-                                <td><span class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span></td>
+                                <td><span
+                                        class="badge bg-info text-white">{{ $entry['summary']['type'] ?? ucfirst($entry['recurrence_type']) }}</span>
+                                </td>
                                 <td>{{ $entry['summary']['recurrence'] ?? '—' }}</td>
-                                <td>{{ !empty($entry['working_date']) ? \Carbon\Carbon::parse($entry['working_date'])->format('d M Y') : '—' }}</td>
+                                <td>{{ !empty($entry['working_date']) ? \Carbon\Carbon::parse($entry['working_date'])->format('d M Y') : '—' }}
+                                </td>
                                 <td>{{ substr((string) $entry['start_time'], 0, 5) }}</td>
                                 <td>{{ substr((string) $entry['end_time'], 0, 5) }}</td>
-                                <td>{{ !empty($entry['start_date']) ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') : '—' }}</td>
-                                <td>{{ !empty($entry['end_date']) ? \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '—' }}</td>
+                                <td>{{ !empty($entry['start_date']) ? \Carbon\Carbon::parse($entry['start_date'])->format('d M Y') : '—' }}
+                                </td>
+                                <td>{{ !empty($entry['end_date']) ? \Carbon\Carbon::parse($entry['end_date'])->format('d M Y') : '—' }}
+                                </td>
                                 <td>
                                     @if($entry['is_working'])
                                         <span class="badge bg-success text-white">Working</span>
@@ -432,48 +512,67 @@ if (!function_exists('ordinalSuffix')) {
                                     <div class="d-flex justify-content-end gap-2">
                                         @if(($entry['recurrence_type'] ?? 'one_time') !== 'one_time' || !empty($entry['recurrence_group_id']))
                                             <div class="dropdown d-inline-block">
-                                                <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
                                                     Edit
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                    <li><a class="dropdown-item small" href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'occurrence']) }}"><i class="bx bx-calendar-event me-2 text-primary"></i>Edit this occurrence only</a></li>
-                                                    <li><a class="dropdown-item small" href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'group']) }}"><i class="bx bx-repeat me-2 text-primary"></i>Edit entire recurring schedule</a></li>
+                                                    <li><a class="dropdown-item small"
+                                                            href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'occurrence']) }}"><i
+                                                                class="bx bx-calendar-event me-2 text-primary"></i>Edit this
+                                                            occurrence only</a></li>
+                                                    <li><a class="dropdown-item small"
+                                                            href="{{ route('schedule.edit', [$entry['id'], 'scope' => 'group']) }}"><i
+                                                                class="bx bx-repeat me-2 text-primary"></i>Edit entire recurring
+                                                            schedule</a></li>
                                                 </ul>
                                             </div>
                                             <div class="dropdown d-inline-block">
-                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
                                                     Delete
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                                     <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Delete this occurrence only?');">
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                            onsubmit="return confirm('Delete this occurrence only?');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="occurrence">
-                                                            <button type="submit" class="dropdown-item small text-danger"><i class="bx bx-calendar-x me-2"></i>Delete this occurrence</button>
+                                                            <button type="submit" class="dropdown-item small text-danger"><i
+                                                                    class="bx bx-calendar-x me-2"></i>Delete this
+                                                                occurrence</button>
                                                         </form>
                                                     </li>
                                                     <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Skip this occurrence? Staff will be unavailable on this date.');">
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                            onsubmit="return confirm('Skip this occurrence? Staff will be unavailable on this date.');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="skip">
-                                                            <button type="submit" class="dropdown-item small text-warning"><i class="bx bx-block me-2"></i>Skip this occurrence</button>
+                                                            <button type="submit" class="dropdown-item small text-warning"><i
+                                                                    class="bx bx-block me-2"></i>Skip this occurrence</button>
                                                         </form>
                                                     </li>
-                                                    <li><hr class="dropdown-divider"></li>
                                                     <li>
-                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST" onsubmit="return confirm('Delete entire recurring schedule group?');">
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
+                                                            onsubmit="return confirm('Delete entire recurring schedule group?');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <input type="hidden" name="scope" value="group">
-                                                            <button type="submit" class="dropdown-item small text-danger fw-semibold"><i class="bx bx-trash me-2"></i>Delete entire schedule</button>
+                                                            <button type="submit"
+                                                                class="dropdown-item small text-danger fw-semibold"><i
+                                                                    class="bx bx-trash me-2"></i>Delete entire schedule</button>
                                                         </form>
                                                     </li>
                                                 </ul>
                                             </div>
                                         @else
-                                            <a href="{{ route('schedule.edit', $entry['id']) }}" class="btn btn-sm btn-light border">Edit</a>
+                                            <a href="{{ route('schedule.edit', $entry['id']) }}"
+                                                class="btn btn-sm btn-light border">Edit</a>
                                             <form action="{{ route('schedule.destroy', $entry['id']) }}" method="POST"
                                                 onsubmit="return confirm('Delete this schedule?');">
                                                 @csrf
@@ -485,10 +584,14 @@ if (!function_exists('ordinalSuffix')) {
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="10" class="text-center text-muted py-4">No schedules found for the selected filters.</td>
+                            <tr id="no-schedules-server-row">
+                                <td colspan="10" class="text-center text-muted py-4">No schedules found for the selected
+                                    filters.</td>
                             </tr>
                         @endforelse
+                        <tr id="no-staff-schedules-row" style="display: none;">
+                            <td colspan="10" class="text-center text-muted py-4">No schedules found for this staff member in the selected date range.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -499,20 +602,26 @@ if (!function_exists('ordinalSuffix')) {
     <div class="px-4 py-4 bg-light">
         <div class="card border-0 shadow-sm rounded">
             <div class="card-body">
-                <h6 class="fw-bold mb-1"><i class="bx bx-calendar-x me-1 text-danger"></i>Business Holidays (Closed Dates)</h6>
-                <p class="text-muted small mb-3">On these dates the clinic is closed: no staff is available and no appointments can be booked.</p>
-                <form action="{{ route('schedule.holidays.store') }}" method="POST" class="d-flex flex-wrap align-items-center gap-2 mb-3" novalidate>
+                <h6 class="fw-bold mb-1"><i class="bx bx-calendar-x me-1 text-danger"></i>Business Holidays (Closed Dates)
+                </h6>
+                <p class="text-muted small mb-3">On these dates the clinic is closed: no staff is available and no
+                    appointments can be booked.</p>
+                <form action="{{ route('schedule.holidays.store') }}" method="POST"
+                    class="d-flex flex-wrap align-items-center gap-2 mb-3" novalidate>
                     @csrf
-                    <input type="date" name="date" class="form-control form-control-sm w-auto" min="{{ date('Y-m-d') }}" required>
+                    <input type="date" name="date" class="form-control form-control-sm w-auto" min="{{ date('Y-m-d') }}"
+                        required>
                     <button type="submit" class="btn btn-sm btn-primary">Add Holiday</button>
                 </form>
                 @forelse($holidays as $holiday)
                     <span class="badge bg-light border text-dark fs-6 fw-normal me-2 mb-2 px-3 py-2">
                         {{ \Carbon\Carbon::parse($holiday)->format('D, d M Y') }}
-                        <form action="{{ route('schedule.holidays.destroy', $holiday) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this holiday?');">
+                        <form action="{{ route('schedule.holidays.destroy', $holiday) }}" method="POST" class="d-inline"
+                            onsubmit="return confirm('Remove this holiday?');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1"><i class="bx bx-x"></i></button>
+                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1"><i
+                                    class="bx bx-x"></i></button>
                         </form>
                     </span>
                 @empty
@@ -526,7 +635,8 @@ if (!function_exists('ordinalSuffix')) {
     <div class="modal fade app-modal" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <form class="modal-content" id="create-schedule-form" action="{{ route('schedule.store') }}" method="POST" novalidate>
+            <form class="modal-content" id="create-schedule-form" action="{{ route('schedule.store') }}" method="POST"
+                novalidate>
                 @csrf
                 <div class="modal-header">
                     <div class="modal-heading">
@@ -551,7 +661,8 @@ if (!function_exists('ordinalSuffix')) {
                             <input type="text" class="form-control" id="cs-staff-category" value="" readonly>
                         </div>
                         <div class="col-6 col-md-3">
-                            <label class="form-label small text-muted">Recurrence Type <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted">Recurrence Type <span
+                                    class="required-mark">*</span></label>
                             <select class="form-select" id="cs-recurrence-type" name="recurrence_type" required>
                                 <option value="one_time">One Time</option>
                                 <option value="daily">Daily</option>
@@ -561,11 +672,13 @@ if (!function_exists('ordinalSuffix')) {
                             </select>
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small text-muted" for="cs-start-time">Start Time <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted" for="cs-start-time">Start Time <span
+                                    class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-start-time" name="start_time" required>
                         </div>
                         <div class="col-6 col-md-2">
-                            <label class="form-label small text-muted" for="cs-end-time">End Time <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted" for="cs-end-time">End Time <span
+                                    class="required-mark">*</span></label>
                             <input type="time" class="form-control" id="cs-end-time" name="end_time" required>
                         </div>
                         <div class="col-6 col-md-2">
@@ -578,8 +691,10 @@ if (!function_exists('ordinalSuffix')) {
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="cs-day-off" name="is_working" value="0">
-                                <label class="form-check-label small" for="cs-day-off">Day Off — staff is <strong>not available</strong> on this date</label>
+                                <input class="form-check-input" type="checkbox" role="switch" id="cs-day-off"
+                                    name="is_working" value="0">
+                                <label class="form-check-label small" for="cs-day-off">Day Off — staff is <strong>not
+                                        available</strong> on this date</label>
                             </div>
                         </div>
                     </div>
@@ -589,24 +704,30 @@ if (!function_exists('ordinalSuffix')) {
                     <div class="row g-3">
                         <!-- One Time Working Date -->
                         <div class="col-12 col-md-6 recurrence-panel" id="panel-one_time">
-                            <label class="form-label small text-muted" for="cs-working-date">Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="working_date" id="cs-working-date" min="{{ date('Y-m-d') }}" required>
+                            <label class="form-label small text-muted" for="cs-working-date">Date <span
+                                    class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="working_date" id="cs-working-date"
+                                min="{{ date('Y-m-d') }}" required>
                             <div class="form-text">Schedule applies only to this single date.</div>
                         </div>
 
                         <!-- Date Range for Recurring -->
                         <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range">
-                            <label class="form-label small text-muted">Start Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="start_date" id="cs-start-date" min="{{ date('Y-m-d') }}">
+                            <label class="form-label small text-muted">Start Date <span
+                                    class="required-mark">*</span></label>
+                            <input type="date" class="form-control" name="start_date" id="cs-start-date"
+                                min="{{ date('Y-m-d') }}">
                         </div>
                         <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-date-range-end">
                             <label class="form-label small text-muted">End Date <span class="required-mark">*</span></label>
-                            <input type="date" class="form-control" name="end_date" id="cs-end-date" min="{{ date('Y-m-d') }}">
+                            <input type="date" class="form-control" name="end_date" id="cs-end-date"
+                                min="{{ date('Y-m-d') }}">
                         </div>
 
                         <!-- Weekly Days Selection -->
                         <div class="col-12 recurrence-panel d-none" id="panel-weekly">
-                            <label class="form-label small text-muted d-block mb-2">Select Weekdays <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted d-block mb-2">Select Weekdays <span
+                                    class="required-mark">*</span></label>
                             <div class="weekday-checkbox-group">
                                 @php
                                     $weekdays = [
@@ -621,7 +742,8 @@ if (!function_exists('ordinalSuffix')) {
                                 @endphp
                                 @foreach($weekdays as $val => $label)
                                     <div class="weekday-checkbox-btn">
-                                        <input type="checkbox" class="cs-weekly-day" name="weekly_days[]" id="day-{{ $val }}" value="{{ $val }}">
+                                        <input type="checkbox" class="cs-weekly-day" name="weekly_days[]" id="day-{{ $val }}"
+                                            value="{{ $val }}">
                                         <label for="day-{{ $val }}">{{ $label }}</label>
                                     </div>
                                 @endforeach
@@ -630,7 +752,8 @@ if (!function_exists('ordinalSuffix')) {
 
                         <!-- Monthly Day Selection -->
                         <div class="col-12 col-md-6 recurrence-panel d-none" id="panel-monthly">
-                            <label class="form-label small text-muted">Day of Month <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted">Day of Month <span
+                                    class="required-mark">*</span></label>
                             <select name="monthly_day" class="form-select" id="cs-monthly-day">
                                 @for($d = 1; $d <= 31; $d++)
                                     <option value="{{ $d }}">Every month on the {{ $d }}{{ ordinalSuffix($d) }}</option>
@@ -644,9 +767,18 @@ if (!function_exists('ordinalSuffix')) {
                             <select name="yearly_month" class="form-select" id="cs-yearly-month">
                                 @php
                                     $months = [
-                                        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
-                                        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
-                                        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+                                        1 => 'January',
+                                        2 => 'February',
+                                        3 => 'March',
+                                        4 => 'April',
+                                        5 => 'May',
+                                        6 => 'June',
+                                        7 => 'July',
+                                        8 => 'August',
+                                        9 => 'September',
+                                        10 => 'October',
+                                        11 => 'November',
+                                        12 => 'December'
                                     ];
                                 @endphp
                                 @foreach($months as $mVal => $mName)
@@ -655,7 +787,8 @@ if (!function_exists('ordinalSuffix')) {
                             </select>
                         </div>
                         <div class="col-6 col-md-3 recurrence-panel d-none" id="panel-yearly-day">
-                            <label class="form-label small text-muted">Day of Month <span class="required-mark">*</span></label>
+                            <label class="form-label small text-muted">Day of Month <span
+                                    class="required-mark">*</span></label>
                             <select name="yearly_day" class="form-select" id="cs-yearly-day">
                                 @for($d = 1; $d <= 31; $d++)
                                     <option value="{{ $d }}">{{ $d }}{{ ordinalSuffix($d) }}</option>
@@ -679,15 +812,97 @@ if (!function_exists('ordinalSuffix')) {
     <script>
         // Staff Schedule Management
         document.addEventListener('DOMContentLoaded', function () {
-            const currentStaffId = {{ isset($currentStaff) ? $currentStaff->id : 'null' }};
+            const currentStaffId = @json($currentStaffId);
+            const currentStaffColor = @json($currentStaffColor ?? ($currentStaff ? \App\Http\Controllers\CalendarController::resolveStaffColor($currentStaff) : null));
+            const isAllStaff = @json($isAllStaff ?? false);
             const currentStaffLocationId = {{ isset($currentStaff) && $currentStaff->location_id ? $currentStaff->location_id : 'null' }};
-            const currentStaffName = @json($currentStaff->name ?? '');
+            const currentStaffName = @json($currentStaff->name ?? 'Staff');
+            const firstStaffId = {{ isset($staff) && $staff->isNotEmpty() ? $staff->first()->id : 'null' }};
+            window.FIRST_STAFF_ID = firstStaffId;
+
+            let activeStaffFilter = isAllStaff ? 'all' : (currentStaffId || (firstStaffId ? String(firstStaffId) : 'all'));
+
+            window.selectStaffFilter = function(staffId) {
+                activeStaffFilter = staffId;
+                const staffIdStr = String(staffId);
+
+                // Update sidebar .active class
+                document.querySelectorAll('.provider-list .provider-item').forEach(el => {
+                    if (el.dataset.staffId === staffIdStr) {
+                        el.classList.add('active');
+                    } else {
+                        el.classList.remove('active');
+                    }
+                });
+
+                // Update legend .bg-light border class
+                document.querySelectorAll('.schedule-legend .legend-staff-item').forEach(el => {
+                    if (el.dataset.staffId === staffIdStr) {
+                        el.classList.add('bg-light', 'border');
+                    } else {
+                        el.classList.remove('bg-light', 'border');
+                    }
+                });
+
+                // Update hidden form inputs and create schedule links
+                const staffInput = document.querySelector('input[name="staff_id"]');
+                if (staffInput) staffInput.value = staffIdStr;
+
+                const newScheduleBtn = document.querySelector('a[href*="schedule/create"]');
+                if (newScheduleBtn) {
+                    const targetStaffId = staffIdStr !== 'all' ? staffIdStr : '';
+                    newScheduleBtn.href = '{{ route("schedule.create") }}' + (targetStaffId ? `?staff_id=${targetStaffId}` : '');
+                }
+
+                // Update Day/Week/Month toggle links so clicking them preserves staff_id
+                document.querySelectorAll('.view-toggle a').forEach(a => {
+                    try {
+                        const url = new URL(a.href, window.location.origin);
+                        url.searchParams.set('staff_id', staffIdStr);
+                        a.href = url.pathname + url.search;
+                    } catch(e) {}
+                });
+
+                // Update browser URL query string without reloading page
+                try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('staff_id', staffIdStr);
+                    window.history.pushState({ staff_id: staffIdStr }, '', url.toString());
+                } catch (e) {}
+
+                // Filter table rows to match active staff
+                filterScheduleTableRows();
+
+                // Re-render blocks with new filter
+                renderScheduleBlocks();
+            };
+
+            function filterScheduleTableRows() {
+                const filter = String(activeStaffFilter || 'all');
+                let visibleCount = 0;
+                document.querySelectorAll('.schedule-entry-row').forEach(row => {
+                    if (filter === 'all' || row.dataset.staffId === filter) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                const emptyRow = document.getElementById('no-staff-schedules-row');
+                if (emptyRow) {
+                    emptyRow.style.display = (visibleCount === 0 && document.querySelectorAll('.schedule-entry-row').length > 0) ? '' : 'none';
+                }
+            }
+
             const currentStaffCategory = @json(
                 $currentStaff && $currentStaff->categories->isNotEmpty()
-                    ? $currentStaff->categories->pluck('name')->join(', ')
-                    : ($currentStaff->category ?? '')
+                ? $currentStaff->categories->pluck('name')->join(', ')
+                : ($currentStaff->category ?? '')
             );
             const schedules = @json($schedules ?? []);
+            const staffColors = @json($staffColors ?? []);
+            window.STAFF_COLORS = staffColors;
+            window.CURRENT_STAFF_COLOR = currentStaffColor;
             const baseWeekStart = @json(isset($weekStart) ? $weekStart->toDateString() : null);
             const scheduleEditBaseUrl = @json(route('schedule.edit', '__ID__'));
 
@@ -715,7 +930,7 @@ if (!function_exists('ordinalSuffix')) {
                 // Clear existing day columns
                 gridBody.querySelectorAll('.day-col').forEach(col => col.remove());
 
-                if (!currentStaffId) {
+                if (!activeStaffFilter && !currentStaffId) {
                     const msg = document.createElement('p');
                     msg.className = 'p-4 text-muted';
                     msg.textContent = 'Please select a staff member from the left sidebar';
@@ -769,6 +984,30 @@ if (!function_exists('ordinalSuffix')) {
                     date.getFullYear() === today.getFullYear();
             }
 
+            function getContrastColor(hexColor) {
+                if (!hexColor || typeof hexColor !== 'string') return '#ffffff';
+                let hex = hexColor.trim().replace('#', '');
+                if (hex.length === 3) {
+                    hex = hex.split('').map(c => c + c).join('');
+                }
+                if (hex.length !== 6) return '#ffffff';
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                return (yiq >= 150) ? '#181c32' : '#ffffff';
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
             function renderScheduleBlocks() {
                 // Clear old blocks
                 document.querySelectorAll('.schedule-block').forEach(b => b.remove());
@@ -777,13 +1016,17 @@ if (!function_exists('ordinalSuffix')) {
 
                 const weekStart = getCurrentWeekStart();
 
+                // Group valid working schedules by day column (0..6)
+                const dayItemsMap = new Map();
+
                 schedules.forEach(sch => {
                     if (!sch.is_working) return;
+                    if (activeStaffFilter !== 'all' && String(sch.staff_id) !== String(activeStaffFilter)) {
+                        return;
+                    }
 
                     let dayOfWeek = null;
                     if (sch.working_date) {
-                        // Eloquent date casts may serialize as ISO with time (e.g. 2026-03-11T00:00:00.000000Z).
-                        // We only need the date part for week mapping.
                         const raw = String(sch.working_date || '');
                         const dateOnlyMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
                         const dateOnly = dateOnlyMatch ? dateOnlyMatch[1] : raw.slice(0, 10);
@@ -798,38 +1041,164 @@ if (!function_exists('ordinalSuffix')) {
                         dayOfWeek = dayMap[String(sch.day_of_week || '').toLowerCase()];
                     }
 
-                    if (dayOfWeek === null || dayOfWeek === undefined || isNaN(dayOfWeek)) return;
+                    if (dayOfWeek === null || dayOfWeek === undefined || isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) return;
 
-                    const [startH, startM] = sch.start_time.split(':').map(Number);
-                    const [endH, endM] = sch.end_time.split(':').map(Number);
+                    const [startH, startM] = (sch.start_time || '00:00').split(':').map(Number);
+                    const [endH, endM] = (sch.end_time || '00:00').split(':').map(Number);
 
-                    // Find day column (dayIndex == dayOfWeek for week view)
+                    const startMinutes = (startH || 0) * 60 + (startM || 0);
+                    let endMinutes = (endH || 0) * 60 + (endM || 0);
+                    if (endMinutes <= startMinutes) {
+                        endMinutes = Math.min(startMinutes + 60, 24 * 60);
+                    }
+                    const durationMinutes = Math.max(endMinutes - startMinutes, 15);
+
+                    if (!dayItemsMap.has(dayOfWeek)) {
+                        dayItemsMap.set(dayOfWeek, []);
+                    }
+
+                    dayItemsMap.get(dayOfWeek).push({
+                        sch,
+                        dayOfWeek,
+                        startMinutes,
+                        endMinutes,
+                        durationMinutes,
+                    });
+                });
+
+                const slotHeight = 50;
+                const minutesPerSlot = 60;
+
+                // Process each day's schedules with track clustering
+                dayItemsMap.forEach((items, dayOfWeek) => {
                     const dayCol = document.querySelector(`.day-col[data-day-index="${dayOfWeek}"]`);
                     if (!dayCol) return;
 
-                    // Calculate position and height
-                    const startMinutes = startH * 60 + startM;
-                    const endMinutes = endH * 60 + endM;
-                    const durationMinutes = endMinutes - startMinutes;
-
-                    const slotHeight = 50;
-                    const minutesPerSlot = 60;
-                    const topOffset = (startMinutes / minutesPerSlot) * slotHeight;
-                    const blockHeight = (durationMinutes / minutesPerSlot) * slotHeight;
-
-                    // Create schedule block
-                    const block = document.createElement('div');
-                    block.className = `schedule-block ${isWeekend(dayOfWeek) ? 'weekend' : ''}`;
-                    block.style.top = topOffset + 'px';
-                    block.style.height = blockHeight + 'px';
-                    block.textContent = `${sch.start_time.slice(0, 5)} – ${sch.end_time.slice(0, 5)}`;
-                    block.dataset.scheduleId = sch.id;
-                    block.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        editSchedule(sch.id);
+                    // 1. Sort: start time ascending, duration descending
+                    items.sort((a, b) => {
+                        if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
+                        if (b.durationMinutes !== a.durationMinutes) return b.durationMinutes - a.durationMinutes;
+                        return (a.sch.id || 0) - (b.sch.id || 0);
                     });
 
-                    dayCol.appendChild(block);
+                    // 2. Cluster overlapping shifts
+                    const clusters = [];
+                    let currentCluster = [];
+                    let clusterEnd = -1;
+
+                    items.forEach(item => {
+                        if (currentCluster.length === 0) {
+                            currentCluster.push(item);
+                            clusterEnd = item.endMinutes;
+                        } else if (item.startMinutes < clusterEnd) {
+                            currentCluster.push(item);
+                            if (item.endMinutes > clusterEnd) clusterEnd = item.endMinutes;
+                        } else {
+                            clusters.push(currentCluster);
+                            currentCluster = [item];
+                            clusterEnd = item.endMinutes;
+                        }
+                    });
+                    if (currentCluster.length > 0) clusters.push(currentCluster);
+
+                    // 3. Assign sub-column tracks within each cluster
+                    clusters.forEach(cluster => {
+                        if (cluster.length === 1) {
+                            cluster[0].trackIndex = 0;
+                            cluster[0].totalTracks = 1;
+                            return;
+                        }
+
+                        const tracks = []; // holds end time of active item in each track
+                        cluster.forEach(item => {
+                            let assignedTrack = -1;
+                            for (let t = 0; t < tracks.length; t++) {
+                                if (tracks[t] <= item.startMinutes) {
+                                    assignedTrack = t;
+                                    tracks[t] = item.endMinutes;
+                                    break;
+                                }
+                            }
+                            if (assignedTrack === -1) {
+                                assignedTrack = tracks.length;
+                                tracks.push(item.endMinutes);
+                            }
+                            item.trackIndex = assignedTrack;
+                        });
+
+                        const totalTracks = tracks.length;
+                        cluster.forEach(item => {
+                            item.totalTracks = totalTracks;
+                        });
+                    });
+
+                    // 4. Render blocks with precise positioning, colors, and separation
+                    items.forEach(item => {
+                        const { sch, startMinutes, durationMinutes, trackIndex, totalTracks } = item;
+                        const topOffset = (startMinutes / minutesPerSlot) * slotHeight;
+                        const blockHeight = (durationMinutes / minutesPerSlot) * slotHeight;
+
+                        const block = document.createElement('div');
+                        block.className = `schedule-block ${isWeekend(dayOfWeek) ? 'weekend' : ''}`;
+                        block.dataset.scheduleId = sch.id;
+
+                        // Horizontal sub-column track assignment
+                        if (totalTracks > 1) {
+                            const trackWidthPct = 100 / totalTracks;
+                            block.style.left = `calc(${trackIndex * trackWidthPct}% + 2px)`;
+                            block.style.width = `calc(${trackWidthPct}% - 4px)`;
+                            block.style.right = 'auto';
+                        } else {
+                            block.style.left = '4px';
+                            block.style.width = 'calc(100% - 8px)';
+                            block.style.right = 'auto';
+                        }
+
+                        // Vertical positioning with 1px top margin and 2px height gap so adjacent shifts clearly separate
+                        block.style.top = (topOffset + 1) + 'px';
+                        block.style.height = Math.max(blockHeight - 2, 18) + 'px';
+
+                        // Staff color resolution
+                        const targetStaffId = sch.staff_id || (activeStaffFilter !== 'all' ? activeStaffFilter : currentStaffId);
+                        const staffColor = sch.staff_color
+                            || sch.color
+                            || sch.staffColor
+                            || (window.STAFF_COLORS && targetStaffId && window.STAFF_COLORS[targetStaffId])
+                            || (currentStaffColor && (activeStaffFilter !== 'all' || String(targetStaffId) === String(currentStaffId)) ? currentStaffColor : null)
+                            || (window.CURRENT_STAFF_COLOR && activeStaffFilter !== 'all' ? window.CURRENT_STAFF_COLOR : null)
+                            || '#2563eb';
+                        const textColor = getContrastColor(staffColor);
+
+                        block.style.setProperty('background', staffColor, 'important');
+                        block.style.setProperty('background-color', staffColor, 'important');
+                        block.style.setProperty('border-color', staffColor, 'important');
+                        block.style.setProperty('color', textColor, 'important');
+
+                        const staffName = (sch.staff && sch.staff.name) ? sch.staff.name : (currentStaffName || 'Staff');
+                        const timeText = `${sch.start_time.slice(0, 5)} – ${sch.end_time.slice(0, 5)}`;
+                        const recurrenceDesc = sch.summary && sch.summary.recurrence ? ` • ${sch.summary.recurrence}` : '';
+
+                        block.title = `${staffName} • ${timeText}${recurrenceDesc}`;
+
+                        if (totalTracks >= 3 || blockHeight < 28) {
+                            block.innerHTML = `
+                                    <div class="fw-bold text-truncate w-100" style="font-size: 0.65rem; line-height: 1.1;">${escapeHtml(staffName)}</div>
+                                    <div class="text-truncate w-100 opacity-90" style="font-size: 0.6rem; line-height: 1;">${timeText}</div>
+                                `;
+                        } else {
+                            block.innerHTML = `
+                                    <div class="fw-bold text-truncate w-100" style="font-size: 0.72rem; line-height: 1.2;">${escapeHtml(staffName)}</div>
+                                    <div class="text-truncate w-100 opacity-90" style="font-size: 0.65rem; line-height: 1.1;">${timeText}</div>
+                                `;
+                        }
+
+                        block.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            editSchedule(sch.id);
+                        });
+
+                        dayCol.appendChild(block);
+                    });
                 });
             }
 
@@ -895,7 +1264,8 @@ if (!function_exists('ordinalSuffix')) {
             }
 
             function openScheduleForm(dayIndex, hour) {
-                if (!currentStaffId) {
+                const effectiveStaffId = (activeStaffFilter && activeStaffFilter !== 'all') ? activeStaffFilter : (currentStaffId || firstStaffId || null);
+                if (!effectiveStaffId) {
                     window.AppToast?.show({
                         type: 'warning',
                         title: 'Select staff',
@@ -921,7 +1291,7 @@ if (!function_exists('ordinalSuffix')) {
                         confirmClass: 'btn-primary',
                         type: 'info',
                         onConfirm: () => {
-                            if (csStaffId) csStaffId.value = String(currentStaffId);
+                            if (csStaffId) csStaffId.value = String(effectiveStaffId);
                             if (csWorkingDate) csWorkingDate.value = workingDate;
                             if (csStartTime) csStartTime.value = startTime;
                             if (csEndTime) csEndTime.value = endTime;
@@ -931,7 +1301,7 @@ if (!function_exists('ordinalSuffix')) {
                     return;
                 }
 
-                if (csStaffId) csStaffId.value = String(currentStaffId);
+                if (csStaffId) csStaffId.value = String(effectiveStaffId);
                 if (csWorkingDate) csWorkingDate.value = workingDate;
                 if (csStartDate) csStartDate.value = workingDate;
                 if (csEndDate) csEndDate.value = '';
@@ -1032,6 +1402,7 @@ if (!function_exists('ordinalSuffix')) {
 
             // Initial render
             renderScheduleGrid();
+            filterScheduleTableRows();
 
             if (createForm) {
                 window.AppFormErrors?.attachAutoClear(createForm);
@@ -1069,8 +1440,12 @@ if (!function_exists('ordinalSuffix')) {
 
             // Navigation button listeners
             document.getElementById('btn-today').addEventListener('click', function () {
-                const qs = currentStaffId ? `?staff_id=${currentStaffId}` : '';
-                window.location.href = '{{ route("schedule.index") }}' + qs;
+                const qs = new URLSearchParams(window.location.search);
+                if (activeStaffFilter) {
+                    qs.set('staff_id', String(activeStaffFilter));
+                }
+                qs.delete('week_date');
+                window.location.href = '{{ route("schedule.index") }}' + (qs.toString() ? `?${qs.toString()}` : '');
             });
 
             document.getElementById('btn-prev-week').addEventListener('click', function () {
@@ -1078,8 +1453,8 @@ if (!function_exists('ordinalSuffix')) {
                 const prev = new Date(ws);
                 prev.setDate(prev.getDate() - 7);
                 const weekDate = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-                const qs = new URLSearchParams();
-                if (currentStaffId) qs.set('staff_id', String(currentStaffId));
+                const qs = new URLSearchParams(window.location.search);
+                if (activeStaffFilter) qs.set('staff_id', String(activeStaffFilter));
                 qs.set('week_date', weekDate);
                 window.location.href = '{{ route("schedule.index") }}' + `?${qs.toString()}`;
             });
@@ -1089,8 +1464,8 @@ if (!function_exists('ordinalSuffix')) {
                 const next = new Date(ws);
                 next.setDate(next.getDate() + 7);
                 const weekDate = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
-                const qs = new URLSearchParams();
-                if (currentStaffId) qs.set('staff_id', String(currentStaffId));
+                const qs = new URLSearchParams(window.location.search);
+                if (activeStaffFilter) qs.set('staff_id', String(activeStaffFilter));
                 qs.set('week_date', weekDate);
                 window.location.href = '{{ route("schedule.index") }}' + `?${qs.toString()}`;
             });

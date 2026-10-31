@@ -132,6 +132,37 @@
                                     aria-label="Show password"><i class="bx bx-show"></i></button>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <label for="color" class="form-label">Staff Color</label>
+                            @error('color')
+                                <div class="invalid-feedback d-block app-field-error text-danger small mb-1 fw-medium" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color"
+                                       class="form-control form-control-color p-1 border rounded @error('color') is-invalid @enderror"
+                                       id="create_staff_color_picker"
+                                       value="{{ old('color', '#2563eb') }}"
+                                       title="Choose staff color"
+                                       style="width: 48px; height: 38px; cursor: pointer;">
+                                <input type="text"
+                                       class="form-control font-monospace @error('color') is-invalid @enderror"
+                                       id="color"
+                                       name="color"
+                                       value="{{ old('color') }}"
+                                       placeholder="#2563eb (Optional)"
+                                       maxlength="7"
+                                       style="max-width: 220px;">
+                                <div id="create_staff_color_preview"
+                                     class="border rounded shadow-sm flex-shrink-0"
+                                     style="width: 38px; height: 38px; background-color: {{ old('color') ? old('color') : '#e2e8f0' }};"
+                                     title="Selected color preview"></div>
+                            </div>
+                            <div class="form-text text-muted small">
+                                Choose a hex color (e.g. #2563eb) for schedule and calendar blocks, or leave blank to use the automatic palette.
+                            </div>
+                        </div>
                         <div class="col-12">
                             <label for="bio" class="form-label">Bio / Notes</label>
                             @error('bio')
@@ -164,3 +195,30 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const colorPicker = document.getElementById('create_staff_color_picker');
+            const colorInput = document.getElementById('color');
+            const colorPreview = document.getElementById('create_staff_color_preview');
+
+            if (colorPicker && colorInput && colorPreview) {
+                colorPicker.addEventListener('input', function () {
+                    colorInput.value = colorPicker.value.toLowerCase();
+                    colorPreview.style.backgroundColor = colorPicker.value;
+                });
+
+                colorInput.addEventListener('input', function () {
+                    const val = colorInput.value.trim();
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        colorPicker.value = val;
+                        colorPreview.style.backgroundColor = val;
+                    } else if (!val) {
+                        colorPreview.style.backgroundColor = '#e2e8f0';
+                    }
+                });
+            }
+        });
+    </script>
+@endpush
