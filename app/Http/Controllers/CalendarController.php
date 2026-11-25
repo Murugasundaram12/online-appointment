@@ -38,11 +38,29 @@ class CalendarController extends Controller
         $this->invoiceCreationService = $invoiceCreationService ?? app(InvoiceCreationService::class);
     }
 
+    private function resolveClinicTimezone(): string
+    {
+        $fallback = config('app.timezone') ?: 'America/Toronto';
+        try {
+            if (Schema::hasTable('business_settings')) {
+                $configured = BusinessSetting::where('key', 'timezone')->value('value');
+                if ($configured && in_array($configured, timezone_identifiers_list(), true)) {
+                    return $configured;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Keep fallback timezone if settings table is unavailable.
+        }
+
+        return $fallback;
+    }
+
     /**
      * Display calendar index page
      */
     public function index(Request $request)
     {
+        $clinicTimezone = $this->resolveClinicTimezone();
         $staffs = Staff::where('is_active', true)
             ->with('categories:id,name')
             ->get(['id', 'name', 'location_id', 'category', 'color']);
@@ -70,10 +88,10 @@ class CalendarController extends Controller
         $monthParam = $request->query('month');
         try {
             $calendarMonth = $monthParam
-                ? Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth()
-                : Carbon::now()->startOfMonth();
+                ? Carbon::createFromFormat('Y-m', $monthParam, $clinicTimezone)->startOfMonth()
+                : Carbon::now($clinicTimezone)->startOfMonth();
         } catch (\Throwable $e) {
-            $calendarMonth = Carbon::now()->startOfMonth();
+            $calendarMonth = Carbon::now($clinicTimezone)->startOfMonth();
         }
 
         $monthStart = $calendarMonth->copy()->startOfMonth();
@@ -141,7 +159,7 @@ class CalendarController extends Controller
             ];
         })->values();
 
-        return view('calendar.index', compact('staffs', 'clients', 'services', 'locations', 'monthEvents', 'calendarMonth', 'view', 'filters'));
+        return view('calendar.index', compact('staffs', 'clients', 'services', 'locations', 'monthEvents', 'calendarMonth', 'view', 'filters', 'clinicTimezone'));
     }
 
     public function dashboard()
@@ -284,12 +302,13 @@ class CalendarController extends Controller
      */
     public function getEvents(Request $request)
     {
+        $clinicTimezone = $this->resolveClinicTimezone();
         $start = $request->query('start');
         $end = $request->query('end');
 
-        // Parse dates or default to current week
-        $startDate = $start ? Carbon::parse($start)->startOfDay() : Carbon::now()->startOfWeek();
-        $endDate = $end ? Carbon::parse($end)->endOfDay() : Carbon::now()->endOfWeek();
+        // Parse dates or default to current week in configured clinic timezone
+        $startDate = $start ? Carbon::parse($start, $clinicTimezone)->startOfDay() : Carbon::now($clinicTimezone)->startOfWeek();
+        $endDate = $end ? Carbon::parse($end, $clinicTimezone)->endOfDay() : Carbon::now($clinicTimezone)->endOfWeek();
 
         // Get all appointments
         $appointmentsQuery = Appointment::with([
@@ -358,11 +377,12 @@ class CalendarController extends Controller
      */
     public function getStaffSchedules(Request $request)
     {
+        $clinicTimezone = $this->resolveClinicTimezone();
         $start = $request->query('start');
         $end = $request->query('end');
 
-        $startDate = $start ? Carbon::parse($start)->startOfDay() : Carbon::now()->startOfWeek();
-        $endDate = $end ? Carbon::parse($end)->endOfDay() : Carbon::now()->endOfWeek();
+        $startDate = $start ? Carbon::parse($start, $clinicTimezone)->startOfDay() : Carbon::now($clinicTimezone)->startOfWeek();
+        $endDate = $end ? Carbon::parse($end, $clinicTimezone)->endOfDay() : Carbon::now($clinicTimezone)->endOfWeek();
 
         $staff = Staff::where('is_active', true)->with(['schedules'])->get();
         $hasWorkingDate = Schema::hasColumn('staff_schedules', 'working_date');

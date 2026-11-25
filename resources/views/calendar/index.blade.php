@@ -17,9 +17,32 @@
             --day-active-bg: #f64e60;
         }
 
+        @media (min-width: 992px) {
+            .app-shell {
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .app-shell > #page-content-wrapper {
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .app-shell > #page-content-wrapper > main {
+                flex: 1 1 auto;
+                min-height: 0;
+                padding-bottom: 0 !important;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+        }
+
         .calendar-wrapper {
             background: #fff;
-            height: 100vh;
+            flex: 1 1 auto;
+            min-height: 0;
+            height: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -27,12 +50,21 @@
 
         /* Top Navigation Bar */
         .calendar-nav {
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid #ebedf3;
-            height: 60px;
+            min-height: 54px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .calendar-filters {
+            padding: 0.45rem 1.5rem;
+            border-bottom: 1px solid #ebedf3;
+            background: #fff;
+            flex-shrink: 0;
         }
 
         .nav-left,
@@ -113,7 +145,8 @@
 
         /* Calendar Grid */
         .grid-container {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             overflow: auto;
             position: relative;
         }
@@ -126,12 +159,12 @@
             border-bottom: 2px solid var(--calendar-border-hourly);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 120;
             background: #fff;
         }
 
         .header-cell {
-            padding: 0.75rem 0.5rem 0.5rem;
+            padding: 0.35rem 0.4rem;
             text-align: center;
             border-right: 1px solid #3f4254;
             border-bottom: none;
@@ -148,16 +181,20 @@
 
         .day-label {
             display: block;
-            font-size: 0.8rem;
-            font-weight: 500;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
             color: #7e8299;
-            margin-bottom: 0.15rem;
+            margin-bottom: 0.05rem;
+            line-height: 1.15;
         }
 
         .day-number {
             display: inline-block;
-            font-size: 1.75rem;
-            font-weight: 400;
+            font-size: 1.25rem;
+            font-weight: 500;
+            line-height: 1.2;
             color: #181c32;
         }
 
@@ -167,6 +204,7 @@
 
         .active-day .day-number {
             color: var(--day-active-bg);
+            font-weight: 600;
         }
 
         .header-cell.active-day {
@@ -191,8 +229,10 @@
             grid-template-columns: 80px repeat(7, minmax(130px, 1fr));
             min-width: min-content;
             width: 100%;
-            min-height: 1000px;
+            min-height: 2880px;
             position: relative;
+            z-index: 1;
+            isolation: isolate;
         }
 
         .time-col {
@@ -263,6 +303,7 @@
             border-right: 1px solid #3f4254;
             border-bottom: 2px solid var(--calendar-border-hourly);
             position: relative;
+            overflow: hidden;
             background-image: repeating-linear-gradient(to bottom,
                     transparent 0,
                     transparent 29px,
@@ -290,17 +331,18 @@
 
         /* Staff Schedule Display */
         .staff-schedule-container {
-            padding: 4px;
-            margin-top: 6px;
+            padding: 2px;
+            margin-top: 3px;
             border-top: 1px solid var(--calendar-border);
             border-bottom: none;
             background: #f8fafc;
-            font-size: 0.7rem;
-            max-height: none;
-            overflow: visible;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            max-height: 52px;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
         }
 
         .staff-schedule-container:empty {
@@ -311,39 +353,48 @@
         }
 
         .staff-schedule-item {
-            padding: 4px 6px;
+            padding: 2px 6px;
             margin: 0;
             color: #ffffff;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
-            border-radius: 5px;
+            border-radius: 4px;
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .staff-schedule-item.small {
+            justify-content: center;
         }
 
         .staff-schedule-name {
             font-weight: 600;
             color: #ffffff;
-            font-size: 0.72rem;
-            line-height: 1.25;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
-        }
-
-        .staff-schedule-hours {
-            color: #ffffff;
             font-size: 0.68rem;
-            font-weight: 500;
-            margin-top: 1px;
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center;
+            text-align: left;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .staff-schedule-hours {
+            color: #ffffff;
+            font-size: 0.62rem;
+            font-weight: 500;
+            margin-top: 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            flex-shrink: 0;
             opacity: 0.95;
         }
 
@@ -952,95 +1003,87 @@
 
 @section('content')
 
-    <div class="d-flex" id="wrapper">
-        <!-- Sidebar -->
-
-
-        <!-- Page Content -->
-        <div id="page-content-wrapper">
-            <div class="calendar-wrapper">
-                <!-- Calendar Navigation -->
-                <div class="calendar-nav">
-                    <div class="nav-left">
-                        <i class='bx bx-slider-alt icon-btn'></i>
-                    </div>
-                    <div class="nav-center">
-                        <select class="view-dropdown" id="calendar-view-select">
-                            <option value="day" {{ ($view ?? 'week') === 'day' ? 'selected' : '' }}>Day View</option>
-                            <option value="week" {{ ($view ?? 'week') === 'week' ? 'selected' : '' }}>Week View</option>
-                            <option value="month" {{ ($view ?? 'week') === 'month' ? 'selected' : '' }}>Month View</option>
-                            {{-- <option value="year">Year View</option> --}}
-                        </select>
-                        <span class="date-display" id="current-date-header"></span>
-                        <span id="calendar-daily-count" class="daily-count-badge"><span class="count-dot"></span><span>0
-                                Appointments · 0 Clients</span></span>
-                        <div class="nav-arrows d-flex gap-2">
-                            <i class='bx bx-chevron-left nav-arrow' id="prev-week"></i>
-                            <i class='bx bx-chevron-right nav-arrow' id="next-week"></i>
-                        </div>
-                        <button class="btn-today" id="btn-today">Today</button>
-                    </div>
-                    <div class="nav-right d-flex">
-                        <i class='bx bx-plus icon-btn' id="btn-new-appointment" title="New Appointment"
-                            style="cursor: pointer;"></i>
-                        <i class='bx bx-time-five icon-btn'></i>
-                    </div>
+    <div class="calendar-wrapper">
+        <!-- Calendar Navigation -->
+        <div class="calendar-nav">
+            <div class="nav-left">
+                <i class='bx bx-slider-alt icon-btn'></i>
+            </div>
+            <div class="nav-center">
+                <select class="view-dropdown" id="calendar-view-select">
+                    <option value="day" {{ ($view ?? 'week') === 'day' ? 'selected' : '' }}>Day View</option>
+                    <option value="week" {{ ($view ?? 'week') === 'week' ? 'selected' : '' }}>Week View</option>
+                    <option value="month" {{ ($view ?? 'week') === 'month' ? 'selected' : '' }}>Month View</option>
+                    {{-- <option value="year">Year View</option> --}}
+                </select>
+                <span class="date-display" id="current-date-header"></span>
+                <span id="calendar-daily-count" class="daily-count-badge"><span class="count-dot"></span><span>0
+                        Appointments · 0 Clients</span></span>
+                <div class="nav-arrows d-flex gap-2">
+                    <i class='bx bx-chevron-left nav-arrow' id="prev-week"></i>
+                    <i class='bx bx-chevron-right nav-arrow' id="next-week"></i>
                 </div>
+                <button class="btn-today" id="btn-today">Today</button>
+            </div>
+            <div class="nav-right d-flex">
+                <i class='bx bx-plus icon-btn' id="btn-new-appointment" title="New Appointment"
+                    style="cursor: pointer;"></i>
+                <i class='bx bx-time-five icon-btn'></i>
+            </div>
+        </div>
 
-                <div class="calendar-filters d-flex flex-wrap gap-2 mb-3">
-                    <select id="calendar-filter-location" class="form-select form-select-sm" style="max-width: 210px;">
-                        <option value="">All locations</option>
-                        @foreach($locations ?? [] as $location)
-                            <option value="{{ $location->id }}" {{ (string) ($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="calendar-filter-staff" class="form-select form-select-sm" style="max-width: 210px;">
-                        <option value="">All staff</option>
-                        @foreach($staffs ?? [] as $staff)
-                            <option value="{{ $staff->id }}" {{ (string) ($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="calendar-filter-service" class="form-select form-select-sm" style="max-width: 210px;">
-                        <option value="">All services</option>
-                        @foreach($services ?? [] as $service)
-                            <option value="{{ $service->id }}" {{ (string) ($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
-                        <option value="">All statuses</option>
-                        <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
-                        <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed
-                        </option>
-                        <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled
-                        </option>
-                        <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show
-                        </option>
-                    </select>
-                    <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
+        <div class="calendar-filters d-flex flex-wrap gap-2">
+            <select id="calendar-filter-location" class="form-select form-select-sm" style="max-width: 210px;">
+                <option value="">All locations</option>
+                @foreach($locations ?? [] as $location)
+                    <option value="{{ $location->id }}" {{ (string) ($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                @endforeach
+            </select>
+            <select id="calendar-filter-staff" class="form-select form-select-sm" style="max-width: 210px;">
+                <option value="">All staff</option>
+                @foreach($staffs ?? [] as $staff)
+                    <option value="{{ $staff->id }}" {{ (string) ($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
+                @endforeach
+            </select>
+            <select id="calendar-filter-service" class="form-select form-select-sm" style="max-width: 210px;">
+                <option value="">All services</option>
+                @foreach($services ?? [] as $service)
+                    <option value="{{ $service->id }}" {{ (string) ($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
+                @endforeach
+            </select>
+            <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
+                <option value="">All statuses</option>
+                <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
+                <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed
+                </option>
+                <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled
+                </option>
+                <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show
+                </option>
+            </select>
+            <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
+        </div>
+
+        <!-- Calendar Content -->
+        <div class="grid-container">
+            <div class="grid-header" id="calendar-grid-header">
+                <div class="timezone-cell">
+                    <i class='bx bx-chevron-down'></i>
+                    <span>GMT{{ \Carbon\Carbon::now($clinicTimezone ?? config('app.timezone', 'America/Toronto'))->format('P') }}</span>
                 </div>
+                <!-- Header cells will be generated by JS -->
+            </div>
 
-                <!-- Calendar Content -->
-                <div class="grid-container">
-                    <div class="grid-header" id="calendar-grid-header">
-                        <div class="timezone-cell">
-                            <i class='bx bx-chevron-down'></i>
-                            <span>GMT-04:00</span>
-                        </div>
-                        <!-- Header cells will be generated by JS -->
-                    </div>
+            <div class="grid-body" id="calendar-grid-body">
+                <!-- Time Column 24 hours (will be generated by JS) -->
+                <div class="time-col" id="calendar-time-col"></div>
 
-                    <div class="grid-body" id="calendar-grid-body">
-                        <!-- Time Column 24 hours (will be generated by JS) -->
-                        <div class="time-col" id="calendar-time-col"></div>
+                <!-- Day Columns (7 columns - will be generated by JS) -->
+            </div>
 
-                        <!-- Day Columns (7 columns - will be generated by JS) -->
-                    </div>
-
-                    <!-- Month Grid (FullCalendar) -->
-                    <div id="calendar-month-container" class="d-none">
-                        <div id="staff-month-calendar"></div>
-                    </div>
-                </div>
+            <!-- Month Grid (FullCalendar) -->
+            <div id="calendar-month-container" class="d-none">
+                <div id="staff-month-calendar"></div>
             </div>
         </div>
     </div>
@@ -1508,6 +1551,7 @@
             clients: @json($clients ?? []),
             services: @json($services ?? []),
             locations: @json($locations ?? []),
+            clinicTimezone: @json($clinicTimezone ?? config('app.timezone', 'America/Toronto')),
             calendarMonth: @json(isset($calendarMonth) ? $calendarMonth->format('Y-m') : now()->format('Y-m')),
             monthEvents: @json($monthEvents ?? [])
         };
@@ -1523,11 +1567,15 @@
                 return suffix ? `${calendarBaseUrl}/${suffix}` : calendarBaseUrl;
             }
 
-            // Toronto timezone helper (America/Toronto)
-            function getTorontoNow() {
+            const clinicTimezone = (window.CALENDAR_DATA && window.CALENDAR_DATA.clinicTimezone)
+                ? window.CALENDAR_DATA.clinicTimezone
+                : 'America/Toronto';
+
+            // Configured clinic timezone helper (e.g. America/Toronto, America/Vancouver, etc.)
+            function getClinicNow() {
                 try {
                     const dtf = new Intl.DateTimeFormat('en-US', {
-                        timeZone: 'America/Toronto',
+                        timeZone: clinicTimezone,
                         year: 'numeric',
                         month: 'numeric',
                         day: 'numeric',
@@ -1551,6 +1599,10 @@
                 } catch (_) {
                     return new Date();
                 }
+            }
+
+            function getTorontoNow() {
+                return getClinicNow();
             }
 
             // Initialize view and date using Toronto local time
@@ -1883,10 +1935,14 @@
                 }
             }
 
-            // Set grid body height for 24 hours (24 * 120px per slot)
+            const GRID_HOUR_HEIGHT = 120;
+            const GRID_TOTAL_HEIGHT = 24 * GRID_HOUR_HEIGHT;
+            const gridContainer = document.querySelector('.grid-container');
+
+            // Set grid body height for 24 hours (24 * 120px per hour = 2880px, 2px/min)
             function setGridHeight() {
-                gridBody.style.minHeight = (24 * 120) + 'px';
-                gridBody.style.height = (24 * 120) + 'px';
+                gridBody.style.minHeight = GRID_TOTAL_HEIGHT + 'px';
+                gridBody.style.height = GRID_TOTAL_HEIGHT + 'px';
             }
 
             function clearHourHighlights() {
@@ -1900,13 +1956,13 @@
                 if (!gridBody) return;
 
                 const hourToHighlight = 10; // 10:00 AM
-                const colHeight = gridBody.clientHeight || (24 * 120);
+                const colHeight = GRID_TOTAL_HEIGHT;
                 const top = (hourToHighlight * 60) / (24 * 60) * colHeight;
 
                 const row = document.createElement('div');
                 row.className = 'hour-highlight-row';
                 row.style.top = `${top}px`;
-                row.style.height = `120px`;
+                row.style.height = `${GRID_HOUR_HEIGHT}px`;
                 gridBody.appendChild(row);
 
                 const line = document.createElement('div');
@@ -1919,10 +1975,10 @@
                 document.querySelectorAll('.current-time-indicator').forEach(el => el.remove());
                 if (!gridBody || currentView === 'month') return;
 
-                const torontoNow = getTorontoNow();
-                const todayKey = toLocalDate(torontoNow);
-                const colHeight = gridBody.clientHeight || (24 * 120);
-                const minutesFromMidnight = torontoNow.getHours() * 60 + torontoNow.getMinutes();
+                const clinicNow = getClinicNow();
+                const todayKey = toLocalDate(clinicNow);
+                const colHeight = GRID_TOTAL_HEIGHT;
+                const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
                 const top = (minutesFromMidnight / (24 * 60)) * colHeight;
 
                 const cols = Array.from(gridBody.querySelectorAll('.day-column'));
@@ -1968,6 +2024,17 @@
 
                     col.appendChild(indicator);
                 });
+            }
+
+            function scrollToCurrentTime() {
+                if (!gridContainer || !gridBody || currentView === 'month') return;
+                const clinicNow = getClinicNow();
+                const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
+                const currentTop = (minutesFromMidnight / (24 * 60)) * GRID_TOTAL_HEIGHT;
+                // Keep ~15 minutes (30px) lead buffer above current time so hour label & indicator are clearly framed
+                const maxScroll = Math.max(0, gridContainer.scrollHeight - gridContainer.clientHeight);
+                const targetScrollTop = Math.min(maxScroll, Math.max(0, Math.round(currentTop - 30)));
+                gridContainer.scrollTop = targetScrollTop;
             }
 
             const modalEl = document.getElementById('appointmentModal');
@@ -2433,16 +2500,16 @@
 
                 try {
                     const now = new Date();
-                    const torontoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+                    const clinicDate = new Date(now.toLocaleString('en-US', { timeZone: clinicTimezone }));
                     const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-                    const diffMinutes = Math.round((torontoDate - utcDate) / 60000);
+                    const diffMinutes = Math.round((clinicDate - utcDate) / 60000);
                     const sign = diffMinutes >= 0 ? '+' : '-';
                     const abs = Math.abs(diffMinutes);
                     const hh = pad2(Math.floor(abs / 60));
                     const mm = pad2(abs % 60);
                     timezoneText.textContent = `GMT${sign}${hh}:${mm}`;
                 } catch (_) {
-                    timezoneText.textContent = 'GMT-04:00';
+                    // Keep server-rendered GMT offset if browser locale parsing fails
                 }
             }
 
@@ -2454,6 +2521,15 @@
                 const ampm = h >= 12 ? 'PM' : 'AM';
                 const displayHour = h % 12 || 12;
                 return `${String(displayHour).padStart(2, '0')}:${m} ${ampm}`;
+            }
+
+            function formatCompactTime(timeStr) {
+                const [hours, minutes] = String(timeStr || '00:00').split(':');
+                const h = parseInt(hours, 10) || 0;
+                const m = parseInt(minutes || '0', 10) || 0;
+                const ampm = h >= 12 ? 'p' : 'a';
+                const displayHour = h % 12 || 12;
+                return m === 0 ? `${displayHour}${ampm}` : `${displayHour}:${pad2(m)}${ampm}`;
             }
 
             function toInputDateTime(d) {
@@ -3992,9 +4068,10 @@
                             item.style.setProperty('border-color', staffCol, 'important');
                             item.style.setProperty('border-left', 'none', 'important');
                             item.style.setProperty('color', staffTextCol, 'important');
+                            item.title = `${staff.name}: ${startTime} – ${endTime}`;
                             item.innerHTML = `
-                                        <div class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</div>
-                                        <div class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${startTime} – ${endTime}</div>
+                                        <span class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</span>
+                                        <span class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${formatCompactTime(sch.start_time)}–${formatCompactTime(sch.end_time)}</span>
                                     `;
                             container.appendChild(item);
                         });
@@ -4006,7 +4083,10 @@
             function renderAppointments() {
                 clearAppointments();
                 const cols = Array.from(document.querySelectorAll('.day-column'));
-                cols.forEach(c => c.style.minHeight = gridBody.clientHeight + 'px');
+                cols.forEach(c => {
+                    c.style.minHeight = GRID_TOTAL_HEIGHT + 'px';
+                    c.style.height = GRID_TOTAL_HEIGHT + 'px';
+                });
 
                 const events = window._calendarEvents || [];
                 const parsedEvents = [];
@@ -4038,9 +4118,10 @@
                         }
                         if (!col) return;
 
-                        const minutesFromMidnight = startIso.getHours() * 60 + startIso.getMinutes();
+                        const minutesFromMidnight = Math.max(0, Math.min(24 * 60 - 1, startIso.getHours() * 60 + startIso.getMinutes()));
                         let durationMinutes = (endIso.getTime() - startIso.getTime()) / 60000;
                         if (durationMinutes <= 0) durationMinutes = 15;
+                        durationMinutes = Math.min(durationMinutes, 24 * 60 - minutesFromMidnight);
 
                         parsedEvents.push({
                             ev,
@@ -4065,7 +4146,7 @@
 
                 // Render each column's events with interval-based track layout
                 colMap.forEach((colItems, col) => {
-                    const colHeight = col.clientHeight || gridBody.clientHeight || (24 * 120);
+                    const colHeight = GRID_TOTAL_HEIGHT;
 
                     // Sort: start time ascending, duration descending (longer events first)
                     colItems.sort((a, b) => {
@@ -4901,7 +4982,7 @@
                 loadDataAndRender();
             });
             document.getElementById('btn-today').addEventListener('click', () => {
-                const now = getTorontoNow();
+                const now = getClinicNow();
                 if (currentView === 'month') {
                     const url = copyFiltersToUrl(new URL(window.location.href));
                     url.searchParams.set('view', 'month');
@@ -4919,7 +5000,7 @@
                     currentWeekStart.setHours(0, 0, 0, 0);
                 }
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => scrollToCurrentTime());
             });
 
             const resetFiltersBtn = document.getElementById('calendar-reset-filters');
@@ -4954,7 +5035,7 @@
                 showTimeGridView();
 
                 if (view === 'day') {
-                    const now = getTorontoNow();
+                    const now = getClinicNow();
                     currentWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
                 } else {
                     const anchor = new Date(currentWeekStart);
@@ -4965,7 +5046,7 @@
                 }
 
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => scrollToCurrentTime());
             });
             if (closeDetailsCardBtn) {
                 closeDetailsCardBtn.addEventListener('click', hideAppointmentDetailsCard);
@@ -4985,8 +5066,16 @@
             } else {
                 showTimeGridView();
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => scrollToCurrentTime());
             }
+
+            // Keep clinic current-time indicator and GMT offset updated live
+            setInterval(() => {
+                updateTimezoneLabel();
+                if (currentView !== 'month') {
+                    renderCurrentTimeIndicator();
+                }
+            }, 60000);
         });
     </script>
 @endpush
