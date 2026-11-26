@@ -227,52 +227,10 @@
             isolation: isolate;
         }
 
-        /* Earlier Hours Bar */
-        .earlier-hours-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 6px 16px;
-            font-size: 0.78rem;
-        }
-
-        .btn-earlier-hours {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 3px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #2563eb;
-            background: #ffffff;
-            border: 1px solid #bfdbfe;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-
-        .btn-earlier-hours:hover {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border-color: #93c5fd;
-        }
-
-        .btn-earlier-hours .badge-earlier-count {
-            background: #2563eb;
-            color: #ffffff;
-            font-size: 0.68rem;
-            font-weight: 600;
-            padding: 1px 6px;
-            border-radius: 9999px;
-            margin-left: 4px;
-        }
-
         .time-col {
             border-right: 1px solid #3f4254;
             background: #fff;
+            min-height: 2880px;
         }
 
         .hour-highlight-line {
@@ -349,7 +307,7 @@
 
         .grid-cell {
             height: 100%;
-            min-height: auto;
+            min-height: 2880px;
             border-right: 1px solid #3f4254;
             border-bottom: 2px solid var(--calendar-border-hourly);
             position: relative;
@@ -1082,15 +1040,6 @@
             </div>
         </div>
 
-        <!-- Earlier Hours Bar -->
-        <div id="calendar-earlier-hours-bar" class="earlier-hours-bar d-none">
-            <button type="button" class="btn-earlier-hours" id="btn-toggle-earlier-hours">
-                <i class='bx bx-chevron-up' id="earlier-hours-icon"></i>
-                <span id="earlier-hours-text">Show earlier hours (12:00 AM – 1:00 PM)</span>
-                <span id="earlier-hours-badge" class="badge-earlier-count d-none"></span>
-            </button>
-        </div>
-
         <!-- Calendar Content -->
         <div class="grid-container">
             <div class="grid-header" id="calendar-grid-header">
@@ -1347,9 +1296,9 @@
                                 <label class="form-label" for="appt-client-search">Client <span
                                         class="required-mark">*</span></label>
                                 <!-- <div class="input-group mb-2">
-                                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                                    <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                                </div> -->
+                                                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                                        <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                                    </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" name="client_id" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -1964,27 +1913,14 @@
             const newClientModalEl = document.getElementById('newClientModal');
             const newClientModal = new bootstrap.Modal(newClientModalEl);
             const newClientForm = document.getElementById('new-client-form');
-            let isEarlierHoursExpanded = false;
-
-            // Resolve clinic origin in minutes from midnight (floored to 15-minute slot)
-            function getClinicOriginMinutes() {
-                const clinicNow = getClinicNow();
-                const totalMinutes = clinicNow.getHours() * 60 + clinicNow.getMinutes();
-                const flooredMinutes = Math.floor(totalMinutes / 15) * 15;
-                return Math.max(0, Math.min(1440 - 15, flooredMinutes));
-            }
-
+            // Complete 24-hour calendar (origin is always midnight = 0)
             function getCurrentOriginMinutes() {
-                if (isEarlierHoursExpanded) {
-                    return 0;
-                }
-                return getClinicOriginMinutes();
+                return 0;
             }
 
             const GRID_HOUR_HEIGHT = 120; // 2px per minute
             function getGridTotalHeight() {
-                const origin = getCurrentOriginMinutes();
-                return (1440 - origin) * 2;
+                return 2880; // 24 hours * 120px
             }
 
             function formatTime12(minutes) {
@@ -1997,45 +1933,10 @@
                 return `${hourPad}:${minPad} ${period}`;
             }
 
-            function updateEarlierHoursBar(earlierCount = 0) {
-                const bar = document.getElementById('calendar-earlier-hours-bar');
-                if (!bar) return;
-
-                const origin = getClinicOriginMinutes();
-                if (currentView === 'month' || origin === 0 && !isEarlierHoursExpanded) {
-                    bar.classList.add('d-none');
-                    return;
-                }
-                bar.classList.remove('d-none');
-
-                const originLabel = formatTime12(origin);
-                const icon = document.getElementById('earlier-hours-icon');
-                const text = document.getElementById('earlier-hours-text');
-                const badge = document.getElementById('earlier-hours-badge');
-
-                if (isEarlierHoursExpanded) {
-                    if (icon) icon.className = 'bx bx-chevron-down';
-                    if (text) text.textContent = `Hide earlier hours (Back to ${originLabel})`;
-                    if (badge) badge.classList.add('d-none');
-                } else {
-                    if (icon) icon.className = 'bx bx-chevron-up';
-                    if (text) text.textContent = `Show earlier hours (12:00 AM – ${originLabel})`;
-                    if (badge) {
-                        if (earlierCount > 0) {
-                            badge.textContent = `${earlierCount} earlier ${earlierCount === 1 ? 'appointment' : 'appointments'}`;
-                            badge.classList.remove('d-none');
-                        } else {
-                            badge.classList.add('d-none');
-                        }
-                    }
-                }
-            }
-
-            // Generate time column starting from current origin with 15-minute slots (each 30px)
+            // Generate full 24-hour time column (96 slots of 15 minutes, each 30px)
             function generateTimeColumn() {
                 timeCol.innerHTML = '';
-                const origin = getCurrentOriginMinutes();
-                for (let m = origin; m < 1440; m += 15) {
+                for (let m = 0; m < 1440; m += 15) {
                     const h = Math.floor(m / 60);
                     const min = m % 60;
                     const period = h >= 12 ? 'PM' : 'AM';
@@ -2056,19 +1957,29 @@
 
             const gridContainer = document.querySelector('.grid-container');
 
-            // Set grid body height and day-column alignment for active hours
+            // Scroll tracking: differentiate genuine user scroll from programmatic auto-scroll
+            let hasUserManuallyScrolled = false;
+            let isProgrammaticScroll = false;
+
+            if (gridContainer) {
+                gridContainer.addEventListener('scroll', function () {
+                    if (!isProgrammaticScroll) {
+                        hasUserManuallyScrolled = true;
+                    }
+                }, { passive: true });
+            }
+
+            // Set grid body height and day-column alignment for all 24 hours
             function setGridHeight() {
-                const height = getGridTotalHeight();
+                const height = 2880;
                 if (gridBody) {
                     gridBody.style.minHeight = height + 'px';
                     gridBody.style.height = height + 'px';
                 }
-                const origin = getCurrentOriginMinutes();
-                const bgOffset = -((origin % 60) * 2);
                 document.querySelectorAll('.day-column').forEach(c => {
                     c.style.minHeight = height + 'px';
                     c.style.height = height + 'px';
-                    c.style.backgroundPositionY = `${bgOffset}px`;
+                    c.style.backgroundPositionY = '0px';
                 });
             }
 
@@ -2078,17 +1989,11 @@
 
             function render10amHourHighlight() {
                 clearHourHighlights();
-
-                // Only for time grid view (week/day)
                 if (!gridBody || currentView === 'month') return;
 
                 const hourToHighlight = 10; // 10:00 AM
                 const targetMinutes = hourToHighlight * 60;
-                const origin = getCurrentOriginMinutes();
-
-                if (targetMinutes < origin) return;
-
-                const top = (targetMinutes - origin) * 2;
+                const top = targetMinutes * 2;
 
                 const row = document.createElement('div');
                 row.className = 'hour-highlight-row';
@@ -2108,12 +2013,8 @@
 
                 const clinicNow = getClinicNow();
                 const todayKey = toLocalDate(clinicNow);
-                const origin = getCurrentOriginMinutes();
                 const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
-
-                if (minutesFromMidnight < origin) return;
-
-                const top = (minutesFromMidnight - origin) * 2;
+                const top = minutesFromMidnight * 2;
 
                 const cols = Array.from(gridBody.querySelectorAll('.day-column'));
                 if (!cols.length) return;
@@ -2160,59 +2061,26 @@
                 });
             }
 
-            function performAutoScroll() {
+            function scrollToCurrentTime(force = false) {
                 if (!gridContainer || !gridBody || currentView === 'month') return;
+                if (!force && hasUserManuallyScrolled) return;
 
-                // When grid origin is already at current clinic time, auto-scroll is not required
-                if (!isEarlierHoursExpanded) {
-                    if (gridContainer) gridContainer.scrollTop = 0;
-                    return;
-                }
-
-                const clinicNow = getClinicNow();
-                const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
-                const currentTop = minutesFromMidnight * 2;
-                const leadBuffer = 60; // 30 minutes lead buffer
-                const headerHeight = header ? header.offsetHeight : 0;
-
-                const maxGridScroll = Math.max(0, gridContainer.scrollHeight - gridContainer.clientHeight);
-                if (maxGridScroll > 0) {
-                    const targetScrollTop = Math.min(maxGridScroll, Math.max(0, Math.round(currentTop - leadBuffer)));
-                    gridContainer.scrollTop = targetScrollTop;
-                }
-
-                const rect = gridContainer.getBoundingClientRect();
-                const docTop = window.scrollY || (document.documentElement ? document.documentElement.scrollTop : 0) || (document.body ? document.body.scrollTop : 0) || 0;
-                const containerAbsoluteTop = docTop + rect.top;
-                const targetWindowTop = Math.max(0, Math.round(containerAbsoluteTop + currentTop - leadBuffer - headerHeight));
-
-                const docScrollHeight = document.documentElement ? document.documentElement.scrollHeight : document.body.scrollHeight;
-                const maxDocScroll = Math.max(0, docScrollHeight - window.innerHeight);
-                if (maxDocScroll > 0) {
-                    window.scrollTo({ top: Math.min(maxDocScroll, targetWindowTop), behavior: 'instant' });
-                    if (document.documentElement) document.documentElement.scrollTop = Math.min(maxDocScroll, targetWindowTop);
-                    if (document.body) document.body.scrollTop = Math.min(maxDocScroll, targetWindowTop);
-                }
-
-                const main = document.querySelector('main');
-                if (main && (main.scrollHeight - main.clientHeight > 10)) {
-                    main.scrollTop = Math.min(main.scrollHeight - main.clientHeight, targetWindowTop);
-                }
-                const pcw = document.getElementById('page-content-wrapper');
-                if (pcw && (pcw.scrollHeight - pcw.clientHeight > 10)) {
-                    pcw.scrollTop = Math.min(pcw.scrollHeight - pcw.clientHeight, targetWindowTop);
-                }
-            }
-
-            function scrollToCurrentTime() {
-                if (!gridContainer || !gridBody || currentView === 'month') return;
-                if (!isEarlierHoursExpanded) {
-                    gridContainer.scrollTop = 0;
-                    return;
-                }
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                        performAutoScroll();
+                        const clinicNow = getClinicNow();
+                        const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
+                        const currentTop = minutesFromMidnight * 2;
+                        const leadBuffer = 60; // 30 minutes lead buffer (60px)
+                        const targetScrollTop = Math.max(0, Math.round(currentTop - leadBuffer));
+
+                        const maxGridScroll = Math.max(0, gridContainer.scrollHeight - gridContainer.clientHeight);
+                        if (maxGridScroll > 0) {
+                            isProgrammaticScroll = true;
+                            gridContainer.scrollTop = Math.min(maxGridScroll, targetScrollTop);
+                            requestAnimationFrame(() => {
+                                isProgrammaticScroll = false;
+                            });
+                        }
                     });
                 });
             }
@@ -4255,9 +4123,9 @@
                             item.style.setProperty('color', staffTextCol, 'important');
                             item.title = `${staff.name}: ${startTime} – ${endTime}`;
                             item.innerHTML = `
-                                                <span class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</span>
-                                                <span class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${formatScheduleTime(sch.start_time)} - ${formatScheduleTime(sch.end_time)}</span>
-                                            `;
+                                                    <span class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</span>
+                                                    <span class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${formatScheduleTime(sch.start_time)} - ${formatScheduleTime(sch.end_time)}</span>
+                                                `;
                             container.appendChild(item);
                         });
                     });
@@ -4267,19 +4135,16 @@
             // Render appointments into day columns with overlap collision layout
             function renderAppointments() {
                 clearAppointments();
-                const origin = getCurrentOriginMinutes();
-                const totalHeight = getGridTotalHeight();
-                const bgOffset = -((origin % 60) * 2);
+                const totalHeight = 2880;
                 const cols = Array.from(document.querySelectorAll('.day-column'));
                 cols.forEach(c => {
                     c.style.minHeight = totalHeight + 'px';
                     c.style.height = totalHeight + 'px';
-                    c.style.backgroundPositionY = `${bgOffset}px`;
+                    c.style.backgroundPositionY = '0px';
                 });
 
                 const events = window._calendarEvents || [];
                 const parsedEvents = [];
-                let earlierEventsCount = 0;
 
                 events.forEach(ev => {
                     try {
@@ -4314,14 +4179,6 @@
                         durationMinutes = Math.min(durationMinutes, 24 * 60 - minutesFromMidnight);
                         const endMinutes = minutesFromMidnight + durationMinutes;
 
-                        // Count events ending before origin
-                        if (endMinutes <= origin) {
-                            earlierEventsCount++;
-                            if (!isEarlierHoursExpanded) {
-                                return;
-                            }
-                        }
-
                         parsedEvents.push({
                             ev,
                             col,
@@ -4335,8 +4192,6 @@
                         console.warn('Error parsing appointment for rendering', err);
                     }
                 });
-
-                updateEarlierHoursBar(earlierEventsCount);
 
                 // Group parsed events by target column element
                 const colMap = new Map();
@@ -4411,15 +4266,11 @@
                     colItems.forEach(item => {
                         try {
                             const { ev, startIso, endIso, durationMinutes, startMinutes, endMinutes, trackIndex, totalTracks } = item;
-                            const effectiveStart = Math.max(startMinutes, origin);
-                            const effectiveEnd = Math.min(endMinutes, 1440);
-                            const effectiveDuration = Math.max(15, effectiveEnd - effectiveStart);
+                            const topPx = startMinutes * 2;
+                            const heightPx = Math.max(durationMinutes * 2, 24);
 
-                            const topPx = (effectiveStart - origin) * 2;
-                            const heightPx = Math.max(effectiveDuration * 2, 24);
-
-                            const isShortAppointment = effectiveDuration <= 35;
-                            const isExtraShortAppointment = effectiveDuration < 25;
+                            const isShortAppointment = durationMinutes <= 35;
+                            const isExtraShortAppointment = durationMinutes < 25;
                             const isOverlapping = totalTracks > 1;
                             const isCompactSlot = totalTracks >= 3;
 
@@ -4485,28 +4336,28 @@
                                 const showStaff = staffName && !isExtraShortAppointment && currentView !== 'day' && (!isCompactSlot || durationMinutes >= 45);
 
                                 el.innerHTML = `
-                                                    <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                                        <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
-                                                    </div>
-                                                    ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
-                                                    ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
-                                                    <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
-                                                        <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
-                                                        <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                                    </div>
-                                                `;
+                                                        <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                            <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
+                                                        </div>
+                                                        ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
+                                                        ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
+                                                        <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
+                                                            <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
+                                                            <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                                        </div>
+                                                    `;
                             } else {
                                 // Non-overlapping appointment card: retain existing appearance with side-by-side status badge in header
                                 const showSecondary = !isExtraShortAppointment;
                                 el.innerHTML = `
-                                                    <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                                        <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
-                                                        <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                                    </div>
-                                                    ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
-                                                    ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
-                                                    <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
-                                                `;
+                                                        <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                            <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                                            <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                                        </div>
+                                                        ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                                                        ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                                                        <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
+                                                    `;
                             }
 
                             el.addEventListener('dragstart', handleDragStart);
@@ -4943,9 +4794,8 @@
                 if (!apptId) return;
                 const rect = col.getBoundingClientRect();
                 const y = e.clientY - rect.top;
-                const origin = getCurrentOriginMinutes();
-                const rawMinutes = origin + (y / 2);
-                const minutes = Math.min(24 * 60 - 15, Math.max(origin, Math.round(rawMinutes / 15) * 15));
+                const rawMinutes = y / 2;
+                const minutes = Math.min(24 * 60 - 15, Math.max(0, Math.round(rawMinutes / 15) * 15));
 
                 // fetch current appointment to know duration
                 try {
@@ -4996,9 +4846,8 @@
                 const col = this;
                 const rect = col.getBoundingClientRect();
                 const y = e.clientY - rect.top;
-                const origin = getCurrentOriginMinutes();
-                const rawMinutes = origin + (y / 2);
-                const rounded = Math.min(24 * 60 - 15, Math.max(origin, Math.floor(rawMinutes / 15) * 15));
+                const rawMinutes = y / 2;
+                const rounded = Math.min(24 * 60 - 15, Math.max(0, Math.floor(rawMinutes / 15) * 15));
 
                 const selectedDate = new Date(currentWeekStart);
                 selectedDate.setDate(currentWeekStart.getDate() + parseInt(col.dataset.dayIndex, 10));
@@ -5187,21 +5036,10 @@
                     const df = now.getDate() - d + (d === 0 ? -6 : 1);
                     currentWeekStart = new Date(now.getFullYear(), now.getMonth(), df, 0, 0, 0, 0);
                 }
+                hasUserManuallyScrolled = false;
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => scrollToCurrentTime(true));
             });
-
-            const btnToggleEarlierHours = document.getElementById('btn-toggle-earlier-hours');
-            if (btnToggleEarlierHours) {
-                btnToggleEarlierHours.addEventListener('click', function () {
-                    isEarlierHoursExpanded = !isEarlierHoursExpanded;
-                    buildWeekView();
-                    renderStaffSchedules();
-                    renderAppointments();
-                    render10amHourHighlight();
-                    renderCurrentTimeIndicator();
-                });
-            }
 
             const resetFiltersBtn = document.getElementById('calendar-reset-filters');
             if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', function () {
@@ -5245,7 +5083,11 @@
                 }
 
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => {
+                    if (!hasUserManuallyScrolled) {
+                        scrollToCurrentTime(true);
+                    }
+                });
             });
             if (closeDetailsCardBtn) {
                 closeDetailsCardBtn.addEventListener('click', hideAppointmentDetailsCard);
@@ -5265,7 +5107,9 @@
             } else {
                 showTimeGridView();
                 buildWeekView();
-                loadDataAndRender();
+                loadDataAndRender().then(() => {
+                    scrollToCurrentTime(true);
+                });
             }
 
             // Keep clinic current-time indicator and GMT offset updated live
