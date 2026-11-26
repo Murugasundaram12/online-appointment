@@ -23,12 +23,12 @@
                 overflow: hidden;
             }
 
-            .app-shell > #page-content-wrapper {
+            .app-shell>#page-content-wrapper {
                 height: 100vh;
                 overflow: hidden;
             }
 
-            .app-shell > #page-content-wrapper > main {
+            .app-shell>#page-content-wrapper>main {
                 flex: 1 1 auto;
                 min-height: 0;
                 padding-bottom: 0 !important;
@@ -57,13 +57,6 @@
             border-bottom: 1px solid #ebedf3;
             min-height: 54px;
             position: relative;
-            flex-shrink: 0;
-        }
-
-        .calendar-filters {
-            padding: 0.45rem 1.5rem;
-            border-bottom: 1px solid #ebedf3;
-            background: #fff;
             flex-shrink: 0;
         }
 
@@ -1032,38 +1025,6 @@
             </div>
         </div>
 
-        <div class="calendar-filters d-flex flex-wrap gap-2">
-            <select id="calendar-filter-location" class="form-select form-select-sm" style="max-width: 210px;">
-                <option value="">All locations</option>
-                @foreach($locations ?? [] as $location)
-                    <option value="{{ $location->id }}" {{ (string) ($filters['location_id'] ?? '') === (string) $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
-                @endforeach
-            </select>
-            <select id="calendar-filter-staff" class="form-select form-select-sm" style="max-width: 210px;">
-                <option value="">All staff</option>
-                @foreach($staffs ?? [] as $staff)
-                    <option value="{{ $staff->id }}" {{ (string) ($filters['staff_id'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
-                @endforeach
-            </select>
-            <select id="calendar-filter-service" class="form-select form-select-sm" style="max-width: 210px;">
-                <option value="">All services</option>
-                @foreach($services ?? [] as $service)
-                    <option value="{{ $service->id }}" {{ (string) ($filters['service_id'] ?? '') === (string) $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
-                @endforeach
-            </select>
-            <select id="calendar-filter-status" class="form-select form-select-sm" style="max-width: 180px;">
-                <option value="">All statuses</option>
-                <option value="booked" {{ ($filters['status'] ?? '') === 'booked' ? 'selected' : '' }}>Booked</option>
-                <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed
-                </option>
-                <option value="cancelled" {{ ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled
-                </option>
-                <option value="no_show" {{ ($filters['status'] ?? '') === 'no_show' ? 'selected' : '' }}>No Show
-                </option>
-            </select>
-            <button type="button" class="btn btn-light btn-sm" id="calendar-reset-filters">Reset filters</button>
-        </div>
-
         <!-- Calendar Content -->
         <div class="grid-container">
             <div class="grid-header" id="calendar-grid-header">
@@ -1320,9 +1281,9 @@
                                 <label class="form-label" for="appt-client-search">Client <span
                                         class="required-mark">*</span></label>
                                 <!-- <div class="input-group mb-2">
-                                            <span class="input-group-text"><i class="bx bx-search"></i></span>
-                                            <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
-                                        </div> -->
+                                                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                                <input type="search" id="appt-client-search" class="form-control" placeholder="Search existing clients by name, phone, or email" autocomplete="off" aria-label="Search existing clients" />
+                                            </div> -->
                                 <div class="d-flex gap-2">
                                     <select id="appt-client" name="client_id" class="form-select"></select>
                                     <button type="button" class="btn btn-new-client" id="open-new-client-modal">+
@@ -1557,6 +1518,9 @@
         };
 
         document.addEventListener('DOMContentLoaded', function () {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
             function pad2(n) { return String(n).padStart(2, '0'); }
             function escapeHtml(str) {
                 return String(str ?? '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
@@ -1582,19 +1546,21 @@
                         hour: 'numeric',
                         minute: 'numeric',
                         second: 'numeric',
-                        hour12: false
+                        hour12: false,
+                        hourCycle: 'h23'
                     });
                     const parts = dtf.formatToParts(new Date());
                     const m = {};
                     parts.forEach(p => { m[p.type] = p.value; });
-                    const h = parseInt(m.hour, 10) === 24 ? 0 : parseInt(m.hour, 10);
+                    let h = parseInt(m.hour, 10);
+                    if (Number.isNaN(h) || h === 24) h = 0;
                     return new Date(
                         parseInt(m.year, 10),
                         parseInt(m.month, 10) - 1,
                         parseInt(m.day, 10),
                         h,
-                        parseInt(m.minute, 10),
-                        parseInt(m.second, 10)
+                        parseInt(m.minute, 10) || 0,
+                        parseInt(m.second, 10) || 0
                     );
                 } catch (_) {
                     return new Date();
@@ -2026,15 +1992,53 @@
                 });
             }
 
-            function scrollToCurrentTime() {
+            function performAutoScroll() {
                 if (!gridContainer || !gridBody || currentView === 'month') return;
+
                 const clinicNow = getClinicNow();
                 const minutesFromMidnight = clinicNow.getHours() * 60 + clinicNow.getMinutes();
                 const currentTop = (minutesFromMidnight / (24 * 60)) * GRID_TOTAL_HEIGHT;
-                // Keep ~15 minutes (30px) lead buffer above current time so hour label & indicator are clearly framed
-                const maxScroll = Math.max(0, gridContainer.scrollHeight - gridContainer.clientHeight);
-                const targetScrollTop = Math.min(maxScroll, Math.max(0, Math.round(currentTop - 30)));
-                gridContainer.scrollTop = targetScrollTop;
+                const leadBuffer = 60; // 30 minutes (60px) lead buffer so indicator & time label are framed clearly
+                const headerHeight = header ? header.offsetHeight : 0;
+
+                // Check if .grid-container is internally scrollable (desktop >= 992px)
+                const maxGridScroll = Math.max(0, gridContainer.scrollHeight - gridContainer.clientHeight);
+                if (maxGridScroll > 0) {
+                    const targetScrollTop = Math.min(maxGridScroll, Math.max(0, Math.round(currentTop - leadBuffer)));
+                    gridContainer.scrollTop = targetScrollTop;
+                }
+
+                // Also scroll outer/window container if document or outer wrappers are the ones scrolling (responsive < 992px)
+                const rect = gridContainer.getBoundingClientRect();
+                const docTop = window.scrollY || (document.documentElement ? document.documentElement.scrollTop : 0) || (document.body ? document.body.scrollTop : 0) || 0;
+                const containerAbsoluteTop = docTop + rect.top;
+                const targetWindowTop = Math.max(0, Math.round(containerAbsoluteTop + currentTop - leadBuffer - headerHeight));
+
+                const docScrollHeight = document.documentElement ? document.documentElement.scrollHeight : document.body.scrollHeight;
+                const maxDocScroll = Math.max(0, docScrollHeight - window.innerHeight);
+                if (maxDocScroll > 0) {
+                    window.scrollTo({ top: Math.min(maxDocScroll, targetWindowTop), behavior: 'instant' });
+                    if (document.documentElement) document.documentElement.scrollTop = Math.min(maxDocScroll, targetWindowTop);
+                    if (document.body) document.body.scrollTop = Math.min(maxDocScroll, targetWindowTop);
+                }
+
+                const main = document.querySelector('main');
+                if (main && (main.scrollHeight - main.clientHeight > 10)) {
+                    main.scrollTop = Math.min(main.scrollHeight - main.clientHeight, targetWindowTop);
+                }
+                const pcw = document.getElementById('page-content-wrapper');
+                if (pcw && (pcw.scrollHeight - pcw.clientHeight > 10)) {
+                    pcw.scrollTop = Math.min(pcw.scrollHeight - pcw.clientHeight, targetWindowTop);
+                }
+            }
+
+            function scrollToCurrentTime() {
+                if (!gridContainer || !gridBody || currentView === 'month') return;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        performAutoScroll();
+                    });
+                });
             }
 
             const modalEl = document.getElementById('appointmentModal');
@@ -2523,13 +2527,17 @@
                 return `${String(displayHour).padStart(2, '0')}:${m} ${ampm}`;
             }
 
-            function formatCompactTime(timeStr) {
+            function formatScheduleTime(timeStr) {
                 const [hours, minutes] = String(timeStr || '00:00').split(':');
                 const h = parseInt(hours, 10) || 0;
                 const m = parseInt(minutes || '0', 10) || 0;
-                const ampm = h >= 12 ? 'p' : 'a';
+                const ampm = h >= 12 ? 'PM' : 'AM';
                 const displayHour = h % 12 || 12;
                 return m === 0 ? `${displayHour}${ampm}` : `${displayHour}:${pad2(m)}${ampm}`;
+            }
+
+            function formatCompactTime(timeStr) {
+                return formatScheduleTime(timeStr);
             }
 
             function toInputDateTime(d) {
@@ -3842,7 +3850,7 @@
                             const segments = getEffectiveSegments(staff, currentWeekStart);
                             const hoursHtml = (segments || [])
                                 .filter(s => s && s.is_working)
-                                .map(s => `<div class="staff-schedule-item small"><div class="staff-schedule-hours">${format12Hour(s.start_time)} – ${format12Hour(s.end_time)}</div></div>`)
+                                .map(s => `<div class="staff-schedule-item small"><div class="staff-schedule-hours">${formatScheduleTime(s.start_time)} - ${formatScheduleTime(s.end_time)}</div></div>`)
                                 .join('');
                             if (hoursHtml) {
                                 const segContainer = document.createElement('div');
@@ -4070,9 +4078,9 @@
                             item.style.setProperty('color', staffTextCol, 'important');
                             item.title = `${staff.name}: ${startTime} – ${endTime}`;
                             item.innerHTML = `
-                                        <span class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</span>
-                                        <span class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${formatCompactTime(sch.start_time)}–${formatCompactTime(sch.end_time)}</span>
-                                    `;
+                                            <span class="staff-schedule-name" style="color: ${staffTextCol};">${escapeHtml(staff.name)}</span>
+                                            <span class="staff-schedule-hours" style="color: ${staffTextCol}; opacity: 0.95;">${formatScheduleTime(sch.start_time)} - ${formatScheduleTime(sch.end_time)}</span>
+                                        `;
                             container.appendChild(item);
                         });
                     });
@@ -4280,28 +4288,28 @@
                                 const showStaff = staffName && !isExtraShortAppointment && currentView !== 'day' && (!isCompactSlot || durationMinutes >= 45);
 
                                 el.innerHTML = `
-                                            <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                                <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
-                                            </div>
-                                            ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
-                                            ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
-                                            <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
-                                                <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
-                                                <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                            </div>
-                                        `;
+                                                <div class="calendar-appointment-header" style="min-width: 0; width: 100%; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                    <div class="calendar-appointment-client fw-bold text-truncate" style="font-weight: 800; font-size: ${isCompactSlot ? '10px' : '11px'}; line-height: 1.15; width: 100%; min-width: 0;">${escapeHtml(clientTitle)}</div>
+                                                </div>
+                                                ${showService ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isCompactSlot ? '8.5px' : '9.5px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(serviceName)}</div>` : ''}
+                                                ${showStaff ? `<div class="calendar-appointment-staff text-truncate opacity-85" style="font-size: ${isCompactSlot ? '8px' : '9px'}; line-height: 1.15; margin-bottom: 1px;">${escapeHtml(staffName)}</div>` : ''}
+                                                <div class="calendar-appointment-footer d-flex align-items-center justify-content-between" style="gap: 2px; min-width: 0; margin-top: auto;">
+                                                    <span class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isCompactSlot ? '0.58rem' : '0.65rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95; min-width: 0; flex: 1 1 auto;">${escapeHtml(timeStr)}</span>
+                                                    <span class="calendar-appointment-status badge" style="font-size: ${isCompactSlot ? '7.5px' : '8px'}; font-weight: 700; padding: 1px 3px; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                                </div>
+                                            `;
                             } else {
                                 // Non-overlapping appointment card: retain existing appearance with side-by-side status badge in header
                                 const showSecondary = !isExtraShortAppointment;
                                 el.innerHTML = `
-                                            <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
-                                                <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
-                                                <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
-                                            </div>
-                                            ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
-                                            ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
-                                            <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
-                                        `;
+                                                <div class="calendar-appointment-header d-flex align-items-center justify-content-between" style="gap: 4px; min-width: 0; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">
+                                                    <span class="calendar-appointment-client fw-bold text-truncate" style="font-size: ${isShortAppointment ? '11px' : '12px'}; line-height: 1.15; min-width: 0; flex: 1 1 auto;">${escapeHtml(clientTitle)}</span>
+                                                    <span class="calendar-appointment-status badge" style="font-size: ${isShortAppointment ? '8.5px' : '9px'}; font-weight: 700; padding: 1px ${isShortAppointment ? '3px' : '4px'}; line-height: 1; text-transform: uppercase; background: rgba(0,0,0,0.22); color: inherit; flex-shrink: 0; border-radius: 3px;">${escapeHtml(statusLabel)}</span>
+                                                </div>
+                                                ${serviceName && showSecondary ? `<div class="calendar-appointment-service text-truncate opacity-90" style="font-size: ${isShortAppointment ? '10px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(serviceName)}</div>` : ''}
+                                                ${staffName && showSecondary && currentView !== 'day' ? `<div class="calendar-appointment-staff text-truncate opacity-90" style="font-size: ${isShortAppointment ? '9.5px' : '11px'}; line-height: 1.15; margin-bottom: ${isShortAppointment ? '1px' : '2px'};">${escapeHtml(staffName)}</div>` : ''}
+                                                <div class="appointment-time calendar-appointment-time text-truncate" style="font-size: ${isShortAppointment ? '0.70rem' : '0.72rem'}; font-weight: 600; line-height: 1.15; opacity: 0.95;">${escapeHtml(timeStr)}</div>
+                                            `;
                             }
 
                             el.addEventListener('dragstart', handleDragStart);
@@ -4991,15 +4999,14 @@
                     return;
                 }
                 if (currentView === 'day') {
-                    currentWeekStart = new Date(now);
-                    currentWeekStart.setHours(0, 0, 0, 0);
+                    currentWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
                 } else {
                     const d = now.getDay();
                     const df = now.getDate() - d + (d === 0 ? -6 : 1);
-                    currentWeekStart = new Date(now.setDate(df));
-                    currentWeekStart.setHours(0, 0, 0, 0);
+                    currentWeekStart = new Date(now.getFullYear(), now.getMonth(), df, 0, 0, 0, 0);
                 }
                 buildWeekView();
+                scrollToCurrentTime();
                 loadDataAndRender().then(() => scrollToCurrentTime());
             });
 
@@ -5041,11 +5048,11 @@
                     const anchor = new Date(currentWeekStart);
                     const d = anchor.getDay();
                     const df = anchor.getDate() - d + (d === 0 ? -6 : 1);
-                    currentWeekStart = new Date(anchor.setDate(df));
-                    currentWeekStart.setHours(0, 0, 0, 0);
+                    currentWeekStart = new Date(anchor.getFullYear(), anchor.getMonth(), df, 0, 0, 0, 0);
                 }
 
                 buildWeekView();
+                scrollToCurrentTime();
                 loadDataAndRender().then(() => scrollToCurrentTime());
             });
             if (closeDetailsCardBtn) {
@@ -5066,8 +5073,15 @@
             } else {
                 showTimeGridView();
                 buildWeekView();
+                scrollToCurrentTime();
                 loadDataAndRender().then(() => scrollToCurrentTime());
             }
+
+            window.addEventListener('load', () => {
+                if (currentView !== 'month') {
+                    scrollToCurrentTime();
+                }
+            });
 
             // Keep clinic current-time indicator and GMT offset updated live
             setInterval(() => {
